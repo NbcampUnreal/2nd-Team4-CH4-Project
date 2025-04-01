@@ -7,14 +7,13 @@
 // Sets default values
 AMushroom::AMushroom()
 {
-	InitializeStat("Mushroom");
 }
 
 // Called when the game starts or when spawned
 void AMushroom::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	InitializeStat("Mushroom");
 }
 
 // Called every frame

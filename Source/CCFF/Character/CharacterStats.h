@@ -12,12 +12,53 @@ USTRUCT(BlueprintType)
 struct FCharacterStats :public FTableRowBase
 {
 	GENERATED_BODY();
- 
+	
 public:
-	FCharacterStats():MaxHealth(0),Health(0){}
+	FCharacterStats();
+	
+	// Movement property
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float Gravity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float GroundFriction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float AirFriction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float MaxAirSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float MaxWalkSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float MaxRunSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
+	float MaxFallSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat")
+	// Battle property
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float MaxSuperMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float SuperMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float MaxBurstMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float BurstMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float BurstMeterGain;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float MaxBlockMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float BlockMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float BlockMeterGain;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float PerfectParryTick;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float DamageTakenModifier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Battle")
+	float DiModifier;
+	
+	// Health property
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Health")
 	float MaxHealth;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Health")
 	float Health;
 };

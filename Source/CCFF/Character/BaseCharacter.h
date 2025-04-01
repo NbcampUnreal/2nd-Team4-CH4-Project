@@ -6,12 +6,12 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "CharacterStats.h"
+#include "CharacterEnum.h"
 #include "BaseCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 struct FInputActionValue;
-
 
 UCLASS()
 class CCFF_API ABaseCharacter : public ACharacter
@@ -24,12 +24,20 @@ class CCFF_API ABaseCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "DataTable", meta = (AllowPrivateAccess = "true"))
-	UDataTable* DT;
 	//Character Stats struct
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
-
+	//Character State
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	ECharacterState CurrentCharacterState;
+	//Character Resistance State
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	EResistanceState CurrentResistanceState;
+	
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DataTable", meta = (AllowPrivateAccess = "true"))
+	UDataTable* DT;
+	
 public:
 	ABaseCharacter();
 

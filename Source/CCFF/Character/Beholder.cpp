@@ -7,14 +7,13 @@
 // Sets default values
 ABeholder::ABeholder()
 {
-	InitializeStat("Beholder");
 }
 
 // Called when the game starts or when spawned
 void ABeholder::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	InitializeStat("Beholder");
 }
 
 // Called every frame

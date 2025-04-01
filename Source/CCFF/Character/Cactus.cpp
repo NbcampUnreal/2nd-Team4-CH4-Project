@@ -7,14 +7,13 @@
 // Sets default values
 ACactus::ACactus()
 {
-	InitializeStat("Cactus");
 }
 
 // Called when the game starts or when spawned
 void ACactus::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	InitializeStat("Cactus");
 }
 
 // Called every frame
