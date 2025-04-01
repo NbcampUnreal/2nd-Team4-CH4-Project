@@ -23,29 +23,24 @@ void AItemSpawner::BeginPlay()
     if (GameInstance)
     {
         UItemPoolManager* PoolManager = GameInstance->GetSubsystem<UItemPoolManager>();
-        if (PoolManager&&ItemClass)
+        if (PoolManager&& ItemDataTable)
         {
-            PoolManager->InitializePool(ItemClass, 4);
-            SpawnItem();
+            PoolManager->InitializePool(ItemDataTable);
+            SpawnRandomItem();
         }
     }    
 }
 
-void AItemSpawner::SpawnItem()
+void AItemSpawner::SpawnRandomItem()
 {
-    //if (HasAuthority()) // 서버에서만 실행
-    //{
-    //    
-    //}
-
     UItemPoolManager* PoolManager = GetGameInstance()->GetSubsystem<UItemPoolManager>();
     if (PoolManager)
     {
-        ASpawnableItem* Item = PoolManager->GetItemFromPool();
+        ASpawnableItem* Item = PoolManager->GetRandomItemFromPool();
         if (Item)
         {
             FVector SpawnLocation = GetActorLocation();
-            SpawnLocation.Z += 100.0f;
+            SpawnLocation.Z += 50.0f;
 
             Item->SetActorLocation(SpawnLocation);
             Item->SetActorHiddenInGame(false);
@@ -57,6 +52,7 @@ void AItemSpawner::SpawnItem()
         }
     }
 }
+
 
 void AItemSpawner::OnItemReset()
 {
@@ -75,7 +71,6 @@ void AItemSpawner::SpawnItemDelayed()
 {
     if (!bIsItemActive)
     {
-        SpawnItem();
-          // 아이템이 활성화된 상태로 설정
+        SpawnRandomItem();
     }
 }

@@ -23,10 +23,6 @@ ASpawnableItem::ASpawnableItem()
     StaticMesh->SetupAttachment(Collision);
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	InteractSound = CreateDefaultSubobject<USoundBase>(TEXT("InteractSound"));
-    InteractParticle = CreateDefaultSubobject<UNiagaraSystem>(TEXT("InteractParticle"));
-
-
     Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpawnableItem::OnItemOverlap);
 }
 
