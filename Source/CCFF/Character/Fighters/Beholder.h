@@ -3,17 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseCharacter.h"
-#include "Mushroom.generated.h"
+#include "Character/Base/BaseCharacter.h"
+#include "Beholder.generated.h"
 
 UCLASS()
-class CCFF_API AMushroom : public ABaseCharacter
+class CCFF_API ABeholder : public ABaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AMushroom();
+	ABeholder();
 
 protected:
 	// Called when the game starts or when spawned

@@ -49,19 +49,9 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-	
-}
 
-void ABaseCharacter::InitializeStat(const FName CharacterRowName)
-{
-	if (CharacterRowName.IsValid()&&DT)
-	{
-		UE_LOG(LogTemp, Display, TEXT("CharacterRowName: %s"), *CharacterRowName.ToString());
-		if (FCharacterStats* TempStats=DT->FindRow<FCharacterStats>(CharacterRowName,TEXT("")))
-		{
-			Stats=*TempStats;
-		}
-	}
+	CurrentCharacterState=ECharacterState::Normal;
+	CurrentResistanceState=EResistanceState::Normal;
 }
 
 // Called to bind functionality to input

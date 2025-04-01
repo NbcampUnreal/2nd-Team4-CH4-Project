@@ -2,7 +2,7 @@
 
 
 #include "Mushroom.h"
-
+#include "Character/DataLoaderSubSystem.h"
 
 // Sets default values
 AMushroom::AMushroom()
@@ -13,7 +13,13 @@ AMushroom::AMushroom()
 void AMushroom::BeginPlay()
 {
 	Super::BeginPlay();
-	InitializeStat("Mushroom");
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat("Mushroom");
+		}
+	}
 }
 
 // Called every frame

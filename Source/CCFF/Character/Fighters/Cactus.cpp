@@ -2,7 +2,7 @@
 
 
 #include "Cactus.h"
-
+#include "Character/DataLoaderSubSystem.h"
 
 // Sets default values
 ACactus::ACactus()
@@ -13,7 +13,13 @@ ACactus::ACactus()
 void ACactus::BeginPlay()
 {
 	Super::BeginPlay();
-	InitializeStat("Cactus");
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat("Cactus");
+		}
+	}
 }
 
 // Called every frame

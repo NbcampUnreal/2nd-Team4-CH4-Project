@@ -2,6 +2,7 @@
 
 
 #include "Beholder.h"
+#include "Character/DataLoaderSubSystem.h"
 
 
 // Sets default values
@@ -13,7 +14,13 @@ ABeholder::ABeholder()
 void ABeholder::BeginPlay()
 {
 	Super::BeginPlay();
-	InitializeStat("Beholder");
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat("Beholder");
+		}
+	}
 }
 
 // Called every frame

@@ -3,8 +3,8 @@
 
 #include "TestGameMode.h"
 
-#include "BaseCharacter.h"
-#include "CharacterController.h"
+#include "Character/Base/BaseCharacter.h"
+#include "Character/Base/CharacterController.h"
 
 ATestGameMode::ATestGameMode()
 {

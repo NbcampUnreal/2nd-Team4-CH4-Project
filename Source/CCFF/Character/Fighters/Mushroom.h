@@ -3,17 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseCharacter.h"
-#include "Cactus.generated.h"
+#include "Character/Base/BaseCharacter.h"
+#include "Mushroom.generated.h"
 
 UCLASS()
-class CCFF_API ACactus : public ABaseCharacter
+class CCFF_API AMushroom : public ABaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	ACactus();
+	AMushroom();
 
 protected:
 	// Called when the game starts or when spawned

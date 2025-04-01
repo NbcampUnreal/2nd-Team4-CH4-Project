@@ -3,17 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseCharacter.h"
-#include "Beholder.generated.h"
+#include "Character/Base/BaseCharacter.h"
+#include "Cactus.generated.h"
 
 UCLASS()
-class CCFF_API ABeholder : public ABaseCharacter
+class CCFF_API ACactus : public ABaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	ABeholder();
+	ACactus();
 
 protected:
 	// Called when the game starts or when spawned
