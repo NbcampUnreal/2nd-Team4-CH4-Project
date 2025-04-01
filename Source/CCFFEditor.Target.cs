@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class CCFFEditorTarget : TargetRules
 {
-	public CCFFEditorTarget( TargetInfo Target) : base(Target)
+	public CCFFEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
