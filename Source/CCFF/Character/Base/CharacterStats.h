@@ -14,7 +14,9 @@ struct FCharacterStats :public FTableRowBase
 	GENERATED_BODY();
 	
 public:
-	FCharacterStats();
+	FCharacterStats(): Gravity(0),GroundFriction(0),AirFriction(0),MaxAirSpeed(0),MaxWalkSpeed(0),MaxRunSpeed(0),MaxFallSpeed(0),
+					   MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
+					   BlockMeterGain(0),PerfectParryTick(0),DamageTakenModifier(0),DiModifier(0),MaxHealth(0),Health(0) {}
 	
 	// Movement property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Stat/Movement")
