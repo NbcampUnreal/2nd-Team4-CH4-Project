@@ -1,7 +1,6 @@
 #include "Framework/UI/LoginWidget.h"
 #include "Components/EditableText.h"
 #include "Components/Button.h"
-#include "Kismet/GameplayStatics.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
 
 void ULoginWidget::NativeConstruct()
@@ -21,15 +20,19 @@ void ULoginWidget::NativeConstruct()
 
 void ULoginWidget::OnConfirmClicked()
 {
-	if (!NicknameTextBox) return;
-
-	FString Nick = NicknameTextBox->GetText().ToString();
-
-	if (!Nick.IsEmpty())
+	if (!NicknameTextBox)
 	{
-		GetGameInstanceTyped()->SetNickname(Nick);
+		return;
+	}
+
+	FString Nickname = NicknameTextBox->GetText().ToString();
+
+	if (!Nickname.IsEmpty())
+	{
+		GetGameInstanceTyped()->SetNickname(Nickname);
 		GetGameInstanceTyped()->SaveData();
-		UGameplayStatics::OpenLevel(this, TEXT("MainMenuMap"));
+
+		OnLoginSuccess.Broadcast();
 	}
 }
 
@@ -39,4 +42,9 @@ void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMe
 	{
 		OnConfirmClicked();
 	}
+}
+
+UCCFFGameInstance* ULoginWidget::GetGameInstanceTyped() const
+{
+	return Cast<UCCFFGameInstance>(GetGameInstance());
 }
