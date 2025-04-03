@@ -11,10 +11,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "BattleComponent.h"
+#include "CharacterAnim.h"
 #include "InputActionValue.h"
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -61,8 +63,54 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//애니메이션 Notify 이벤트 연결
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNormalNotify);
+	}
 	PreLoadCharacterStats();
 	PreLoadAttackCollisions();
+	PreLoadCharacterAnim();
+}
+
+void ABaseCharacter::AttackNormalNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
+{
+	if (NotifyName!="NormalAttack"||AttackCollisions.IsEmpty()) return;
+	// Activate Collision in proper location
+	if (AttackCollisions[0])
+	{
+		AttackCollisions[0]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+	else
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
+	}
+}
+
+void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// Except self
+	if (!OtherActor || OtherActor == this) return;
+
+	// Apply Damage
+	UGameplayStatics::ApplyDamage(
+		OtherActor,                // 피해 대상
+		Stats.AttackPower,         // 공격력 (Character Stats 기반)
+		GetController(),           // 공격한 플레이어의 컨트롤러
+		this,                      // 공격한 액터 (자기 자신)
+		UDamageType::StaticClass() // 기본 데미지 타입
+	);
+	UE_LOG(LogTemp, Warning, TEXT("%s hit %s!"), *GetName(), *OtherActor->GetName());
+}
+
+void ABaseCharacter::OnAttackNormalEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (AttackCollisions.IsEmpty()) return;
+	if (AttackCollisions[0])
+	{
+		AttackCollisions[0]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void ABaseCharacter::PreLoadCharacterStats()
@@ -76,6 +124,17 @@ void ABaseCharacter::PreLoadCharacterStats()
 	}
 }
 
+void ABaseCharacter::PreLoadCharacterAnim()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
+		}
+	}
+}
+
 void ABaseCharacter::PreLoadAttackCollisions()
 {
 	if (UGameInstance* GameInstance=GetGameInstance())
@@ -85,20 +144,25 @@ void ABaseCharacter::PreLoadAttackCollisions()
 			if (UEnum* Type=StaticEnum<EAttackType>())
 			{
 				const int32 n=Type->NumEnums();
-				AttackCollisions.SetNum(n);
-				for (int32 i=0;i<n;i++)
+				AttackCollisions.SetNum(n-1);
+				for (int32 i=0;i<n-1;i++)
 				{
-					FName AttackName=Type->GetNameByIndex(i);
-					const FName RowName=FName(CharacterType+"_"+AttackName.ToString());
+					FString TypeName=Type->GetNameStringByIndex(i);
+					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
+					const FName RowName=FName(CharacterType+"_"+TypeName);
 					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
 					if (Data.Scale!=FVector::ZeroVector)
 					{
-						//콜리전 데이터 이용해 생성 및 부착
-						// UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
-						// AttackCollision->SetupAttachment(GetMesh());
-						// AttackCollision->SetRelativeLocation(Data.Location);
-						// AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-						// AttackCollisions[i]=AttackCollision;
+						//Create Collision and Attacth to Mesh
+						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
+						AttackCollision->AttachToComponent(GetMesh(),FAttachmentTransformRules::KeepRelativeTransform,"Root");
+						AttackCollision->SetRelativeLocation(Data.Location);
+						AttackCollision->SetRelativeScale3D(Data.Scale);
+						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
+						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						AddInstanceComponent(AttackCollision);
+						AttackCollision->RegisterComponent();
+						AttackCollisions[i]=AttackCollision;
 					}
 				}
 			}
@@ -118,7 +182,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		
 			// Jumping
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);	
+			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+			//Attack Normal
+			EnhancedInputComponent->BindAction(MyController->AttackNormalAction,ETriggerEvent::Triggered,this,&ABaseCharacter::AttackNormal);
 		}
 	}
 	else
@@ -168,6 +235,23 @@ void ABaseCharacter::StopJump(const FInputActionValue& Value)
 	}
 }
 
+void ABaseCharacter::AttackNormal(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage1)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage1);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackNormalEnded);
+	}
+}
+
 void ABaseCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -189,9 +273,13 @@ void ABaseCharacter::NotifyControllerChanged()
 
 float ABaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	ProcessHitReaction(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	return DamageAmount;
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	Stats.Health = FMath::Clamp(Stats.Health - DamageAmount, 0.0f, Stats.MaxHealth);
+	UE_LOG(LogTemp,Warning,TEXT("Damage: %f"),ActualDamage);
+	
+	//ProcessHitReaction(DamageAmount, DamageEvent, EventInstigator, DamageCauser); Error Detected (Crash)
+	
+	return ActualDamage;
 }
 
 void ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)

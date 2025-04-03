@@ -6,7 +6,9 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "CharacterStats.h"
+#include "CharacterAnim.h"
 #include "CharacterEnum.h"
+#include "InputActionValue.h"
 #include "BaseCharacter.generated.h"
 
 class USpringArmComponent;
@@ -32,6 +34,22 @@ public:
 
 #pragma endregion
 
+#pragma region AttackAnimation
+	UFUNCTION()
+	void AttackNormalNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
+	UFUNCTION()
+	void OnAttackOverlap(
+		UPrimitiveComponent* OverlappedComponent,  // 오버랩된 콜리전 컴포넌트
+		AActor* OtherActor,                        // 충돌한 다른 액터
+		UPrimitiveComponent* OtherComp,            // 충돌한 액터의 컴포넌트
+		int32 OtherBodyIndex,                      // 충돌한 바디의 인덱스
+		bool bFromSweep,                           // Sweep에 의한 오버랩 여부
+		const FHitResult& SweepResult              // 충돌 결과 정보
+	);
+	UFUNCTION()
+	void OnAttackNormalEnded(UAnimMontage* Montage, bool bInterrupted);
+#pragma endregion 
+	
 protected:
 
 #pragma region Timer
@@ -51,6 +69,8 @@ protected:
 	void PreLoadCharacterStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadAttackCollisions();
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadCharacterAnim();
 #pragma endregion
 	
 #pragma region MoveFunction
@@ -62,7 +82,9 @@ protected:
 	void StopJump(const FInputActionValue& Value);
 
 #pragma endregion
-
+#pragma region AttackFunctions
+	void AttackNormal(const FInputActionValue& Value);
+#pragma endregion
 #pragma region CombatEffect
 
 private:
@@ -133,6 +155,8 @@ protected:
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	FCharacterAnim Anim;
 #pragma endregion
 protected:
 #pragma region Components
