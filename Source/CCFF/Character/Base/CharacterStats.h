@@ -66,4 +66,3 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
 	float Health;
 };
-};
