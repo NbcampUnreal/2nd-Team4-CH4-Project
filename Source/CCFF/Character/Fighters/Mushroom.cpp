@@ -2,24 +2,18 @@
 
 
 #include "Mushroom.h"
-#include "Character/DataLoaderSubSystem.h"
 
 // Sets default values
 AMushroom::AMushroom()
 {
+	CharacterType="Mushroom";
 }
 
 // Called when the game starts or when spawned
 void AMushroom::BeginPlay()
 {
 	Super::BeginPlay();
-	if (UGameInstance* GameInstance=GetGameInstance())
-	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			Stats=Loader->InitializeStat("Mushroom");
-		}
-	}
+	
 }
 
 // Called every frame

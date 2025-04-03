@@ -29,3 +29,11 @@ enum class EResistanceState : uint8
 	ProjectileInvulnerable	UMETA(DisplayName = "ProjectileInvulnerable"),
 	ThrowInvulnerable		UMETA(DisplayName = "ThrowInvulnerable")
 };
+
+UENUM(BlueprintType)
+enum class EAttackType : uint8
+{
+	Normal UMETA(DisplayName="Normal"),
+	Slash UMETA(DisplayName="Slash"),
+	Super UMETA(DisplayName="Super")
+};

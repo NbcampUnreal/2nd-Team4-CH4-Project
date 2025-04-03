@@ -11,7 +11,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
-
+#include "Character/DataLoaderSubSystem.h"
+#include "Character/Base/AttackCollisionData.h"
+#include "Components/SphereComponent.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -52,6 +54,55 @@ ABaseCharacter::ABaseCharacter()
 
 	CurrentCharacterState=ECharacterState::Normal;
 	CurrentResistanceState=EResistanceState::Normal;
+	
+}
+
+void ABaseCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	PreLoadCharacterStats();
+	PreLoadAttackCollisions();
+}
+
+void ABaseCharacter::PreLoadCharacterStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadAttackCollisions()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			if (UEnum* Type=StaticEnum<EAttackType>())
+			{
+				const int32 n=Type->NumEnums();
+				AttackCollisions.SetNum(n);
+				for (int32 i=0;i<n;i++)
+				{
+					FName AttackName=Type->GetNameByIndex(i);
+					const FName RowName=FName(CharacterType+"_"+AttackName.ToString());
+					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
+					if (Data.Scale!=FVector::ZeroVector)
+					{
+						//콜리전 데이터 이용해 생성 및 부착
+						// UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
+						// AttackCollision->SetupAttachment(GetMesh());
+						// AttackCollision->SetRelativeLocation(Data.Location);
+						// AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						// AttackCollisions[i]=AttackCollision;
+					}
+				}
+			}
+		}
+	}
 }
 
 // Called to bind functionality to input
