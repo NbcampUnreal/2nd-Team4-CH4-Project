@@ -22,45 +22,19 @@ class CCFF_API ABaseCharacter : public ACharacter
 public:
 	ABaseCharacter();
 
-#pragma region CharacterOverride
+#pragma region Override
 
 	// === Character Override Functions ===
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void BeginPlay() override;
 
 #pragma endregion
 
-#pragma region Components
-
 protected:
-	// === Components ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UBattleComponent* BattleComponent;
 
-#pragma endregion
-
-#pragma region StateAndStats
-
-protected:
-	// === Stats ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
-	FCharacterStats Stats;
-
-	// === State ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	ECharacterState CurrentCharacterState;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	EResistanceState CurrentResistanceState;
-
-	// === Data Table ===
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DataTable", meta = (AllowPrivateAccess = "true"))
-	UDataTable* DT;
-
+#pragma region Timer
 	// === Timers ===
 	UPROPERTY()
 	FTimerHandle HitstunTimerHandle;
@@ -70,11 +44,7 @@ protected:
 	FTimerHandle BlockStunTimerHandle;
 	UPROPERTY()
 	FVector StoredVelocity;
-
 #pragma endregion
-
-#pragma region Input
-
 protected:
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
@@ -143,15 +113,6 @@ private:
 
 #pragma endregion
 
-#pragma region Meter
-
-#pragma endregion
-
-#pragma region Override
-	virtual void NotifyControllerChanged() override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void BeginPlay() override;
-#pragma endregion
 	
 protected:
 	
@@ -173,8 +134,20 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
 #pragma endregion
+protected:
+#pragma region Components
+	// === Components ===
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FollowCamera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UBattleComponent* BattleComponent;
+#pragma endregion
 	
 private:
+
+#pragma region Meter
 	// === Meter Handling ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")
 	void ModifyGuardMeter(float GuardMeterDamage);
@@ -182,15 +155,7 @@ private:
 	void ModifySuperMeter(float Amount);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")
 	void GainBurstMeter(float Amount);
-
 #pragma endregion
-};
-	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
-	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
 	
 };
 
