@@ -22,17 +22,38 @@ public:
 	ABaseCharacter();
 
 protected:
+#pragma region DataPreLoad
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadCharacterStats();
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadAttackCollisions();
+#pragma endregion
+	
+#pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
-	
+#pragma endregion
+
+#pragma region Override
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void BeginPlay() override;
+#pragma endregion
 	
 protected:
+	
+#pragma region AttackCollision
+	TArray<UShapeComponent*> AttackCollisions;
+#pragma endregion
+	
+#pragma region Character Status
+	//Character Type
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	FString CharacterType;
 	//Character State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	ECharacterState CurrentCharacterState;
@@ -42,6 +63,7 @@ protected:
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
+#pragma endregion
 	
 private:
 	/** Camera boom positioning the camera behind the character */
@@ -52,3 +74,4 @@ private:
 	UCameraComponent* FollowCamera;
 	
 };
+

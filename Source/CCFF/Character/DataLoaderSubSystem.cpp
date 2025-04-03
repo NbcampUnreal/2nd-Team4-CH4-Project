@@ -24,7 +24,7 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> AttackCollisionDataFinder(TEXT("/Game/Character/DataTables/DT_AttackCollisionData.DT_AttackCollisionData"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> AttackCollisionDataFinder(TEXT("/Game/Character/DataTables/DT_AttackData.DT_AttackData"));
 	if (AttackCollisionDataFinder.Succeeded())
 	{
 		AttackCollisionDataTable=AttackCollisionDataFinder.Object;
