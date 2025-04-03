@@ -19,7 +19,7 @@ protected:
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta = (BindWidget))
-	class UEditableText* NicknameTextBox;
+	class UEditableTextBox* NicknameTextBox;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ConfirmButton;

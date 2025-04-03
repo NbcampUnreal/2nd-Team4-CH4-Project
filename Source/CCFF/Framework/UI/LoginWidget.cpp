@@ -1,5 +1,5 @@
 #include "Framework/UI/LoginWidget.h"
-#include "Components/EditableText.h"
+#include "Components/EditableTextBox.h"
 #include "Components/Button.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
 
@@ -16,24 +16,50 @@ void ULoginWidget::NativeConstruct()
 	{
 		NicknameTextBox->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
 	}
+	
+
+	if (!IsValid(NicknameTextBox))
+	{
+		UE_LOG(LogTemp, Error, TEXT("NicknameTextBox IS NULL in NativeConstruct"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NicknameTextBox bound successfully"));
+	}
+
 }
 
 void ULoginWidget::OnConfirmClicked()
 {
-	if (!NicknameTextBox)
+	UE_LOG(LogTemp, Warning, TEXT("Entered OnConfirmClicked"));
+
+	if (!IsValid(NicknameTextBox))
 	{
+		UE_LOG(LogTemp, Error, TEXT("NicknameTextBox is NULL"));
 		return;
 	}
 
-	FString Nickname = NicknameTextBox->GetText().ToString();
+	FText RawText = NicknameTextBox->GetText();
+	UE_LOG(LogTemp, Warning, TEXT("Got RawText"));
 
-	if (!Nickname.IsEmpty())
+	FString Nickname = RawText.ToString();
+	UE_LOG(LogTemp, Warning, TEXT("Converted to FString: %s"), *Nickname);
+
+	UCCFFGameInstance* GI = GetGameInstanceTyped();
+	if (!GI)
 	{
-		GetGameInstanceTyped()->SetNickname(Nickname);
-		GetGameInstanceTyped()->SaveData();
-
-		OnLoginSuccess.Broadcast();
+		UE_LOG(LogTemp, Error, TEXT("GameInstance is NULL!"));
+		return;
 	}
+
+	GI->SetNickname(Nickname);
+	UE_LOG(LogTemp, Warning, TEXT("Nickname set"));
+
+	GI->SaveData();
+	UE_LOG(LogTemp, Warning, TEXT("SaveData called"));
+
+	OnLoginSuccess.Broadcast();
+	UE_LOG(LogTemp, Warning, TEXT("Broadcast done"));
 }
 
 void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)

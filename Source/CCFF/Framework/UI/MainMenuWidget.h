@@ -17,16 +17,16 @@ protected:
 	void HandleEnterPressed();
 
 	UFUNCTION()
-	void HandleQuitClicked();
+	void HandleExitGameClicked();
 
 	UFUNCTION()
-	void HandleQuitConfirmed();
+	void HandleExitGameConfirmed();
 
 	UFUNCTION()
-	void HandleQuitCanceled();
+	void HandleExitGameCanceled();
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* GameSessionButton;
+	class UButton* EnterArenaButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* LockerRoomButton;
@@ -38,13 +38,13 @@ protected:
 	class UButton* SettingButton;
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* QuitButton;
+	class UButton* ExitGameButton;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class UQuitPopupWidget> QuitPopupClass;
+	TSubclassOf<class UConfirmPopupWidget> ExitGamePopupClass;
 
 	UPROPERTY()
-	class UQuitPopupWidget* QuitPopup;
+	class UConfirmPopupWidget* ExitGamePopup;
 
 	UPROPERTY()
 	TArray<UButton*> MenuButtons;

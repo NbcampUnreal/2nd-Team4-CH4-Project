@@ -1,5 +1,5 @@
-#include "Framework/UI/MainMenuWidget.h"
-#include "Framework/UI/QuitPopupWidget.h"
+﻿#include "Framework/UI/MainMenuWidget.h"
+#include "Framework/UI/ConfirmPopupWidget.h"
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -8,18 +8,18 @@ void UMainMenuWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	MenuButtons = {
-		GameSessionButton,
+		EnterArenaButton,
 		LockerRoomButton,
 		ShopButton,
 		SettingButton,
-		QuitButton
+		ExitGameButton
 	};
 
 	CurrentIndex = 0;
 
-	if (QuitButton)
+	if (ExitGameButton)
 	{
-		QuitButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleQuitClicked);
+		ExitGameButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleExitGameClicked);
 	}
 
 	UpdateButtonFocus();
@@ -73,21 +73,22 @@ void UMainMenuWidget::UpdateButtonFocus()
 	}
 }
 
-void UMainMenuWidget::HandleQuitClicked()
+void UMainMenuWidget::HandleExitGameClicked()
 {
-	if (!QuitPopup && QuitPopupClass)
+	if (!ExitGamePopup && ExitGamePopupClass)
 	{
-		QuitPopup = CreateWidget<UQuitPopupWidget>(GetWorld(), QuitPopupClass);
-		if (QuitPopup)
+		ExitGamePopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), ExitGamePopupClass);
+		if (ExitGamePopup)
 		{
-			QuitPopup->AddToViewport();
-			QuitPopup->OnQuitConfirmed.AddDynamic(this, &UMainMenuWidget::HandleQuitConfirmed);
-			QuitPopup->OnQuitCanceled.AddDynamic(this, &UMainMenuWidget::HandleQuitCanceled);
+			ExitGamePopup->SetMessage(FText::FromString(TEXT("진짜 나감?")));
+			ExitGamePopup->AddToViewport();
+			ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &UMainMenuWidget::HandleExitGameConfirmed);
+			ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &UMainMenuWidget::HandleExitGameCanceled);
 		}
 	}
 }
 
-void UMainMenuWidget::HandleQuitConfirmed()
+void UMainMenuWidget::HandleExitGameConfirmed()
 {
 	if (UWorld* World = GetWorld())
 	{
@@ -98,12 +99,12 @@ void UMainMenuWidget::HandleQuitConfirmed()
 	}
 }
 
-void UMainMenuWidget::HandleQuitCanceled()
+void UMainMenuWidget::HandleExitGameCanceled()
 {
-	if (QuitPopup)
+	if (ExitGamePopup)
 	{
-		QuitPopup->RemoveFromParent();
-		QuitPopup = nullptr;
+		ExitGamePopup->RemoveFromParent();
+		ExitGamePopup = nullptr;
 	}
 
 	SetKeyboardFocus();
