@@ -1,4 +1,5 @@
 #include "Items/Class/SpawnableItem.h"
+#include "Items/Component/ItemInteractionComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundBase.h"
@@ -24,11 +25,29 @@ ASpawnableItem::ASpawnableItem()
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
     Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpawnableItem::OnItemOverlap);
+
+    bReplicates = true;
+    SetReplicateMovement(true);
 }
 
 void ASpawnableItem::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ASpawnableItem::OnSpawned()
+{
+    InitialLocation = GetActorLocation();
+    TimeElapsed = 0.0f;
+    GetWorldTimerManager().SetTimer(FloatingTimerHandle, this, &ASpawnableItem::UpdateFloating, 0.02f, true);
+}
+
+void ASpawnableItem::UpdateFloating()
+{
+    TimeElapsed += 0.02f;  // 타이머 주기와 맞춤 (0.02초마다 호출됨)
+    FVector NewLocation = InitialLocation;
+    NewLocation.Z += FMath::Sin(TimeElapsed * 2.0f) * 10.0f;  // 위아래로 10만큼 움직임
+    SetActorLocation(NewLocation);
 }
 
 void ASpawnableItem::OnItemOverlap(
@@ -39,12 +58,16 @@ void ASpawnableItem::OnItemOverlap(
     bool bFromSweep,
     const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor->ActorHasTag("Player"))
+    if (!HasAuthority() && OtherActor->ActorHasTag("Player"))
 	{
 #if WITH_EDITOR
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!!")));
 #endif
-        Interact(OtherActor);
+        UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
+        if (InteractionComponent)
+        {
+            InteractionComponent->Server_InteractItem(this);
+        }
 	}
 }
 
@@ -54,14 +77,14 @@ void ASpawnableItem::Interact(AActor* Activator)
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Interact!")));
 #endif
 
-    if (HasAuthority() && Activator)
+    if (HasAuthority()) // 서버에서 실행
     {
-        Multicast_OnInteract();
+        OnInteract();
         ResetItem();
     }
 }
 
-void ASpawnableItem::Multicast_OnInteract_Implementation()
+void ASpawnableItem::OnInteract()
 {
     if (InteractSound)
     {
@@ -69,7 +92,6 @@ void ASpawnableItem::Multicast_OnInteract_Implementation()
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Interact Sound!")));
     }
 
-    // 파티클 재생
     if (InteractParticle)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, InteractParticle, GetActorLocation());
@@ -79,11 +101,11 @@ void ASpawnableItem::Multicast_OnInteract_Implementation()
 
 void ASpawnableItem::ResetItem()
 {
+    GetWorldTimerManager().ClearTimer(FloatingTimerHandle);
+
     // 아이템 초기화 및 풀로 반환
     SetActorHiddenInGame(true);
     SetActorEnableCollision(false);
-
-
 
     UGameInstance* GameInstance = GetGameInstance();
     if (GameInstance)
