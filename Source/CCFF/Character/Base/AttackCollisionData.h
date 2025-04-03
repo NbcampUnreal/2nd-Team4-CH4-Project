@@ -20,7 +20,7 @@ struct FAttackCollisionData :public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FAttackCollisionData(): Shape(EAttackCollisionType::Box),Location(0.0f),Rotation(0.0f),Scale(1.0f) {}
+	FAttackCollisionData(): Shape(EAttackCollisionType::Box),Location(0.0f),Rotation(0.0f),Scale(0.0f) {}
 
 	// Collision type
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox")

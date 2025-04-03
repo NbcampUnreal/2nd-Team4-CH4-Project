@@ -1,35 +1,44 @@
 #include "Items/Manager/ItemPoolManager.h"
+#include "Items/Manager/ItemManager.h"
 #include "Items/Class/SpawnableItem.h"
 #include "Items/Class/ItemSpawner.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Engine/DataTable.h"
+#include "Net/UnrealNetwork.h"
 
-void UItemPoolManager::InitializePool(UDataTable* ItemDataTable)
+void UItemPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 {
-    if (!GetWorld() || !ItemDataTable || ItemPool.Num() > 0) return; // 초기화 여부 확인
+    Super::Initialize(Collection);
+}
 
-    // 맵에 존재하는 Spawner 개수 확인
-    int32 SpawnerCount = 0;
-    for (TActorIterator<AItemSpawner> It(GetWorld()); It; ++It)
+void UItemPoolManager::InitializePool()
+{
+    if (!IsServer() || !GetWorld() || ItemPool.Num() > 0)
+        return;
+
+    UE_LOG(LogTemp, Log, TEXT("ItemPoolManager: Initializing item pool."));
+
+    static const FString DataTablePath = TEXT("/Game/CCFF/DataTables/ItemSpawnTable.ItemSpawnTable");
+    ItemDataTable = LoadObject<UDataTable>(nullptr, *DataTablePath);
+    if (!ItemDataTable)
     {
-        ++SpawnerCount;
+        UE_LOG(LogTemp, Error, TEXT("ItemPoolManager: Failed to load ItemSpawnTable."));
+        return;
     }
-    if (SpawnerCount == 0) return;
 
-    // DataTable에서 아이템 정보 가져오기
     TArray<FItemSpawnRow*> ItemRows;
     ItemDataTable->GetAllRows<FItemSpawnRow>(TEXT(""), ItemRows);
 
-    // SpawnChance의 총합 계산
     float TotalChance = 0.0f;
     for (const FItemSpawnRow* Row : ItemRows)
     {
-        TotalChance += Row->SpawnChance;
+        if (Row)
+            TotalChance += Row->SpawnChance;
     }
     if (TotalChance <= 0.0f) return;
 
-    // 아이템 풀 생성 (Spawner 개수 기준으로 분배)
+    int32 SpawnerCount = GetSpawnerCount();
     for (const FItemSpawnRow* Row : ItemRows)
     {
         if (!Row || !Row->ItemClass) continue;
@@ -43,32 +52,65 @@ void UItemPoolManager::InitializePool(UDataTable* ItemDataTable)
                 NewItem->SetActorHiddenInGame(true);
                 NewItem->SetActorEnableCollision(false);
                 ItemPool.Add(NewItem);
+                UE_LOG(LogTemp, Log, TEXT("ItemPoolManager: %s added to ItemPool"), *NewItem->GetName());
             }
         }
     }
+
+    UE_LOG(LogTemp, Log, TEXT("ItemPoolManager: Initialization complete. Total items in pool: %d."), ItemPool.Num());
 }
 
 
-ASpawnableItem* UItemPoolManager::GetRandomItemFromPool() // Need to be fixed
+
+ASpawnableItem* UItemPoolManager::GetRandomItemFromPool()
 {
+    if (ItemPool.Num() == 0) return nullptr;
+
+    TArray<ASpawnableItem*> AvailableItems;
     for (ASpawnableItem* Item : ItemPool)
     {
         if (Item && Item->IsHidden())
         {
-            Item->SetActorHiddenInGame(false);
-            Item->SetActorEnableCollision(true);
-            return Item;
+            AvailableItems.Add(Item);
         }
     }
+
+    if (AvailableItems.Num() > 0)
+    {
+        int32 RandomIndex = FMath::RandRange(0, AvailableItems.Num() - 1);
+        ASpawnableItem* SelectedItem = AvailableItems[RandomIndex];
+
+        if (SelectedItem)
+        {
+            SelectedItem->SetActorHiddenInGame(false);
+            SelectedItem->SetActorEnableCollision(true);
+            return SelectedItem;
+        }
+    }
+
     return nullptr;
 }
 
 void UItemPoolManager::ReturnItemToPool(ASpawnableItem* Item)
 {
-    if (Item)
+    if (!Item || ItemPool.Contains(Item)) return;
+
+    Item->SetActorHiddenInGame(true);
+    Item->SetActorEnableCollision(false);
+    ItemPool.Add(Item);
+}
+
+bool UItemPoolManager::IsServer() const
+{
+    return GetWorld() && GetWorld()->GetNetMode() != NM_Client;
+}
+
+int32 UItemPoolManager::GetSpawnerCount() const
+{
+    int32 Count = 0;
+    for (TActorIterator<AItemSpawner> It(GetWorld()); It; ++It)
     {
-        Item->SetActorHiddenInGame(true);
-        Item->SetActorEnableCollision(false);
-        ItemPool.Add(Item);
+        ++Count;
     }
+    return Count;
 }
