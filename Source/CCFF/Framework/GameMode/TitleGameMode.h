@@ -2,14 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "CCFFTitleGameMode.generated.h"
+#include "TitleGameMode.generated.h"
 
 UCLASS()
-class CCFF_API ACCFFTitleGameMode : public AGameModeBase
+class CCFF_API ATitleGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
 public:
-	ACCFFTitleGameMode();
+	ATitleGameMode();
 	
 };
