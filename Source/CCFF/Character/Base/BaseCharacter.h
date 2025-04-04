@@ -48,6 +48,8 @@ public:
 	void AttackNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
 	UFUNCTION()
 	void OnAttackEnded(UAnimMontage* Montage, bool bInterrupted);
+	UFUNCTION()
+	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
 	
 protected:

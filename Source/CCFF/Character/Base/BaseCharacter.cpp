@@ -46,7 +46,7 @@ ABaseCharacter::ABaseCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 1200.0f; // The camera follows at this distance behind the character
-	CameraBoom->SetWorldRotation(FRotator(-35, 0, 0));
+	CameraBoom->SetWorldRotation((FRotator(-35, -180, 0)));
 	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
 	CameraBoom->bInheritYaw=false;
 
@@ -87,12 +87,23 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		// Activate Collision in proper location
 		if (AttackCollisions[AttackNumber])
 		{
-			AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			// Deactivate Collision
+			if (NotifyNameString.Contains(TEXT("End")))
+			{
+				DeactivateAttackCollision(AttackNumber);
+				UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
+			}
+			else // Activate Collision
+			{
+				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
+			}
 		}
 		else
 		{
 			UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
-		}		
+		}
+		return;
 	}
 }
 
@@ -116,18 +127,12 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (AttackCollisions.IsEmpty()||!Montage) return;
-	// Determine the type of attack by Montage name
-	FString MontageName = Montage->GetName();
-	//UE_LOG(LogTemp, Log, TEXT("Montage Name: %s"), *MontageName);
-	const TCHAR LastNum=MontageName[MontageName.Len()-1];
-	int32 AttackNum=FCString::Atoi(&LastNum)-1;
-	//UE_LOG(LogTemp,Warning,TEXT("AttackNum: %d"),AttackNum);
 	
-	if (AttackCollisions[AttackNum])
-	{
-		AttackCollisions[AttackNum]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
+}
+
+void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
+{
+	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ABaseCharacter::PreLoadCharacterStats()
