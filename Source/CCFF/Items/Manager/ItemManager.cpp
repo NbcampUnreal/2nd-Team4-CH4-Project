@@ -10,6 +10,11 @@ void UItemManager::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 
 	Collection.InitializeDependency<UItemPoolManager>();
+	InitializeItemManager();
+}
+
+void UItemManager::InitializeItemManager()
+{
 	ItemPoolManager = GetGameInstance()->GetSubsystem<UItemPoolManager>();
 	if (!ItemPoolManager)
 	{

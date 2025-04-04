@@ -50,6 +50,7 @@ void ASpawnableItem::UpdateFloating()
     SetActorLocation(NewLocation);
 }
 
+// need to CHECK LOGIC ON AUTORITY
 void ASpawnableItem::OnItemOverlap(
     UPrimitiveComponent* OverlappedComp,
     AActor* OtherActor,
@@ -59,17 +60,46 @@ void ASpawnableItem::OnItemOverlap(
     const FHitResult& SweepResult)
 {
     APawn* OverlappingPawn = Cast<APawn>(OtherActor);
-    if (OverlappingPawn && OverlappingPawn->IsLocallyControlled()&& !HasAuthority())
+    if (OverlappingPawn)
     {
+        bool bIsLocallyControlled = OverlappingPawn->IsLocallyControlled();
+        bool bHasAuthority = HasAuthority();
+
+        FString LogMsg = FString::Printf(TEXT("Overlap Detected: %s | LocallyControlled: %s | HasAuthority: %s"),
+            *OtherActor->GetName(),
+            bIsLocallyControlled ? TEXT("true") : TEXT("false"),
+            bHasAuthority ? TEXT("true") : TEXT("false"));
+
+        UE_LOG(LogTemp, Log, TEXT("%s"), *LogMsg);
+
 #if WITH_EDITOR
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!!")));
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, LogMsg);
 #endif
-        UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
-        if (InteractionComponent)
+
+        if (bIsLocallyControlled && bHasAuthority)
         {
-            InteractionComponent->Server_InteractItem(this);
+            UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
+            if (InteractionComponent)
+            {
+                UE_LOG(LogTemp, Log, TEXT("Calling Server_InteractItem on %s"), *GetName());
+
+#if WITH_EDITOR
+                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow,
+                    FString::Printf(TEXT("Calling Server_InteractItem on %s"), *GetName()));
+#endif
+                InteractionComponent->Server_InteractItem(this);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("No ItemInteractionComponent found on %s"), *OtherActor->GetName());
+            }
         }
     }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Overlap failed: %s is not a Pawn"), *OtherActor->GetName());
+    }
+
 }
 
 void ASpawnableItem::Interact(AActor* Activator)
