@@ -36,8 +36,6 @@ public:
 
 #pragma region AttackAnimation
 	UFUNCTION()
-	void AttackNormalNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
-	UFUNCTION()
 	void OnAttackOverlap(
 		UPrimitiveComponent* OverlappedComponent,  // 오버랩된 콜리전 컴포넌트
 		AActor* OtherActor,                        // 충돌한 다른 액터
@@ -47,7 +45,9 @@ public:
 		const FHitResult& SweepResult              // 충돌 결과 정보
 	);
 	UFUNCTION()
-	void OnAttackNormalEnded(UAnimMontage* Montage, bool bInterrupted);
+	void AttackNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
+	UFUNCTION()
+	void OnAttackEnded(UAnimMontage* Montage, bool bInterrupted);
 #pragma endregion 
 	
 protected:
@@ -83,7 +83,9 @@ protected:
 
 #pragma endregion
 #pragma region AttackFunctions
-	void AttackNormal(const FInputActionValue& Value);
+	void Attack1(const FInputActionValue& Value);
+	void Attack2(const FInputActionValue& Value);
+	void Attack3(const FInputActionValue& Value);
 #pragma endregion
 #pragma region CombatEffect
 
@@ -182,4 +184,5 @@ private:
 #pragma endregion
 	
 };
+
 

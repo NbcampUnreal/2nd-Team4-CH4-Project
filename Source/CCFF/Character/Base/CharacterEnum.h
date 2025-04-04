@@ -32,7 +32,7 @@ enum class EResistanceState : uint8
 UENUM(BlueprintType)
 enum class EAttackType : uint8
 {
-	Normal UMETA(DisplayName="Normal"),
-	Slash UMETA(DisplayName="Slash"),
-	Super UMETA(DisplayName="Super")
+	Attack1		UMETA(DisplayName="Attack1"),
+	Attack2		UMETA(DisplayName="Attack2"),
+	Attack3		UMETA(DisplayName="Attack3")
 };
