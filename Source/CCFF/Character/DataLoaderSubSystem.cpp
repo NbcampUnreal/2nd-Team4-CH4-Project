@@ -10,7 +10,7 @@
 UDataLoaderSubSystem::UDataLoaderSubSystem()
 {
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> StatDataFinder(TEXT("/Game/Character/DataTables/DT_Stats.DT_Stats"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> StatDataFinder(TEXT("/Game/CCFF/DataTables/DT_Stats.DT_Stats"));
 	if (StatDataFinder.Succeeded())
 	{
 		StatDataTable=StatDataFinder.Object;
@@ -23,21 +23,21 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> CharacterAnimDataFinder(TEXT("/Game/Character/DataTables/DT_CharacterAnimation.DT_CharacterAnimation"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> CharacterAnimDataFinder(TEXT("/Game/CCFF/DataTables/DT_CharacterAnimation.DT_CharacterAnimation"));
 	if (CharacterAnimDataFinder.Succeeded())
 	{
 		CharacterAnimDataTable=CharacterAnimDataFinder.Object;
 	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> AttackCollisionDataFinder(TEXT("/Game/Character/DataTables/DT_AttackData.DT_AttackData"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> AttackCollisionDataFinder(TEXT("/Game/CCFF/DataTables/DT_AttackData.DT_AttackData"));
 	if (AttackCollisionDataFinder.Succeeded())
 	{
 		AttackCollisionDataTable=AttackCollisionDataFinder.Object;
 	}
 	
 	// Find BattleModifiers Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> BattleModifiersDataFinder(TEXT("/Game/Character/DataTables/DT_BattleModifiers.DT_BattleModifiers"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> BattleModifiersDataFinder(TEXT("/Game/CCFF/DataTables/DT_BattleModifiers.DT_BattleModifiers"));
 	if (BattleModifiersDataFinder.Succeeded())
 	{
 		BattleModifiersDataTable=BattleModifiersDataFinder.Object;
