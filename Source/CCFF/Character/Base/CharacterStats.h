@@ -14,25 +14,9 @@ struct FCharacterStats :public FTableRowBase
 	GENERATED_BODY();
 	
 public:
-	FCharacterStats(): Gravity(0),GroundFriction(0),AirFriction(0),MaxAirSpeed(0),MaxWalkSpeed(0),MaxRunSpeed(0),MaxFallSpeed(0),
-					   MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
+	FCharacterStats(): MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
 					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0),DamageTakenModifier(0),DiModifier(0),AttackPower(0),MaxHealth(0),Health(0) {}
 	
-	// Movement property
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float Gravity;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float GroundFriction;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float AirFriction;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float MaxAirSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float MaxWalkSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float MaxRunSpeed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
-	float MaxFallSpeed;
 
 	// Battle property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
@@ -67,4 +51,26 @@ public:
 	float MaxHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
 	float Health;
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterMovementStats :public FTableRowBase
+{
+	GENERATED_BODY();
+
+	// Movement property
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float Gravity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float GroundFriction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float AirFriction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float MaxAirSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float MaxWalkSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float MaxRunSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
+	float MaxFallSpeed;
 };
