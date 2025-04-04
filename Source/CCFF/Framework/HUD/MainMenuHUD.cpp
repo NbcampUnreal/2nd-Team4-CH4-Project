@@ -22,7 +22,15 @@ void AMainMenuHUD::ShowSelectModeWidget()
 
 void AMainMenuHUD::ShowSettingsWidget()
 {
-	SwitchWidget(SettingsWidget, SettingsWidgetClass, 10);
+	if (SettingsWidgetClass)
+	{
+		if (!SettingsWidget)
+		{
+			SettingsWidget = CreateWidget<USettingsWidget>(GetWorld(), SettingsWidgetClass);
+		}
+
+		SettingsWidget->AddToViewport(10);
+	}
 }
 
 void AMainMenuHUD::HideSettingsWidget()
