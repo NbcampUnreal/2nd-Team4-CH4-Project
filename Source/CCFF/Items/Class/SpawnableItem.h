@@ -8,8 +8,9 @@
 class UNiagaraSystem;
 class USoundBase;
 class USphereComponent;
+class AItemSpawner;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FItemResetDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemReturnedToPool, ASpawnableItem*, Item);
 
 UCLASS()
 class CCFF_API ASpawnableItem : public AActor, public IInteractableItemInterface
@@ -21,12 +22,13 @@ public:
 	ASpawnableItem();
 
 	UPROPERTY(BlueprintAssignable)
-	FItemResetDelegate OnItemResetDelegate;
+	FOnItemReturnedToPool OnReturnedToPool;
 
 	virtual void Interact(AActor* Activator) override;
 	void OnInteract();
 	void ResetItem();
-
+	UPROPERTY()
+	AItemSpawner* OwningSpawner = nullptr;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	FName ItemType;
@@ -59,7 +61,6 @@ public:
 	void OnSpawned();
 
 private:
-	void FloatItem();
 	void UpdateFloating();
 
 	FVector InitialLocation;

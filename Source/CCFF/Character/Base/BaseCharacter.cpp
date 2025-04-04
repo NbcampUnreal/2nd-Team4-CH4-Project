@@ -16,6 +16,7 @@
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
 #include "Components/SphereComponent.h"
+#include "Items/Component/ItemInteractionComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -46,7 +47,7 @@ ABaseCharacter::ABaseCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 1200.0f; // The camera follows at this distance behind the character
-	CameraBoom->SetWorldRotation(FRotator(-35, 0, 0));
+	CameraBoom->SetWorldRotation((FRotator(-35, -180, 0)));
 	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
 	CameraBoom->bInheritYaw=false;
 
@@ -58,6 +59,8 @@ ABaseCharacter::ABaseCharacter()
 	CurrentCharacterState=ECharacterState::Normal;
 	CurrentResistanceState=EResistanceState::Normal;
 	
+	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
+
 }
 
 void ABaseCharacter::BeginPlay()
@@ -66,24 +69,44 @@ void ABaseCharacter::BeginPlay()
 	//애니메이션 Notify 이벤트 연결
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
-		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNormalNotify);
+		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNotify);
 	}
 	PreLoadCharacterStats();
 	PreLoadAttackCollisions();
 	PreLoadCharacterAnim();
 }
 
-void ABaseCharacter::AttackNormalNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
+void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
 {
-	if (NotifyName!="NormalAttack"||AttackCollisions.IsEmpty()) return;
-	// Activate Collision in proper location
-	if (AttackCollisions[0])
+	if (!NotifyName.IsValid()||AttackCollisions.IsEmpty()) return;
+	// Determin the type of attack by name
+	FString NotifyNameString=NotifyName.ToString();
+	// Hitbox 
+	if(NotifyNameString.Contains(TEXT("Hitbox")))
 	{
-		AttackCollisions[0]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	}
-	else
-	{
-		UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
+		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
+		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
+		//UE_LOG(LogTemp, Log, TEXT("Parsed Attack Number: %d"), AttackNumber);	
+		// Activate Collision in proper location
+		if (AttackCollisions[AttackNumber])
+		{
+			// Deactivate Collision
+			if (NotifyNameString.Contains(TEXT("End")))
+			{
+				DeactivateAttackCollision(AttackNumber);
+				UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
+			}
+			else // Activate Collision
+			{
+				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
+		}
+		return;
 	}
 }
 
@@ -101,16 +124,18 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 		this,                      // 공격한 액터 (자기 자신)
 		UDamageType::StaticClass() // 기본 데미지 타입
 	);
-	UE_LOG(LogTemp, Warning, TEXT("%s hit %s!"), *GetName(), *OtherActor->GetName());
+
 }
 
-void ABaseCharacter::OnAttackNormalEnded(UAnimMontage* Montage, bool bInterrupted)
+
+void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (AttackCollisions.IsEmpty()) return;
-	if (AttackCollisions[0])
-	{
-		AttackCollisions[0]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
+	
+}
+
+void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
+{
+	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ABaseCharacter::PreLoadCharacterStats()
@@ -153,13 +178,15 @@ void ABaseCharacter::PreLoadAttackCollisions()
 					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
 					if (Data.Scale!=FVector::ZeroVector)
 					{
-						//Create Collision and Attacth to Mesh
+						//Create Collision and Attacth to Socket
 						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
 						AttackCollision->AttachToComponent(GetMesh(),FAttachmentTransformRules::KeepRelativeTransform,"Root");
 						AttackCollision->SetRelativeLocation(Data.Location);
 						AttackCollision->SetRelativeScale3D(Data.Scale);
-						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
 						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						//Bind Overlap Event
+						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
+						//Activate Components
 						AddInstanceComponent(AttackCollision);
 						AttackCollision->RegisterComponent();
 						AttackCollisions[i]=AttackCollision;
@@ -184,8 +211,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
-			//Attack Normal
-			EnhancedInputComponent->BindAction(MyController->AttackNormalAction,ETriggerEvent::Triggered,this,&ABaseCharacter::AttackNormal);
+			//Attack Actions
+			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
+			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
+			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
 		}
 	}
 	else
@@ -235,7 +264,7 @@ void ABaseCharacter::StopJump(const FInputActionValue& Value)
 	}
 }
 
-void ABaseCharacter::AttackNormal(const FInputActionValue& Value)
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
 {
 	//메시 유효 
 	if (!GetMesh()) return;
@@ -248,7 +277,39 @@ void ABaseCharacter::AttackNormal(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(Anim.AttackMontage1);
 		//몽타주 끝났을 때 이벤트 바인딩
 		AnimInstance->OnMontageEnded.Clear();
-		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackNormalEnded);
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+}
+void ABaseCharacter::Attack2(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage2)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage2);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+}
+void ABaseCharacter::Attack3(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage3)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage3);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
 	}
 }
 

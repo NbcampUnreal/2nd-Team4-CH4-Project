@@ -85,3 +85,4 @@ DerivedDataCache/*
 # Prerequisites
 *.d
 
+Content/Character/BP_Cactus.uasset

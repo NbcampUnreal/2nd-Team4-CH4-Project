@@ -14,6 +14,7 @@
 class USpringArmComponent;
 class UCameraComponent;
 class UBattleComponent;
+class UItemInteractionComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -36,8 +37,6 @@ public:
 
 #pragma region AttackAnimation
 	UFUNCTION()
-	void AttackNormalNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
-	UFUNCTION()
 	void OnAttackOverlap(
 		UPrimitiveComponent* OverlappedComponent,  // 오버랩된 콜리전 컴포넌트
 		AActor* OtherActor,                        // 충돌한 다른 액터
@@ -47,7 +46,11 @@ public:
 		const FHitResult& SweepResult              // 충돌 결과 정보
 	);
 	UFUNCTION()
-	void OnAttackNormalEnded(UAnimMontage* Montage, bool bInterrupted);
+	void AttackNotify(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
+	UFUNCTION()
+	void OnAttackEnded(UAnimMontage* Montage, bool bInterrupted);
+	UFUNCTION()
+	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
 	
 protected:
@@ -83,7 +86,9 @@ protected:
 
 #pragma endregion
 #pragma region AttackFunctions
-	void AttackNormal(const FInputActionValue& Value);
+	void Attack1(const FInputActionValue& Value);
+	void Attack2(const FInputActionValue& Value);
+	void Attack3(const FInputActionValue& Value);
 #pragma endregion
 #pragma region CombatEffect
 
@@ -167,6 +172,8 @@ protected:
 	UCameraComponent* FollowCamera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBattleComponent* BattleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UItemInteractionComponent* ItemInteractionComponent;
 #pragma endregion
 	
 private:
@@ -182,4 +189,5 @@ private:
 #pragma endregion
 	
 };
+
 

@@ -7,6 +7,7 @@
 class ASpawnableItem;
 class AItemSpawner;
 class UItemPoolManager;
+class UItemInteractionComponent;
 
 UCLASS()
 class CCFF_API UItemManager : public UGameInstanceSubsystem
@@ -14,19 +15,15 @@ class CCFF_API UItemManager : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
-    UFUNCTION(Server, Reliable, WithValidation)
-    void Server_PickupItem(APlayerController* Player, ASpawnableItem* Item);
-    void Server_PickupItem_Implementation(APlayerController* Player, ASpawnableItem* Item);
-    bool Server_PickupItem_Validate(APlayerController* Player, ASpawnableItem* Item) { return true; };
+	void InitializeItemManager();
 
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_UpdateItemState(ASpawnableItem* Item, bool bIsActive);
-    void Multicast_UpdateItemState_Implementation(ASpawnableItem* Item, bool bIsActive);
-
-    void SpawnItemAtSpawner(AItemSpawner* Spawner);
+    bool IsServer() const;
+	void OnItemInteract(AActor* Interactor, UItemInteractionComponent* ItemInteractionComponent, ASpawnableItem* Item);
 
 protected:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+       
+
 
 private:
     UPROPERTY()
@@ -35,7 +32,7 @@ private:
     UPROPERTY()
     UItemPoolManager* ItemPoolManager;
     
-    bool IsServer() const;
+
     void OnWorldReady();
     void ActivateAllSpawners();
 };

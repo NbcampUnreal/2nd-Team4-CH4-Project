@@ -7,6 +7,8 @@ ACharacterController::ACharacterController()
 	  : DefaultMappingContext(nullptr),
 	    MoveAction(nullptr),
 	    JumpAction(nullptr),
-		AttackNormalAction(nullptr)
+		AttackAction1(nullptr),
+		AttackAction2(nullptr),
+		AttackAction3(nullptr)
 {
 }
