@@ -14,6 +14,7 @@
 class USpringArmComponent;
 class UCameraComponent;
 class UBattleComponent;
+class UItemInteractionComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -171,6 +172,8 @@ protected:
 	UCameraComponent* FollowCamera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBattleComponent* BattleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UItemInteractionComponent* ItemInteractionComponent;
 #pragma endregion
 	
 private:

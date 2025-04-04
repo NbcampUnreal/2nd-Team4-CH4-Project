@@ -16,6 +16,7 @@
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
 #include "Components/SphereComponent.h"
+#include "Items/Component/ItemInteractionComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -58,6 +59,8 @@ ABaseCharacter::ABaseCharacter()
 	CurrentCharacterState=ECharacterState::Normal;
 	CurrentResistanceState=EResistanceState::Normal;
 	
+	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
+
 }
 
 void ABaseCharacter::BeginPlay()
