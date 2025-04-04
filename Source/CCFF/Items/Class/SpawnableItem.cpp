@@ -58,8 +58,9 @@ void ASpawnableItem::OnItemOverlap(
     bool bFromSweep,
     const FHitResult& SweepResult)
 {
-    if (!HasAuthority() && OtherActor->ActorHasTag("Player"))
-	{
+    APawn* OverlappingPawn = Cast<APawn>(OtherActor);
+    if (OverlappingPawn && OverlappingPawn->IsLocallyControlled()&& !HasAuthority())
+    {
 #if WITH_EDITOR
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!!")));
 #endif
@@ -68,7 +69,7 @@ void ASpawnableItem::OnItemOverlap(
         {
             InteractionComponent->Server_InteractItem(this);
         }
-	}
+    }
 }
 
 void ASpawnableItem::Interact(AActor* Activator)
@@ -77,15 +78,17 @@ void ASpawnableItem::Interact(AActor* Activator)
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Interact!")));
 #endif
 
-    if (HasAuthority()) // 서버에서 실행
-    {
-        OnInteract();
-        ResetItem();
-    }
+	// Item Interaction Logic Here
 }
 
 void ASpawnableItem::OnInteract()
 {
+    if (!this)
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnInteract called on a nullptr object!"));
+        return;
+    }
+
     if (InteractSound)
     {
         UGameplayStatics::PlaySoundAtLocation(this, InteractSound, GetActorLocation());
@@ -117,9 +120,6 @@ void ASpawnableItem::ResetItem()
         {
             UE_LOG(LogTemp, Warning, TEXT("Returning item to pool: %s"), *GetName());
             PoolManager->ReturnItemToPool(this);
-
-            UE_LOG(LogTemp, Warning, TEXT("Broadcasting OnItemResetDelegate for %s"), *GetName());
-            OnItemResetDelegate.Broadcast();
         }
         else
         {
