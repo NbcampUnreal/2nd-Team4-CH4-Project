@@ -53,7 +53,7 @@ void USelectModeWidget::OnTrainingRoomClicked()
 
 void USelectModeWidget::HandleTrainingPopupConfirmed()
 {
-	UGameplayStatics::OpenLevel(this, FName("L_TrainingField"));
+	UGameplayStatics::OpenLevel(this, FName("TestTrainingMap"));
 }
 
 void USelectModeWidget::HandleTrainingPopupCanceled()
