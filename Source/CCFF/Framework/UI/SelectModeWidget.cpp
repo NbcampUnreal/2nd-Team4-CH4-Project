@@ -46,17 +46,17 @@ void USelectModeWidget::OnTrainingRoomClicked()
 		TrainingRoomPopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), ConfirmPopupClass);
 		TrainingRoomPopup->SetMessage(FText::FromString(TEXT("Time to warm up?")));
 		TrainingRoomPopup->AddToViewport();
-		TrainingRoomPopup->OnConfirmPopupConfirmed.AddDynamic(this, &USelectModeWidget::EnterTrainingRoom);
-		TrainingRoomPopup->OnConfirmPopupCanceled.AddDynamic(this, &USelectModeWidget::CancelPopup);
+		TrainingRoomPopup->OnConfirmPopupConfirmed.AddDynamic(this, &USelectModeWidget::HandleTrainingPopupConfirmed);
+		TrainingRoomPopup->OnConfirmPopupCanceled.AddDynamic(this, &USelectModeWidget::HandleTrainingPopupCanceled);
 	}
 }
 
-void USelectModeWidget::EnterTrainingRoom()
+void USelectModeWidget::HandleTrainingPopupConfirmed()
 {
 	UGameplayStatics::OpenLevel(this, FName("L_TrainingField"));
 }
 
-void USelectModeWidget::CancelPopup()
+void USelectModeWidget::HandleTrainingPopupCanceled()
 {
 	TrainingRoomPopup = nullptr;
 	SetKeyboardFocus();

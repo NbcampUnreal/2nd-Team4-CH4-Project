@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "Blueprint/UserWidget.h"
 #include "MainMenuHUD.generated.h"
 
 UCLASS()
@@ -30,7 +31,7 @@ public:
 protected:
 
 	template<typename TWidget>
-	TWidget* SwitchWidget(TWidget*& CurrentWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder = 0);
+	TWidget* SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder = 0);
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
@@ -52,25 +53,29 @@ private:
 	UPROPERTY()
 	class USettingsWidget* SettingsWidget;
 
+	UPROPERTY()
+	UUserWidget* LastActiveWidget;
+
 };
 
 template<typename TWidget>
-inline TWidget* AMainMenuHUD::SwitchWidget(TWidget*& CurrentWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder)
+inline TWidget* AMainMenuHUD::SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder)
 {
-	if (CurrentWidget)
+	if (LastActiveWidget)
 	{
-		CurrentWidget->RemoveFromParent();
-		CurrentWidget = nullptr;
+		LastActiveWidget->RemoveFromParent();
+		LastActiveWidget = nullptr;
 	}
 
 	if (WidgetClass)
 	{
-		CurrentWidget = CreateWidget<TWidget>(GetWorld(), WidgetClass);
-		if (CurrentWidget)
+		TargetWidget = CreateWidget<TWidget>(GetWorld(), WidgetClass);
+		if (TargetWidget)
 		{
-			CurrentWidget->AddToViewport(ZOrder);
+			TargetWidget->AddToViewport(ZOrder);
+			LastActiveWidget = TargetWidget;
 		}
 	}
 
-	return CurrentWidget;
+	return TargetWidget;
 }

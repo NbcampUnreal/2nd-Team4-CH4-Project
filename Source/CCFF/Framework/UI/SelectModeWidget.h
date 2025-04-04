@@ -25,10 +25,10 @@ protected:
 	void OnBackClicked();
 
 	UFUNCTION()
-	void EnterTrainingRoom();
+	void HandleTrainingPopupConfirmed();
 
 	UFUNCTION()
-	void CancelPopup();
+	void HandleTrainingPopupCanceled();
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* AdventureButton;
