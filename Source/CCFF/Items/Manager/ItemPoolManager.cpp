@@ -80,12 +80,8 @@ ASpawnableItem* UItemPoolManager::GetRandomItemFromPool()
         int32 RandomIndex = FMath::RandRange(0, AvailableItems.Num() - 1);
         ASpawnableItem* SelectedItem = AvailableItems[RandomIndex];
 
-        if (SelectedItem)
-        {
-            SelectedItem->SetActorHiddenInGame(false);
-            SelectedItem->SetActorEnableCollision(true);
-            return SelectedItem;
-        }
+        return SelectedItem;
+
     }
 
     return nullptr;
@@ -93,12 +89,18 @@ ASpawnableItem* UItemPoolManager::GetRandomItemFromPool()
 
 void UItemPoolManager::ReturnItemToPool(ASpawnableItem* Item)
 {
-    if (!Item || ItemPool.Contains(Item)) return;
+    if (!Item)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ReturnItemToPool: Item is nullptr!"));
+        return;
+    }
 
     Item->SetActorHiddenInGame(true);
     Item->SetActorEnableCollision(false);
-    ItemPool.Add(Item);
+    Item->OnReturnedToPool.Broadcast(Item);
+    UE_LOG(LogTemp, Log, TEXT("ReturnItemToPool: Returned item to pool: %s"), *Item->GetName());
 }
+
 
 bool UItemPoolManager::IsServer() const
 {
