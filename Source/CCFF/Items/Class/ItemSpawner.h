@@ -7,6 +7,7 @@
 
 class ASpawnableItem;
 class UItemManager;
+class UItemPoolManager;
 
 UCLASS()
 class CCFF_API AItemSpawner : public AActor
@@ -19,6 +20,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	UDataTable* ItemDataTable;
 
+	void SpawnItem();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	USceneComponent* Scene;
@@ -27,16 +30,16 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	float SpawnCooldown = 3.0f;
-
+	
 
 	virtual void BeginPlay() override;
 
 private:
 	UFUNCTION()
-	void OnItemReset();
+	void HandleItemReturned(ASpawnableItem* Item);
 
+	UItemPoolManager* ItemPoolManager;
 	UItemManager* ItemManager;
-	void SpawnItemDelayed();
 	FTimerHandle SpawnTimerHandle; // 타이머 핸들
 
 	bool bIsItemActive=false;
