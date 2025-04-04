@@ -1,5 +1,6 @@
 ﻿#include "Framework/UI/MainMenuWidget.h"
 #include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/HUD/MainMenuHUD.h"
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -16,6 +17,16 @@ void UMainMenuWidget::NativeConstruct()
 	};
 
 	CurrentIndex = 0;
+
+	if (EnterArenaButton)
+	{
+		EnterArenaButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleEnterArenaClicked);
+	}
+
+	if (SettingButton)
+	{
+		SettingButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleSettingClicked);
+	}
 
 	if (ExitGameButton)
 	{
@@ -56,6 +67,32 @@ void UMainMenuWidget::HandleEnterPressed()
 	if (MenuButtons.IsValidIndex(CurrentIndex) && MenuButtons[CurrentIndex])
 	{
 		MenuButtons[CurrentIndex]->OnClicked.Broadcast();
+	}
+}
+
+void UMainMenuWidget::HandleEnterArenaClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowSelectModeWidget();
+		}
+	}
+}
+
+void UMainMenuWidget::HandleSettingClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowSettingsWidget();
+		}
 	}
 }
 

@@ -17,6 +17,12 @@ protected:
 	void HandleEnterPressed();
 
 	UFUNCTION()
+	void HandleEnterArenaClicked();
+
+	UFUNCTION()
+	void HandleSettingClicked();
+
+	UFUNCTION()
 	void HandleExitGameClicked();
 
 	UFUNCTION()
