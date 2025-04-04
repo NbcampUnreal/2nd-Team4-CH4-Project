@@ -1,5 +1,6 @@
 ﻿#include "Framework/GameMode/BaseInGameMode.h"
 #include "Framework/GameState/BaseInGameState.h"
+#include "Items/Manager/ItemManager.h"
 
 ABaseInGameMode::ABaseInGameMode(const FObjectInitializer & ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -7,6 +8,7 @@ ABaseInGameMode::ABaseInGameMode(const FObjectInitializer & ObjectInitializer) :
 
 	RoundDuration = 60.0f;
 	MaxHP = 3;
+
 }
 
 void ABaseInGameMode::BeginPlay()
@@ -14,6 +16,20 @@ void ABaseInGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	StartRound();
+	ResetSubsystem();
+}
+
+void ABaseInGameMode::ResetSubsystem()
+{
+	UItemManager* ItemManager = GetGameInstance()->GetSubsystem<UItemManager>();
+	if (ItemManager)
+	{
+		ItemManager->InitializeItemManager();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemManager is not initialized!"));
+	}
 }
 
 void ABaseInGameMode::StartRound()

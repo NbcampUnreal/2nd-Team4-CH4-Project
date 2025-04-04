@@ -4,12 +4,14 @@
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
 
-
 ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	RoundDuration = 60.0f;
 	MaxHP = 3;
+
 }
+
+
 
 void ATrainingGameMode::StartTraining()
 {

@@ -15,11 +15,15 @@ class CCFF_API UItemManager : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
+	void InitializeItemManager();
+
     bool IsServer() const;
 	void OnItemInteract(AActor* Interactor, UItemInteractionComponent* ItemInteractionComponent, ASpawnableItem* Item);
 
 protected:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+       
+
 
 private:
     UPROPERTY()

@@ -32,4 +32,7 @@ protected:
 
 	FTimerHandle GameTimerHandle;
 
+private:
+	void ResetSubsystem();
+
 };
