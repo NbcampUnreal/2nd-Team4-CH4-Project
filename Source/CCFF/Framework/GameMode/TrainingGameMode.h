@@ -13,12 +13,8 @@ class CCFF_API ATrainingGameMode : public ABaseInGameMode
 public:
 	ATrainingGameMode(const FObjectInitializer& ObjectInitializer);
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
-	void StartTraining();
-
-	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
-	void EndTraining();
-
+	void StartRound() override;
+	void EndRound() override;
 	virtual void CheckGameConditions() override;
 
 protected:

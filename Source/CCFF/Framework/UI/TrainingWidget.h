@@ -9,6 +9,7 @@ class CCFF_API UTrainingWidget : public UBaseInGameWidget
 {
 	GENERATED_BODY()
 	
+public:
 	UFUNCTION()
 	void OnStartButtonClicked();
 

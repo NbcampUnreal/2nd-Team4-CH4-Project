@@ -7,15 +7,12 @@
 ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	RoundDuration = 60.0f;
-	MaxHP = 3;
-
+	MyClassName = "TrainingMode";
 }
 
-
-
-void ATrainingGameMode::StartTraining()
+void ATrainingGameMode::StartRound()
 {
-	UE_LOG(LogTemp, Log, TEXT("Training started for %f seconds."), RoundDuration);
+	Super::StartRound();
 
 	ATrainingGameState* TGameState = Cast<ATrainingGameState>(GameState);
 	if (IsValid(TGameState))
@@ -33,14 +30,11 @@ void ATrainingGameMode::StartTraining()
 			TrainingHUD->AddToViewport();
 		}
 	}
-
-	StartRound();
 }
 
-void ATrainingGameMode::EndTraining()
+void ATrainingGameMode::EndRound()
 {
-	UE_LOG(LogTemp, Log, TEXT("Training ended."));
-	EndRound();
+	Super::EndRound();
 
 	ATrainingGameState* TGameState = Cast<ATrainingGameState>(GameState);
 	if (IsValid(TGameState))
@@ -51,5 +45,7 @@ void ATrainingGameMode::EndTraining()
 
 void ATrainingGameMode::CheckGameConditions()
 {
-	EndTraining();
+	Super::CheckGameConditions();
+
+	// Call EndRound() when condition is true
 }

@@ -63,6 +63,8 @@ void UTrainingWidget::OnResetButtonClicked()
 	}
 
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+
+	// TODO : Add Initialize Total damame, max combo, dps, TimeText 60
 }
 
 void UTrainingWidget::UpdateTimer()
