@@ -149,6 +149,17 @@ void ABaseCharacter::PreLoadCharacterStats()
 	}
 }
 
+void ABaseCharacter::PreLoadCharacterMovementStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			MovementStats=Loader->InitializeMovementStat(FName(CharacterType));
+		}
+	}
+}
+
 void ABaseCharacter::PreLoadCharacterAnim()
 {
 	if (UGameInstance* GameInstance=GetGameInstance())

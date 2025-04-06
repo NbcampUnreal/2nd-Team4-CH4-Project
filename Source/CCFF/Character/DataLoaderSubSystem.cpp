@@ -15,6 +15,12 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 	{
 		StatDataTable=StatDataFinder.Object;
 	}
+	// Find Character Stats Data Table and Initialize Data Table Variable
+	static ConstructorHelpers::FObjectFinder<UDataTable> MovementStatDataFinder(TEXT("/Game/Character/DataTables/DT_MovementsStats.DT_MovementsStats"));
+	if (MovementStatDataFinder.Succeeded())
+	{
+		MovementStatsDataTable=MovementStatDataFinder.Object;
+	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
 	static ConstructorHelpers::FObjectFinder<UDataTable> CharacterAnimDataFinder(TEXT("/Game/CCFF/DataTables/DT_CharacterAnimation.DT_CharacterAnimation"));
@@ -55,6 +61,20 @@ FCharacterStats UDataLoaderSubSystem::InitializeStat(const FName RowName) const
 		}
 	}
 	return FCharacterStats();
+}
+
+FCharacterMovementStats UDataLoaderSubSystem::InitializeMovementStat(const FName RowName) const
+{
+	if (RowName.IsValid()&&MovementStatsDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		if (FCharacterMovementStats* TempStats=MovementStatsDataTable->FindRow<FCharacterMovementStats>(RowName,TEXT("")))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			return *TempStats;
+		}
+	}
+	return FCharacterMovementStats();
 }
 
 FBattleModifiers UDataLoaderSubSystem::InitializeBattleModifiers(const FName RowName) const

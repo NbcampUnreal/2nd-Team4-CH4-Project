@@ -26,6 +26,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FCharacterStats InitializeStat(const FName RowName) const;
+
+	UFUNCTION(BlueprintCallable)
+	FCharacterMovementStats InitializeMovementStat(const FName RowName) const;
 	
 	UFUNCTION(BlueprintCallable)
 	FBattleModifiers InitializeBattleModifiers(const FName RowName) const;
@@ -40,7 +43,10 @@ private:
 	//CharacterStats Data Table
 	UPROPERTY()
 	UDataTable* StatDataTable;
-
+	//CharacterStats Data Table
+	UPROPERTY()
+	UDataTable* MovementStatsDataTable;
+	
 	//CollisionData Data Table
 	UPROPERTY()
 	UDataTable* AttackCollisionDataTable;

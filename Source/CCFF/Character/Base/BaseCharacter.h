@@ -71,6 +71,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadCharacterMovementStats();
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadAttackCollisions();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterAnim();
@@ -160,6 +162,9 @@ protected:
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	FCharacterMovementStats MovementStats;
+	//Attack and Hitted Animation Data
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterAnim Anim;
 #pragma endregion
