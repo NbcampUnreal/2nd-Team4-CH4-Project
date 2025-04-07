@@ -479,11 +479,12 @@ void ABaseCharacter::OnAttackBlocked() const
 
 void ABaseCharacter::ProcessHitReaction(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	//if (/*잡기면*/)
-	//{
-	//	ReceiveGrabbed();
-	//	return;
-	//}
+	ABaseCharacter* AttackData = Cast<ABaseCharacter>(DamageCauser);
+	if (AttackData && AttackData->)
+	{
+		ReceiveGrabbed();
+		return;
+	}
 	if (CurrentCharacterState == ECharacterState::Block || CurrentCharacterState == ECharacterState::BlockStun)
 	{
 		ReceiveBlock(DamageCauser);
