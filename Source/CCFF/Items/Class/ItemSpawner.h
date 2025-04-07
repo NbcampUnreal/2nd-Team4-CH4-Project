@@ -6,6 +6,9 @@
 #include "ItemSpawner.generated.h"
 
 class ASpawnableItem;
+class UItemManager;
+class UItemPoolManager;
+class UWidgetComponent;
 
 UCLASS()
 class CCFF_API AItemSpawner : public AActor
@@ -15,28 +18,31 @@ class CCFF_API AItemSpawner : public AActor
 public:
 	AItemSpawner();
 
-	UFUNCTION(BlueprintCallable, Category = "Item|Spawn")
-	void SpawnRandomItem();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|UI")
+	UWidgetComponent* WidgetComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
+	UDataTable* ItemDataTable;
+
+	void SpawnItem();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	USceneComponent* Scene;
 	UPROPERTY(VisibleAnywhere, Category = "Item|Spawn")
 	UStaticMeshComponent* StaticMesh;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
-	UDataTable* ItemDataTable;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	float SpawnCooldown = 3.0f;
-
+	
 
 	virtual void BeginPlay() override;
 
 private:
 	UFUNCTION()
-	void OnItemReset();
+	void HandleItemReturned(ASpawnableItem* Item);
 
-
-	void SpawnItemDelayed();
+	UItemPoolManager* ItemPoolManager;
+	UItemManager* ItemManager;
 	FTimerHandle SpawnTimerHandle; // 타이머 핸들
 
 	bool bIsItemActive=false;

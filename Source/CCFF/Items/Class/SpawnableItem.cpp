@@ -1,4 +1,5 @@
 #include "Items/Class/SpawnableItem.h"
+#include "Items/Component/ItemInteractionComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundBase.h"
@@ -24,6 +25,9 @@ ASpawnableItem::ASpawnableItem()
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
     Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpawnableItem::OnItemOverlap);
+
+    bReplicates = true;
+    SetReplicateMovement(true);
 }
 
 void ASpawnableItem::BeginPlay()
@@ -31,6 +35,22 @@ void ASpawnableItem::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASpawnableItem::OnSpawned()
+{
+    InitialLocation = GetActorLocation();
+    TimeElapsed = 0.0f;
+    GetWorldTimerManager().SetTimer(FloatingTimerHandle, this, &ASpawnableItem::UpdateFloating, 0.02f, true);
+}
+
+void ASpawnableItem::UpdateFloating()
+{
+    TimeElapsed += 0.02f;  // 타이머 주기와 맞춤 (0.02초마다 호출됨)
+    FVector NewLocation = InitialLocation;
+    NewLocation.Z += FMath::Sin(TimeElapsed * 2.0f) * 10.0f;  // 위아래로 10만큼 움직임
+    SetActorLocation(NewLocation);
+}
+
+// need to CHECK LOGIC ON AUTORITY
 void ASpawnableItem::OnItemOverlap(
     UPrimitiveComponent* OverlappedComp,
     AActor* OtherActor,
@@ -39,13 +59,47 @@ void ASpawnableItem::OnItemOverlap(
     bool bFromSweep,
     const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor->ActorHasTag("Player"))
-	{
+    APawn* OverlappingPawn = Cast<APawn>(OtherActor);
+    if (OverlappingPawn)
+    {
+        bool bIsLocallyControlled = OverlappingPawn->IsLocallyControlled();
+        bool bHasAuthority = HasAuthority();
+
+        FString LogMsg = FString::Printf(TEXT("Overlap Detected: %s | LocallyControlled: %s | HasAuthority: %s"),
+            *OtherActor->GetName(),
+            bIsLocallyControlled ? TEXT("true") : TEXT("false"),
+            bHasAuthority ? TEXT("true") : TEXT("false"));
+
+        UE_LOG(LogTemp, Log, TEXT("%s"), *LogMsg);
+
 #if WITH_EDITOR
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Overlap!!!")));
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, LogMsg);
 #endif
-        Interact(OtherActor);
-	}
+
+        if (bIsLocallyControlled && bHasAuthority)
+        {
+            UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
+            if (InteractionComponent)
+            {
+                UE_LOG(LogTemp, Log, TEXT("Calling Server_InteractItem on %s"), *GetName());
+
+#if WITH_EDITOR
+                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow,
+                    FString::Printf(TEXT("Calling Server_InteractItem on %s"), *GetName()));
+#endif
+                InteractionComponent->Server_InteractItem(this);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("No ItemInteractionComponent found on %s"), *OtherActor->GetName());
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Overlap failed: %s is not a Pawn"), *OtherActor->GetName());
+    }
+
 }
 
 void ASpawnableItem::Interact(AActor* Activator)
@@ -54,22 +108,23 @@ void ASpawnableItem::Interact(AActor* Activator)
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Interact!")));
 #endif
 
-    if (HasAuthority() && Activator)
-    {
-        Multicast_OnInteract();
-        ResetItem();
-    }
+	// Item Interaction Logic Here
 }
 
-void ASpawnableItem::Multicast_OnInteract_Implementation()
+void ASpawnableItem::OnInteract()
 {
+    if (!this)
+    {
+        UE_LOG(LogTemp, Error, TEXT("OnInteract called on a nullptr object!"));
+        return;
+    }
+
     if (InteractSound)
     {
         UGameplayStatics::PlaySoundAtLocation(this, InteractSound, GetActorLocation());
         GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Interact Sound!")));
     }
 
-    // 파티클 재생
     if (InteractParticle)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, InteractParticle, GetActorLocation());
@@ -79,11 +134,11 @@ void ASpawnableItem::Multicast_OnInteract_Implementation()
 
 void ASpawnableItem::ResetItem()
 {
+    GetWorldTimerManager().ClearTimer(FloatingTimerHandle);
+
     // 아이템 초기화 및 풀로 반환
     SetActorHiddenInGame(true);
     SetActorEnableCollision(false);
-
-
 
     UGameInstance* GameInstance = GetGameInstance();
     if (GameInstance)
@@ -95,9 +150,6 @@ void ASpawnableItem::ResetItem()
         {
             UE_LOG(LogTemp, Warning, TEXT("Returning item to pool: %s"), *GetName());
             PoolManager->ReturnItemToPool(this);
-
-            UE_LOG(LogTemp, Warning, TEXT("Broadcasting OnItemResetDelegate for %s"), *GetName());
-            OnItemResetDelegate.Broadcast();
         }
         else
         {

@@ -16,8 +16,8 @@ public:
 	// Sets default values for this component's properties
 	UBattleComponent();
 
-	FORCEINLINE void ResetCombo() {  };
-	FORCEINLINE void IncreaseCombo() {  };
+	FORCEINLINE void ResetCombo() { Modifiers.ComboCount = 0; };
+	FORCEINLINE void IncreaseCombo() { Modifiers.ComboCount++; };
 
 	float GetMeterGainFromDamageTaken(float Damage) const;
 	FVector KnockbackDir(FVector KnockbackAngle, float KnockbackForce, FVector2D DiInput, float DiModifier) const;

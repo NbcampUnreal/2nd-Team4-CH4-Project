@@ -2,24 +2,18 @@
 
 
 #include "Cactus.h"
-#include "Character/DataLoaderSubSystem.h"
 
 // Sets default values
 ACactus::ACactus()
 {
+	CharacterType="Cactus";
 }
 
 // Called when the game starts or when spawned
 void ACactus::BeginPlay()
 {
 	Super::BeginPlay();
-	if (UGameInstance* GameInstance=GetGameInstance())
-	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			Stats=Loader->InitializeStat("Cactus");
-		}
-	}
+	
 }
 
 // Called every frame

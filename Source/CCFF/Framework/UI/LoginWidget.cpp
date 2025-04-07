@@ -1,7 +1,6 @@
 #include "Framework/UI/LoginWidget.h"
-#include "Components/EditableText.h"
+#include "Components/EditableTextBox.h"
 #include "Components/Button.h"
-#include "Kismet/GameplayStatics.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
 
 void ULoginWidget::NativeConstruct()
@@ -17,20 +16,50 @@ void ULoginWidget::NativeConstruct()
 	{
 		NicknameTextBox->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
 	}
+	
+
+	if (!IsValid(NicknameTextBox))
+	{
+		UE_LOG(LogTemp, Error, TEXT("NicknameTextBox IS NULL in NativeConstruct"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NicknameTextBox bound successfully"));
+	}
+
 }
 
 void ULoginWidget::OnConfirmClicked()
 {
-	if (!NicknameTextBox) return;
+	UE_LOG(LogTemp, Warning, TEXT("Entered OnConfirmClicked"));
 
-	FString Nick = NicknameTextBox->GetText().ToString();
-
-	if (!Nick.IsEmpty())
+	if (!IsValid(NicknameTextBox))
 	{
-		GetGameInstanceTyped()->SetNickname(Nick);
-		GetGameInstanceTyped()->SaveData();
-		UGameplayStatics::OpenLevel(this, TEXT("MainMenuMap"));
+		UE_LOG(LogTemp, Error, TEXT("NicknameTextBox is NULL"));
+		return;
 	}
+
+	FText RawText = NicknameTextBox->GetText();
+	UE_LOG(LogTemp, Warning, TEXT("Got RawText"));
+
+	FString Nickname = RawText.ToString();
+	UE_LOG(LogTemp, Warning, TEXT("Converted to FString: %s"), *Nickname);
+
+	UCCFFGameInstance* GI = GetGameInstanceTyped();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("GameInstance is NULL!"));
+		return;
+	}
+
+	GI->SetNickname(Nickname);
+	UE_LOG(LogTemp, Warning, TEXT("Nickname set"));
+
+	GI->SaveData();
+	UE_LOG(LogTemp, Warning, TEXT("SaveData called"));
+
+	OnLoginSuccess.Broadcast();
+	UE_LOG(LogTemp, Warning, TEXT("Broadcast done"));
 }
 
 void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
@@ -39,4 +68,9 @@ void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMe
 	{
 		OnConfirmClicked();
 	}
+}
+
+UCCFFGameInstance* ULoginWidget::GetGameInstanceTyped() const
+{
+	return Cast<UCCFFGameInstance>(GetGameInstance());
 }

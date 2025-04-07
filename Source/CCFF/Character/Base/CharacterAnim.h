@@ -12,13 +12,15 @@ struct FCharacterAnim :public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FCharacterAnim(): AttackMontage1(nullptr),AttackMontage2(nullptr),HittedMontage(nullptr) {}
+	FCharacterAnim(): AttackMontage1(nullptr),AttackMontage2(nullptr),AttackMontage3(nullptr),HittedMontage(nullptr) {}
 
 	// Attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Attack")
 	UAnimMontage* AttackMontage1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Attack")
 	UAnimMontage* AttackMontage2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Attack")
+	UAnimMontage* AttackMontage3;
 
 	// Hitted
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Hitted")

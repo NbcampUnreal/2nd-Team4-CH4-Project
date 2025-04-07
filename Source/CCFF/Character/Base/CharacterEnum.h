@@ -9,10 +9,9 @@ enum class ECharacterState : uint8
 	Normal		UMETA(DisplayName = "Normal"),
 	Hitted		UMETA(DisplayName = "Hitted"),
 	Block 		UMETA(DisplayName = "Block"),
+	BlockStun	UMETA(DisplayName = "BlockStun"),
 	Dodge		UMETA(DisplayName = "Dodge"),
-	AMove		UMETA(DisplayName = "AMove"),
-	BMove		UMETA(DisplayName = "BMove"),
-	CMove		UMETA(DisplayName = "CMove"),
+	Attack		UMETA(DisplayName = "Attack"),
 	Grab		UMETA(DisplayName = "Grab"),
 	Grabbed		UMETA(DisplayName = "Grabbed"),
 	Burst		UMETA(DisplayName = "Burst"),
@@ -28,4 +27,12 @@ enum class EResistanceState : uint8
 	Invulnerable			UMETA(DisplayName = "Invulnerable"),
 	ProjectileInvulnerable	UMETA(DisplayName = "ProjectileInvulnerable"),
 	ThrowInvulnerable		UMETA(DisplayName = "ThrowInvulnerable")
+};
+
+UENUM(BlueprintType)
+enum class EAttackType : uint8
+{
+	Attack1		UMETA(DisplayName="Attack1"),
+	Attack2		UMETA(DisplayName="Attack2"),
+	Attack3		UMETA(DisplayName="Attack3")
 };

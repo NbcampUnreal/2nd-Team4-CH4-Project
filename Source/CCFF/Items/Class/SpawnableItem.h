@@ -8,8 +8,9 @@
 class UNiagaraSystem;
 class USoundBase;
 class USphereComponent;
+class AItemSpawner;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FItemResetDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemReturnedToPool, ASpawnableItem*, Item);
 
 UCLASS()
 class CCFF_API ASpawnableItem : public AActor, public IInteractableItemInterface
@@ -20,15 +21,14 @@ class CCFF_API ASpawnableItem : public AActor, public IInteractableItemInterface
 public:	
 	ASpawnableItem();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnInteract();
-	void Multicast_OnInteract_Implementation();
-
 	UPROPERTY(BlueprintAssignable)
-	FItemResetDelegate OnItemResetDelegate;
+	FOnItemReturnedToPool OnReturnedToPool;
 
-	void ResetItem(); // 풀링을 위한 초기화
-
+	virtual void Interact(AActor* Activator) override;
+	void OnInteract();
+	void ResetItem();
+	UPROPERTY()
+	AItemSpawner* OwningSpawner = nullptr;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	FName ItemType;
@@ -51,9 +51,21 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult) override;
 
-	virtual void Interact(AActor* Activator) override;
+
 	virtual FName GetItemType() const override { return ItemType; };
 
 	virtual void BeginPlay() override;
+
+public:
+	UFUNCTION()
+	void OnSpawned();
+
+private:
+	void UpdateFloating();
+
+	FVector InitialLocation;
+	float TimeElapsed;
+
+	FTimerHandle FloatingTimerHandle;
 
 };

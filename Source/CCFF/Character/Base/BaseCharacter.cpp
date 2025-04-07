@@ -10,7 +10,13 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "BattleComponent.h"
 #include "InputActionValue.h"
+#include "Character/DataLoaderSubSystem.h"
+#include "Character/Base/AttackCollisionData.h"
+#include "Components/SphereComponent.h"
+#include "Items/Component/ItemInteractionComponent.h"
+#include "Character/DamageHelper.h"
 
 
 // Sets default values
@@ -41,7 +47,7 @@ ABaseCharacter::ABaseCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 1200.0f; // The camera follows at this distance behind the character
-	CameraBoom->SetWorldRotation(FRotator(-35, 0, 0));
+	CameraBoom->SetWorldRotation((FRotator(-35, -180, 0)));
 	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
 	CameraBoom->bInheritYaw=false;
 
@@ -52,6 +58,172 @@ ABaseCharacter::ABaseCharacter()
 
 	CurrentCharacterState=ECharacterState::Normal;
 	CurrentResistanceState=EResistanceState::Normal;
+	
+	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
+	
+	CurrentActivatedCollision=-1;
+}
+
+void ABaseCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	//애니메이션 Notify 이벤트 연결
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNotify);
+	}
+	PreLoadCharacterStats();
+	PreLoadAttackCollisions();
+	PreLoadCharacterAnim();
+}
+
+float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+	Stats.Health = FMath::Clamp(Stats.Health - DamageAmount, 0.0f, Stats.MaxHealth);
+	UE_LOG(LogTemp,Warning,TEXT("Damage: %f"),ActualDamage);
+	
+	return ActualDamage;
+}
+
+void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
+{
+	if (!NotifyName.IsValid()||AttackCollisions.IsEmpty()) return;
+	// Determin the type of attack by name
+	FString NotifyNameString=NotifyName.ToString();
+	// Hitbox 
+	if(NotifyNameString.Contains(TEXT("Hitbox")))
+	{
+		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
+		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
+		//UE_LOG(LogTemp, Log, TEXT("Parsed Attack Number: %d"), AttackNumber);	
+		// Activate Collision in proper location
+		if (AttackCollisions[AttackNumber])
+		{
+			// Deactivate Collision
+			if (NotifyNameString.Contains(TEXT("End")))
+			{
+				CurrentActivatedCollision=-1;
+				DeactivateAttackCollision(AttackNumber);
+				UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
+			}
+			else // Activate Collision
+			{
+				CurrentActivatedCollision=AttackNumber;
+				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
+		}
+		return;
+	}
+}
+
+void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// Except self
+	if (!OtherActor || OtherActor == this) return;
+	
+	float DamageAmount=Stats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
+	UE_LOG(LogTemp,Warning,TEXT("Damage: %f, Overlapped Actor: %s"),DamageAmount,*OtherActor->GetName());
+	UDamageHelper::ApplyDamage(
+	OtherActor,                // 피해 대상
+	DamageAmount,			   // 공격력 (Character Stats 기반)
+	GetController(),           // 공격한 플레이어의 컨트롤러
+	this,                      // 공격한 액터 (자기 자신)
+	UDamageType::StaticClass(),// 기본 데미지 타입)
+	HitBoxList[CurrentActivatedCollision]
+	);
+}
+
+
+void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	
+}
+
+void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
+{
+	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ABaseCharacter::PreLoadCharacterStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadCharacterMovementStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			MovementStats=Loader->InitializeMovementStat(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadCharacterAnim()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadAttackCollisions()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			if (UEnum* Type=StaticEnum<EAttackType>())
+			{
+				const int32 n=Type->NumEnums();
+				AttackCollisions.SetNum(n-1);
+				HitBoxList.SetNum(n-1);
+				for (int32 i=0;i<n-1;i++)
+				{
+					FString TypeName=Type->GetNameStringByIndex(i);
+					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
+					const FName RowName=FName(CharacterType+"_"+TypeName);
+					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
+					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
+					if (Data.Scale!=FVector::ZeroVector)
+					{
+						//Create Collision and Attacth to mesh
+						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
+						AttackCollision->SetupAttachment(GetMesh());
+						AttackCollision->SetRelativeLocation(Data.Location);
+						AttackCollision->SetRelativeScale3D(Data.Scale);
+						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						//Bind Overlap Event
+						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
+						//Activate Components
+						AddInstanceComponent(AttackCollision);
+						AttackCollision->RegisterComponent();
+						AttackCollisions[i]=AttackCollision;
+						HitBoxList[i]=HitBoxData;
+					}
+				}
+			}
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -66,7 +238,12 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		
 			// Jumping
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);	
+			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+			//Attack Actions
+			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
+			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
+			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
 		}
 	}
 	else
@@ -116,6 +293,55 @@ void ABaseCharacter::StopJump(const FInputActionValue& Value)
 	}
 }
 
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage1)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage1);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+}
+void ABaseCharacter::Attack2(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage2)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage2);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+}
+void ABaseCharacter::Attack3(const FInputActionValue& Value)
+{
+	//메시 유효 
+	if (!GetMesh()) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage3)
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage3);
+		//몽타주 끝났을 때 이벤트 바인딩
+		AnimInstance->OnMontageEnded.Clear();
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+}
+
 void ABaseCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -131,4 +357,255 @@ void ABaseCharacter::NotifyControllerChanged()
 			}
 		}
 	}
+}
+
+void ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
+{
+	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
+	float NewHealth = FMath::Clamp(Stats.Health - ScaledDamage, 0.0f, Stats.MaxHealth);
+	Stats.Health = NewHealth;
+
+	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
+
+	if (NewHealth <= 0.0f)
+	{
+		OnDeath();
+	}
+}
+
+void ABaseCharacter::TakeHitstun(int32 Hitstun)
+{
+	if (Hitstun == 0)
+	{
+		return;
+	}
+
+	float ScaledHitstun = BattleComponent->ComboStaleHitstun(Hitstun);
+	CurrentCharacterState = ECharacterState::Hitted;
+
+	GetWorldTimerManager().ClearTimer(HitstunTimerHandle);
+
+	GetWorldTimerManager().SetTimer(
+		HitstunTimerHandle,
+		this,
+		&ABaseCharacter::EndHitstun,
+		ScaledHitstun / 60.0f,
+		false
+	);
+}
+
+void ABaseCharacter::EndHitstun()
+{
+	CurrentCharacterState = ECharacterState::Normal;
+	BattleComponent->ResetCombo();
+}
+
+void ABaseCharacter::TakeHitLag(int32 Hitlag)
+{
+	if (Hitlag == 0)
+	{
+		return;
+	}
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		if (Movement->MovementMode != MOVE_None)
+		{
+			StoredVelocity = Movement->Velocity;
+			Movement->DisableMovement();
+		}
+	}
+	GetMesh()->bPauseAnims = true;
+
+	GetWorldTimerManager().ClearTimer(HitLagTimerHandle);
+	GetWorldTimerManager().SetTimer(HitLagTimerHandle, this, &ABaseCharacter::EndHitLag, Hitlag / 60.0f, false);
+}
+
+void ABaseCharacter::EndHitLag()
+{
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->SetMovementMode(MOVE_Walking);
+		Movement->Velocity = StoredVelocity;
+	}
+	GetMesh()->bPauseAnims = false;
+}
+
+void ABaseCharacter::TakeBlockStun(int32 BlockStun)
+{
+	CurrentCharacterState = ECharacterState::BlockStun;
+	GetWorldTimerManager().ClearTimer(BlockStunTimerHandle);
+	GetWorldTimerManager().SetTimer(
+		BlockStunTimerHandle,
+		this,
+		&ABaseCharacter::EndBlockStun,
+		BlockStun / 60.0f,
+		false
+	);
+}
+
+void ABaseCharacter::EndBlockStun()
+{
+	if (CurrentCharacterState == ECharacterState::BlockStun)
+	{
+		CurrentCharacterState = ECharacterState::Normal;
+	}
+}
+
+void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce, FVector2D DiInput)
+{
+	FVector KnockbackVelocity = BattleComponent->KnockbackDir(KnockbackAngle, KnockbackForce, DiInput, Stats.DiModifier);
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+	}
+
+	LaunchCharacter(KnockbackVelocity, true, true);
+}
+
+void ABaseCharacter::GuardCrush()
+{
+	CurrentCharacterState = ECharacterState::Hitted;
+}
+
+
+void ABaseCharacter::OnAttackHit() const
+{
+	//TakeHitLag(Hitlag);
+	//GainSuperMeter(Damage * Stats.AttackSuperGainMultiplier);
+	//히트 이펙트
+	//히트 사운드
+}
+
+void ABaseCharacter::OnAttackBlocked() const
+{
+	//TakeHitLag(Hitlag);
+	//GainSuperMeter(GuardDamage * Stats.AttackSuperGainMultiplier);
+}
+
+void ABaseCharacter::ProcessHitReaction(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	ABaseCharacter* AttackData = Cast<ABaseCharacter>(DamageCauser);
+	if (AttackData && AttackData)
+	{
+		ReceiveGrabbed();
+		return;
+	}
+	if (CurrentCharacterState == ECharacterState::Block || CurrentCharacterState == ECharacterState::BlockStun)
+	{
+		ReceiveBlock(DamageCauser);
+		return;
+	}
+	//if (/*버스트면*/)
+	//{
+	//	ReceiveNormalHit();
+	//	return;
+	//}
+	//if (/*투사체 확인*/)
+	//{
+	//	if (/*투사체 무적이면*/)
+	//	{
+	//		return;
+	//	}
+	//	if (/*투사체 아머면*/)
+	//	{
+	//		ReceiveArmorHit();
+	//		return;
+	//	}
+	//}
+	if (CurrentResistanceState == EResistanceState::Invulnerable)
+	{
+		return;
+	}
+	if (CurrentResistanceState == EResistanceState::HyperArmor)
+	{
+		ReceiveArmorHit(DamageAmount);
+		return;
+	}
+	ReceiveNormalHit(DamageCauser);
+	return;
+}
+
+void ABaseCharacter::ReceiveNormalHit(AActor* DamageCauser)
+{
+	if (CurrentCharacterState == ECharacterState::Attack || CurrentCharacterState == ECharacterState::Grab)
+	{
+		/*Hitlag *= BattleComponent->CounterHitStunModifier;
+		VictimHitlag *= BattleComponent->CounterHitStunModifier;
+		Hitstun *= BattleComponent->CounterHitStunModifier;
+		Damage *= BattleComponent->CounterDamageModifier;*/
+		//카운터 사운드
+	}
+	CurrentResistanceState = EResistanceState::Normal;
+	/*ApplyHitLag(VictimHitlag);
+	TakeHitstun(Hitstun);
+	TakeDamage(Damage, MinimumDamage);
+	TakeKnockback(KnockbackAngle, KnockbackForce, DiInput);*/
+	BattleComponent->IncreaseCombo();
+	return;
+}
+
+void ABaseCharacter::ReceiveArmorHit(float Damage) const
+{
+	/*TakeHitLag(ArmorHitlag);
+	TakeDamage(Damage * ArmorDamageModifier);*/
+	//아머 이펙트
+	//아머 사운드
+	return;
+}
+
+void ABaseCharacter::ReceiveBlock(AActor* DamageCauser) const
+{
+	/*ApplyBlockStun(BlockStun);
+	ApplyDamage(GuardDamage, 0.0f);
+	ModifyGuardMeter(-GuardMeterDamage);
+	ApplyKnockback(Direction, GuardPushback, FVector2D(0.0f, 0.0f), 0.0f);*/
+	//가드 이펙트
+	//가드 사운드
+	return;
+}
+
+void ABaseCharacter::ReceiveGrabbed()
+{
+	if (CurrentResistanceState == EResistanceState::ThrowInvulnerable)
+	{
+		return;
+	}
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->DisableMovement();
+	}
+	CurrentResistanceState = EResistanceState::Normal;
+	CurrentCharacterState = ECharacterState::Grabbed;
+}
+
+void ABaseCharacter::Clash(AActor* DamageCauser) const
+{
+	/*ApplyKnockback(KnockbackAngle, KnockbackForce, FVector2D(0.0f, 0.0f), 0.0f);*/
+}
+
+void ABaseCharacter::OnDeath() const
+{
+	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+}
+
+void ABaseCharacter::ModifyGuardMeter(float Amount)
+{
+	Stats.BlockMeter = FMath::Clamp(Stats.BlockMeter + Amount, 0.0f, Stats.MaxBlockMeter);
+
+	if (Stats.BlockMeter <= 0.0f)
+	{
+		GuardCrush();
+	}
+}
+
+void ABaseCharacter::ModifySuperMeter(float Amount)
+{
+	float NewSuperMeter = FMath::Clamp(Stats.SuperMeter + Amount, 0.0f, Stats.MaxSuperMeter);
+	Stats.SuperMeter = NewSuperMeter;
+}
+
+void ABaseCharacter::GainBurstMeter(float Amount)
+{
+	float NewBurstMeter = FMath::Clamp(Stats.BurstMeter + Amount, 0.0f, Stats.MaxBurstMeter);
+	Stats.BurstMeter = NewBurstMeter;
 }

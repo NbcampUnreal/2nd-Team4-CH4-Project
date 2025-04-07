@@ -1,6 +1,8 @@
 #include "Items/Class/ItemSpawner.h"
 #include "Items/Class/SpawnableItem.h"
+#include "Items/Manager/ItemManager.h"
 #include "Items/Manager/ItemPoolManager.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/GameInstance.h"
 
 AItemSpawner::AItemSpawner()
@@ -13,64 +15,73 @@ AItemSpawner::AItemSpawner()
     StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpawnerMesh"));
     StaticMesh->SetupAttachment(Scene);
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+    WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("CoolDownWidget"));
+	WidgetComponent->SetupAttachment(Scene);
 }
 
 void AItemSpawner::BeginPlay()
 {
 	Super::BeginPlay();
-
-    UGameInstance* GameInstance = GetGameInstance();
-    if (GameInstance)
-    {
-        UItemPoolManager* PoolManager = GameInstance->GetSubsystem<UItemPoolManager>();
-        if (PoolManager&& ItemDataTable)
-        {
-            PoolManager->InitializePool(ItemDataTable);
-            SpawnRandomItem();
-        }
-    }    
+	ItemPoolManager = GetGameInstance()->GetSubsystem<UItemPoolManager>();
 }
 
-void AItemSpawner::SpawnRandomItem()
+void AItemSpawner::SpawnItem()
 {
-    UItemPoolManager* PoolManager = GetGameInstance()->GetSubsystem<UItemPoolManager>();
-    if (PoolManager)
+    if (bIsItemActive)
     {
-        ASpawnableItem* Item = PoolManager->GetRandomItemFromPool();
-        if (Item)
-        {
-            FVector SpawnLocation = GetActorLocation();
-            SpawnLocation.Z += 50.0f;
-
-            Item->SetActorLocation(SpawnLocation);
-            Item->SetActorHiddenInGame(false);
-            Item->SetActorEnableCollision(true);
-
-            Item->OnItemResetDelegate.RemoveDynamic(this, &AItemSpawner::OnItemReset);
-            Item->OnItemResetDelegate.AddDynamic(this, &AItemSpawner::OnItemReset);
-            bIsItemActive = true;
-        }
+        UE_LOG(LogTemp, Warning, TEXT("ItemSpawner %s : Spawn skipped item is already active."), *GetName());
+        return;
     }
-}
 
-
-void AItemSpawner::OnItemReset()
-{
-    // 기존 타이머가 있을 경우 종료
     if (GetWorldTimerManager().IsTimerActive(SpawnTimerHandle))
     {
+        UE_LOG(LogTemp, Log, TEXT("ItemSpawner %s : SpawnTimer is active. Clearing it."), *GetName());
         GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
     }
 
-    // 새로운 타이머 설정
-    GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AItemSpawner::SpawnItemDelayed, SpawnCooldown, false);
-    bIsItemActive = false;
+    if (!HasAuthority())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ItemSpawner %s : SpawnItem called but does not have authority."), *GetName());
+        return;
+    }
+
+    if (ItemPoolManager == nullptr)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ItemSpawner %s : ItemPoolManager is nullptr!"), *GetName());
+        return;
+    }
+
+    ASpawnableItem* NewItem = ItemPoolManager->GetRandomItemFromPool();
+    if (NewItem)
+    {
+        FVector SpawnLocation = GetActorLocation();
+        SpawnLocation.Z += 50.0f;
+        NewItem->SetActorLocation(SpawnLocation);
+        NewItem->SetActorHiddenInGame(false);
+        NewItem->SetActorEnableCollision(true);
+        NewItem->OnSpawned();
+        NewItem->OwningSpawner = this;
+        NewItem->OnReturnedToPool.AddDynamic(this, &AItemSpawner::HandleItemReturned);
+
+        UE_LOG(LogTemp, Log, TEXT("ItemSpawner %s : Successfully spawned item %s at location %s"),
+            *GetName(),
+            *NewItem->GetName(),
+            *SpawnLocation.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ItemSpawner %s : Failed to spawn item pool returned nullptr."), *GetName());
+    }
+
+    bIsItemActive = true;
+    UE_LOG(LogTemp, Log, TEXT("ItemSpawner %s : bIsItemActive set to true."), *GetName());
 }
 
-void AItemSpawner::SpawnItemDelayed()
+
+void AItemSpawner::HandleItemReturned(ASpawnableItem* Item)
 {
-    if (!bIsItemActive)
-    {
-        SpawnRandomItem();
-    }
+    bIsItemActive = false;
+    GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AItemSpawner::SpawnItem, SpawnCooldown, false);
+	Item->OnReturnedToPool.RemoveDynamic(this, &AItemSpawner::HandleItemReturned);
 }

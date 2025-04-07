@@ -10,7 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"UMG"
+				"UMG",
+				"CoreUObject"
 			]
 		}
 	],
@@ -28,6 +29,14 @@
 		},
 		{
 			"Name": "PCGGeometryScriptInterop",
+			"Enabled": true
+		},
+		{
+			"Name": "PCGBiomeCore",
+			"Enabled": true
+		},
+		{
+			"Name": "PCGBiomeSample",
 			"Enabled": true
 		}
 	]
