@@ -15,7 +15,7 @@ struct FCharacterStats :public FTableRowBase
 	
 public:
 	FCharacterStats(): MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
-					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0),DamageTakenModifier(0),DiModifier(0),AttackPower(0),MaxHealth(0),Health(0) {}
+					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0),DamageTakenModifier(0),DiModifier(0),DamageModifier(0), MaxHealth(0), Health(0) { }
 	
 
 	// Battle property
@@ -43,8 +43,8 @@ public:
 	float DamageTakenModifier;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
 	float DiModifier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float AttackPower;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
+	float DamageModifier;
 
 	// Health property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")

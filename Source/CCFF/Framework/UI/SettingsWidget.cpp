@@ -3,6 +3,7 @@
 #include "Framework/UI/GraphicSettingsWidget.h"
 #include "Framework/UI/ControlSettingsWidget.h"
 #include "Framework/HUD/MainMenuHUD.h"
+#include "Framework/HUD/BaseInGameHUD.h"
 #include "Components/Button.h"
 
 void USettingsWidget::NativeConstruct()
@@ -109,10 +110,24 @@ void USettingsWidget::OnCancelClicked()
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
-		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		/*AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
 		if (HUD)
 		{
 			HUD->HideSettingsWidget();
+		}*/
+
+		// Notice :: Dahye
+		AHUD* CurrentHUD = PlayerController->GetHUD();
+		if (CurrentHUD)
+		{
+			if (AMainMenuHUD* MainMenuHUD = Cast<AMainMenuHUD>(CurrentHUD))
+			{
+				MainMenuHUD->HideSettingsWidget();
+			}
+			else if (ABaseInGameHUD* BaseInGameHUD = Cast<ABaseInGameHUD>(CurrentHUD))
+			{
+				BaseInGameHUD->HideSettingsWidget();
+			}
 		}
 	}
 }

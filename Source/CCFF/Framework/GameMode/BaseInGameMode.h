@@ -27,12 +27,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "CCFF|GameMode|Round")
 	float RoundDuration;
 
-	UPROPERTY(EditAnywhere, Category = "CCFF|GameMode|Round")
-	int32 MaxHP;
-
 	FTimerHandle GameTimerHandle;
+	FString MyClassName;
 
 private:
 	void ResetSubsystem();
-
 };
