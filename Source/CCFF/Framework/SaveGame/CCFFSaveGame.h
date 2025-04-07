@@ -12,6 +12,12 @@ class CCFF_API UCCFFSaveGame : public USaveGame
 
 public:
 	UPROPERTY()
-	FPlayerMetaData SavedMetaData;
+	int32 SaveVersion;
+
+	UPROPERTY()
+	FPlayerMetaData PlayerMeta;
+
+	UPROPERTY()
+	FString ServerIP;
 	
 };

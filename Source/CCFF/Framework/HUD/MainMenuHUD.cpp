@@ -1,5 +1,6 @@
 #include "Framework/HUD/MainMenuHUD.h"
 #include "Framework/UI/MainMenuWidget.h"
+#include "Framework/UI/ArenaModeWidget.h"
 #include "Framework/UI/SelectModeWidget.h"
 #include "Framework/UI/SettingsWidget.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,14 +11,82 @@ void AMainMenuHUD::BeginPlay()
 	ShowMainMenuWidget();
 }
 
+void AMainMenuHUD::PushWidget(UUserWidget* WidgetClass)
+{
+	if (WidgetStack.Num() > 0 && WidgetStack.Last())
+	{
+		WidgetStack.Last()->RemoveFromParent();
+	}
+
+	if (WidgetClass)
+	{
+		WidgetClass->AddToViewport();
+		WidgetStack.Add(WidgetClass);
+	}
+}
+
+void AMainMenuHUD::PopWidget()
+{
+	if (WidgetStack.Num() == 0)
+	{
+		return;
+	}
+
+	UUserWidget* Top = WidgetStack.Pop();
+	if (IsValid(Top))
+	{
+		Top->RemoveFromParent();
+	}
+
+	if (WidgetStack.Num() > 0 && IsValid(WidgetStack.Last()))
+	{
+		WidgetStack.Last()->AddToViewport();
+	}
+}
+
+void AMainMenuHUD::ReturnToPreviousWidget()
+{
+	PopWidget();
+}
+
 void AMainMenuHUD::ShowMainMenuWidget()
 {
-	SwitchWidget(MainMenuWidget, MainMenuWidgetClass);
+	if (!MainMenuWidget && MainMenuWidgetClass)
+	{
+		MainMenuWidget = CreateWidget<UMainMenuWidget>(GetWorld(), MainMenuWidgetClass);
+	}
+
+	PushWidget(MainMenuWidget);
 }
 
 void AMainMenuHUD::ShowSelectModeWidget()
 {
-	SwitchWidget(SelectModeWidget, SelectModeWidgetClass);
+	if (!SelectModeWidget && SelectModeWidgetClass)
+	{
+		SelectModeWidget = CreateWidget<USelectModeWidget>(GetWorld(), SelectModeWidgetClass);
+		
+		if (!SelectModeWidget->OnArenaModeRequested.IsAlreadyBound(this, &AMainMenuHUD::ShowArenaWidget))
+		{
+			SelectModeWidget->OnArenaModeRequested.AddDynamic(this, &AMainMenuHUD::ShowArenaWidget);
+		}
+	}
+
+	PushWidget(SelectModeWidget);
+}
+
+void AMainMenuHUD::ShowArenaWidget()
+{
+	if (!ArenaModeWidget && ArenaModeWidgetClass)
+	{
+		ArenaModeWidget = CreateWidget<UArenaModeWidget>(GetWorld(), ArenaModeWidgetClass);
+		
+		if (!ArenaModeWidget->OnBackToSelectMode.IsBoundToObject(this))
+		{
+			ArenaModeWidget->OnBackToSelectMode.BindUObject(this, &AMainMenuHUD::ReturnToPreviousWidget);
+		}
+	}
+
+	PushWidget(ArenaModeWidget);
 }
 
 void AMainMenuHUD::ShowSettingsWidget()
@@ -39,5 +108,27 @@ void AMainMenuHUD::HideSettingsWidget()
 	{
 		SettingsWidget->RemoveFromParent();
 		SettingsWidget = nullptr;
+	}
+}
+
+void AMainMenuHUD::ShowLoadingWidget()
+{
+	if (!LoadingWidget && LoadingWidgetClass)
+	{
+		LoadingWidget = CreateWidget<UUserWidget>(GetWorld(), LoadingWidgetClass);
+	}
+
+	if (LoadingWidget)
+	{
+		LoadingWidget->AddToViewport(100);
+	}
+}
+
+void AMainMenuHUD::HideLoadingWidget()
+{
+	if (LoadingWidget)
+	{
+		LoadingWidget->RemoveFromParent();
+		LoadingWidget = nullptr;
 	}
 }
