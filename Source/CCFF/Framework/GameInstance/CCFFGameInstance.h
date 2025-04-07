@@ -9,13 +9,6 @@ UCLASS()
 class CCFF_API UCCFFGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
-	
-private:
-	/* 현재 세이브 버전. 구조체 변경 시 증가 */
-	static const int32 CurrentSaveVersion;
-
-	UPROPERTY()
-	FPlayerMetaData PlayerMeta;
 
 public:
 	FORCEINLINE FString GetNickname() const { return PlayerMeta.Nickname; }
@@ -26,5 +19,12 @@ public:
 
 	void SaveData();
 	void LoadData();
+
+private:
+	/* 현재 세이브 버전. 구조체 변경 시 증가 */
+	static const int32 CurrentSaveVersion;
+
+	UPROPERTY()
+	FPlayerMetaData PlayerMeta;
 
 };

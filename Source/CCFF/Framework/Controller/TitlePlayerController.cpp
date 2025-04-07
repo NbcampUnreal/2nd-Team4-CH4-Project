@@ -1,8 +1,14 @@
 #include "Framework/Controller/TitlePlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 void ATitlePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (IsLocalController() == false)
+	{
+		return;
+	}
 
 	bShowMouseCursor = true;
 
@@ -10,6 +16,15 @@ void ATitlePlayerController::BeginPlay()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputMode.SetWidgetToFocus(nullptr);
 	SetInputMode(InputMode);
+}
+
+void ATitlePlayerController::JoinServer(const FString& InIPAddress)
+{
+	if (!InIPAddress.IsEmpty())
+	{
+		FName NextLevelName = FName(*InIPAddress);
+		UGameplayStatics::OpenLevel(this, NextLevelName, true);
+	}
 }
 
 void ATitlePlayerController::SetupInputComponent()
