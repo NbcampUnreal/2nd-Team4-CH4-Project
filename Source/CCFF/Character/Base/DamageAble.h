@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AttackCollisionData.h"
 #include "UObject/Interface.h"
 #include "DamageAble.generated.h"
 
@@ -22,5 +23,17 @@ class CCFF_API IDamageAble
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void ApplyDamage(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass)=0;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Damage")
+	float TakeDamage(float DamageAmount,
+		const FDamageEvent& DamageEvent,
+		AController* EventInstigator,
+		AActor* DamageCauser,
+		FHitBoxData& HitData);
+	
+	// virtual float ApplyDamage(AActor* DamagedActor, float BaseDamage, AController* EventInstigator,
+	// 	AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass, FHitBoxData HitData) = 0;
+	//
+	// virtual float TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
+	// 	class AController* EventInstigator, AActor* DamageCauser, FHitBoxData HitData) = 0;
 };

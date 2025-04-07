@@ -16,7 +16,8 @@
 #include "Character/Base/AttackCollisionData.h"
 #include "Components/SphereComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
-#include "Kismet/GameplayStatics.h"
+#include "Character/DamageHelper.h"
+
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -59,7 +60,8 @@ ABaseCharacter::ABaseCharacter()
 	CurrentResistanceState=EResistanceState::Normal;
 	
 	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
-
+	
+	CurrentActivatedCollision=-1;
 }
 
 void ABaseCharacter::BeginPlay()
@@ -73,6 +75,17 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterStats();
 	PreLoadAttackCollisions();
 	PreLoadCharacterAnim();
+}
+
+float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+	Stats.Health = FMath::Clamp(Stats.Health - DamageAmount, 0.0f, Stats.MaxHealth);
+	UE_LOG(LogTemp,Warning,TEXT("Damage: %f"),ActualDamage);
+	
+	return ActualDamage;
 }
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
@@ -92,11 +105,13 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 			// Deactivate Collision
 			if (NotifyNameString.Contains(TEXT("End")))
 			{
+				CurrentActivatedCollision=-1;
 				DeactivateAttackCollision(AttackNumber);
 				UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
 			}
 			else // Activate Collision
 			{
+				CurrentActivatedCollision=AttackNumber;
 				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
 			}
@@ -114,16 +129,17 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 {
 	// Except self
 	if (!OtherActor || OtherActor == this) return;
-
-	// Apply Damage
-	UGameplayStatics::ApplyDamage(
-		OtherActor,                // 피해 대상
-		Stats.DamageModifier*100,  // 공격력 (Character Stats 기반)
-		GetController(),           // 공격한 플레이어의 컨트롤러
-		this,                      // 공격한 액터 (자기 자신)
-		UDamageType::StaticClass() // 기본 데미지 타입
+	
+	float DamageAmount=Stats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
+	UE_LOG(LogTemp,Warning,TEXT("Damage: %f, Overlapped Actor: %s"),DamageAmount,*OtherActor->GetName());
+	UDamageHelper::ApplyDamage(
+	OtherActor,                // 피해 대상
+	DamageAmount,			   // 공격력 (Character Stats 기반)
+	GetController(),           // 공격한 플레이어의 컨트롤러
+	this,                      // 공격한 액터 (자기 자신)
+	UDamageType::StaticClass(),// 기본 데미지 타입)
+	HitBoxList[CurrentActivatedCollision]
 	);
-
 }
 
 
@@ -190,7 +206,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
 					if (Data.Scale!=FVector::ZeroVector)
 					{
-						//Create Collision and Attacth to Socket
+						//Create Collision and Attacth to mesh
 						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
 						AttackCollision->SetupAttachment(GetMesh());
 						AttackCollision->SetRelativeLocation(Data.Location);
@@ -341,19 +357,6 @@ void ABaseCharacter::NotifyControllerChanged()
 			}
 		}
 	}
-}
-
-
-
-float ABaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	Stats.Health = FMath::Clamp(Stats.Health - DamageAmount, 0.0f, Stats.MaxHealth);
-	UE_LOG(LogTemp,Warning,TEXT("Damage: %f"),ActualDamage);
-	
-	//ProcessHitReaction(DamageAmount, DamageEvent, EventInstigator, DamageCauser); Error Detected (Crash)
-	
-	return ActualDamage;
 }
 
 void ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)

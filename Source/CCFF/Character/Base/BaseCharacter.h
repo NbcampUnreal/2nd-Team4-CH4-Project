@@ -9,7 +9,9 @@
 #include "CharacterAnim.h"
 #include "CharacterEnum.h"
 #include "BattleModifiers.h"
+#include "DamageAble.h"
 #include "InputActionValue.h"
+#include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
 class USpringArmComponent;
@@ -20,7 +22,7 @@ struct FInputActionValue;
 struct FHitBoxData;
 
 UCLASS()
-class CCFF_API ABaseCharacter : public ACharacter
+class CCFF_API ABaseCharacter : public ACharacter, public IDamageAble
 {
 	GENERATED_BODY()
 
@@ -30,10 +32,12 @@ public:
 #pragma region Override
 
 	// === Character Override Functions ===
-	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
+
+	//Interface Override Functions
+	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
 
 #pragma endregion
 
@@ -148,6 +152,8 @@ private:
 protected:
 	
 #pragma region AttackCollision
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
+	int32 CurrentActivatedCollision;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
 	TArray<UShapeComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
