@@ -25,8 +25,11 @@ class CCFF_API IDamageAble
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Damage")
-	float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent,
-		AController* EventInstigator, AActor* DamageCauser, FHitBoxData HitData);
+	float TakeDamage(float DamageAmount,
+		const FDamageEvent& DamageEvent,
+		AController* EventInstigator,
+		AActor* DamageCauser,
+		FHitBoxData& HitData);
 	
 	// virtual float ApplyDamage(AActor* DamagedActor, float BaseDamage, AController* EventInstigator,
 	// 	AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass, FHitBoxData HitData) = 0;

@@ -12,7 +12,6 @@ float UDamageHelper::ApplyDamage(AActor* DamagedActor,
 	TSubclassOf<UDamageType> DamageTypeClass,
 	FHitBoxData& HitData)
 {
-	UE_LOG(LogTemp, Display, TEXT("ApplyDamage_Implementation"));
 	if ( DamagedActor && (BaseDamage != 0.f) )
 	{
 		// make sure we have a good damage type
@@ -21,6 +20,7 @@ float UDamageHelper::ApplyDamage(AActor* DamagedActor,
 
 		if (DamagedActor->Implements<UDamageAble>())
 		{
+			UE_LOG(LogTemp, Display, TEXT("ApplyDamage"));
 			return IDamageAble::Execute_TakeDamage(DamagedActor, BaseDamage, DamageEvent, EventInstigator, DamageCauser,HitData);	
 		}
 	}

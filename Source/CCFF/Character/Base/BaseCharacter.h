@@ -37,7 +37,7 @@ public:
 	virtual void BeginPlay() override;
 
 	//Interface Override Functions
-	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData) override;
+	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
 
 #pragma endregion
 
