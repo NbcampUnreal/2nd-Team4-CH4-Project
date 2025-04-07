@@ -18,17 +18,17 @@ void UMainMenuWidget::NativeConstruct()
 
 	CurrentIndex = 0;
 
-	if (EnterArenaButton)
+	if (EnterArenaButton && !EnterArenaButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleEnterArenaClicked))
 	{
 		EnterArenaButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleEnterArenaClicked);
 	}
 
-	if (SettingButton)
+	if (SettingButton && !SettingButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleSettingClicked))
 	{
 		SettingButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleSettingClicked);
 	}
 
-	if (ExitGameButton)
+	if (ExitGameButton && !ExitGameButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleExitGameClicked))
 	{
 		ExitGameButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleExitGameClicked);
 	}
@@ -119,8 +119,16 @@ void UMainMenuWidget::HandleExitGameClicked()
 		{
 			ExitGamePopup->SetMessage(FText::FromString(TEXT("진짜 나감?")));
 			ExitGamePopup->AddToViewport();
-			ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &UMainMenuWidget::HandleExitGameConfirmed);
-			ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &UMainMenuWidget::HandleExitGameCanceled);
+
+			if (!ExitGamePopup->OnConfirmPopupConfirmed.IsAlreadyBound(this, &UMainMenuWidget::HandleExitGameConfirmed))
+			{
+				ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &UMainMenuWidget::HandleExitGameConfirmed);
+			}
+
+			if (!ExitGamePopup->OnConfirmPopupCanceled.IsAlreadyBound(this, &UMainMenuWidget::HandleExitGameCanceled))
+			{
+				ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &UMainMenuWidget::HandleExitGameCanceled);
+			}
 		}
 	}
 }

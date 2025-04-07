@@ -16,33 +16,50 @@ protected:
 
 public:
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ShowMainMenuWidget();
-
-	UFUNCTION(BlueprintCallable)
+	
+	UFUNCTION()
 	void ShowSelectModeWidget();
-
-	UFUNCTION(BlueprintCallable)
+	
+	UFUNCTION()
+	void ShowArenaWidget();
+	
+	UFUNCTION()
 	void ShowSettingsWidget();
-
-	UFUNCTION(BlueprintCallable)
+	
+	UFUNCTION()
 	void HideSettingsWidget();
 
-protected:
+	UFUNCTION()
+	void ReturnToPreviousWidget();
 
-	template<typename TWidget>
-	TWidget* SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder = 0);
+	UFUNCTION()
+	void ShowLoadingWidget();
+
+	UFUNCTION()
+	void HideLoadingWidget();
+
+protected:
+	void PushWidget(UUserWidget* WidgetClass);
+	void PopWidget();
+
+protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = UI)
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class USelectModeWidget> SelectModeWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = UI)
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UArenaModeWidget> ArenaModeWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class USettingsWidget> SettingsWidgetClass;
 
-private:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> LoadingWidgetClass;
 
 	UPROPERTY()
 	class UMainMenuWidget* MainMenuWidget;
@@ -51,31 +68,15 @@ private:
 	class USelectModeWidget* SelectModeWidget;
 
 	UPROPERTY()
+	class UArenaModeWidget* ArenaModeWidget;
+
+	UPROPERTY()
 	class USettingsWidget* SettingsWidget;
 
 	UPROPERTY()
-	UUserWidget* LastActiveWidget;
+	class UUserWidget* LoadingWidget;
+
+	UPROPERTY()
+	TArray<UUserWidget*> WidgetStack;
 
 };
-
-template<typename TWidget>
-inline TWidget* AMainMenuHUD::SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder)
-{
-	if (LastActiveWidget)
-	{
-		LastActiveWidget->RemoveFromParent();
-		LastActiveWidget = nullptr;
-	}
-
-	if (WidgetClass)
-	{
-		TargetWidget = CreateWidget<TWidget>(GetWorld(), WidgetClass);
-		if (TargetWidget)
-		{
-			TargetWidget->AddToViewport(ZOrder);
-			LastActiveWidget = TargetWidget;
-		}
-	}
-
-	return TargetWidget;
-}

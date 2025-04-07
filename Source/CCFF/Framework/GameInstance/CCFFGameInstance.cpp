@@ -4,14 +4,10 @@
 
 const int32 UCCFFGameInstance::CurrentSaveVersion = 1;
 
-void UCCFFGameInstance::SetNickname(const FString& NewNickname)
+void UCCFFGameInstance::Init()
 {
-	PlayerMeta.Nickname = NewNickname;
-}
-
-void UCCFFGameInstance::SetPlayerMeta(const FPlayerMetaData& NewPlayerMeta)
-{
-	PlayerMeta = NewPlayerMeta;
+	Super::Init();
+	LoadData();
 }
 
 void UCCFFGameInstance::SaveData()
@@ -21,14 +17,15 @@ void UCCFFGameInstance::SaveData()
 		return;
 	}
 
-	UCCFFSaveGame* SaveGameObject = Cast<UCCFFSaveGame>(UGameplayStatics::CreateSaveGameObject(UCCFFSaveGame::StaticClass()));
-	if (SaveGameObject)
+	UCCFFSaveGame* SaveInstance = Cast<UCCFFSaveGame>(UGameplayStatics::CreateSaveGameObject(UCCFFSaveGame::StaticClass()));
+	if (SaveInstance)
 	{
-		PlayerMeta.SaveVersion = CurrentSaveVersion;
-		SaveGameObject->SavedMetaData = PlayerMeta;
+		SaveInstance->SaveVersion = CurrentSaveVersion;
+		SaveInstance->PlayerMeta = PlayerMeta;
+		SaveInstance->ServerIP = ServerIP;
 
 		const FString SlotName = FString::Printf(TEXT("PlayerSaveSlot_%s"), *PlayerMeta.Nickname);
-		UGameplayStatics::SaveGameToSlot(SaveGameObject, SlotName, 0);
+		UGameplayStatics::SaveGameToSlot(SaveInstance , SlotName, 0);
 	}
 }
 
@@ -42,14 +39,46 @@ void UCCFFGameInstance::LoadData()
 	const FString SlotName = FString::Printf(TEXT("PlayerSaveSlot_%s"), *PlayerMeta.Nickname);
 	if (UGameplayStatics::DoesSaveGameExist(SlotName, 0))
 	{
-		UCCFFSaveGame* LoadedGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
-		if (LoadedGame)
+		UCCFFSaveGame* SaveInstance = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+		if (SaveInstance)
 		{
-			int32 LoadedGameVersion = LoadedGame->SavedMetaData.SaveVersion;
+			int32 LoadedGameVersion = SaveInstance->PlayerMeta.SaveVersion;
 			if (LoadedGameVersion <= CurrentSaveVersion)
 			{
-				PlayerMeta = LoadedGame->SavedMetaData;
+				PlayerMeta = SaveInstance->PlayerMeta;
+				ServerIP = SaveInstance->ServerIP;
 			}
 		}
 	}
+}
+
+void UCCFFGameInstance::StartFindSessions(APlayerController* OwnerPlayerController)
+{
+	TArray<FSessionInfo> DummySessions;
+
+	FSessionInfo Session;
+	Session.SessionName = TEXT("Test Room");
+	Session.CurrentPlayers = 0;
+	Session.MaxPlayers = 4;
+	Session.IPAddress = TEXT("127.0.0.1");
+
+	DummySessions.Add(Session);
+
+	OnSessionsFound.Broadcast(DummySessions);
+}
+
+void UCCFFGameInstance::SetNickname(const FString& NewNickname)
+{
+	PlayerMeta.Nickname = NewNickname;
+}
+
+void UCCFFGameInstance::SetPlayerMeta(const FPlayerMetaData& NewPlayerMeta)
+{
+	PlayerMeta = NewPlayerMeta;
+}
+
+void UCCFFGameInstance::SetServerIP(const FString& NewServerIP)
+{
+	ServerIP = NewServerIP;
+	SaveData();
 }
