@@ -13,6 +13,7 @@ struct FCharacterStats;
 struct FCharacterAnim;
 struct FAttackCollisionData;
 struct FBattleModifiers;
+struct FHitBoxData;
 
 UCLASS()
 class CCFF_API UDataLoaderSubSystem : public UGameInstanceSubsystem
@@ -37,6 +38,9 @@ public:
 	FAttackCollisionData InitializeAttackCollisionData(const FName RowName) const;
 
 	UFUNCTION(BlueprintCallable)
+	FHitBoxData InitializeHitBoxData(const FName RowName) const;
+
+	UFUNCTION(BlueprintCallable)
 	FCharacterAnim InitializeCharacterAnim(const FName RowName) const;
 	
 private:
@@ -50,6 +54,10 @@ private:
 	//CollisionData Data Table
 	UPROPERTY()
 	UDataTable* AttackCollisionDataTable;
+
+	//HitboxData Table
+	UPROPERTY()
+	UDataTable* HitBoxDataTable;
 
 	//CharacterAnim Data Table
 	UPROPERTY()

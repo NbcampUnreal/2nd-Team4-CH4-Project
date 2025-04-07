@@ -8,6 +8,7 @@
 #include "CharacterStats.h"
 #include "CharacterAnim.h"
 #include "CharacterEnum.h"
+#include "BattleModifiers.h"
 #include "InputActionValue.h"
 #include "BaseCharacter.generated.h"
 
@@ -16,6 +17,7 @@ class UCameraComponent;
 class UBattleComponent;
 class UItemInteractionComponent;
 struct FInputActionValue;
+struct FHitBoxData;
 
 UCLASS()
 class CCFF_API ABaseCharacter : public ACharacter
@@ -146,7 +148,10 @@ private:
 protected:
 	
 #pragma region AttackCollision
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
 	TArray<UShapeComponent*> AttackCollisions;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
+	TArray<FHitBoxData> HitBoxList;
 #pragma endregion
 	
 #pragma region Character Status
@@ -156,6 +161,9 @@ protected:
 	//Character State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	ECharacterState CurrentCharacterState;
+	//BattleModifier
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	FBattleModifiers CurrentBattleModifiers;
 	//Character Resistance State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	EResistanceState CurrentResistanceState;

@@ -28,10 +28,7 @@ struct FAttackCollisionData :public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FAttackCollisionData(): Shape(EAttackCollisionType::Box),Location(0.0f),Rotation(0.0f),Scale(0.0f), 
-							Type(EHitBoxType::Normal), Damage(0.0f), MinimumDamage(0.0f), GuardDamage(0.0f), GuardMeterDamage(0.0f),
-							Hitstun(0.0f), Hitlag(0.0f), VictimHitlag(0.0f), BlockStun(0.0f), 
-							KnockbackForce(0.0f), KnockbackAngle(0.0f), DiModifier(0.0f), GuardPushback(0.0f) {}
+	FAttackCollisionData(): Shape(EAttackCollisionType::Box),Location(0.0f),Rotation(0.0f),Scale(0.0f){}
 
 	// Collision type
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Transform")
@@ -44,6 +41,15 @@ public:
 	FRotator Rotation;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Transform")
 	FVector Scale;
+};
+
+USTRUCT(BlueprintType)
+struct FHitBoxData : public FTableRowBase
+{
+	GENERATED_BODY();
+public:
+	FHitBoxData(): Type(EHitBoxType::Normal), Damage(0.0f), MinimumDamage(0.0f), GuardDamage(0.0f), GuardMeterDamage(0.0f),Hitstun(0.0f), Hitlag(0.0f),
+					VictimHitlag(0.0f), BlockStun(0.0f), KnockbackForce(0.0f), KnockbackAngle(0.0f), DiModifier(0.0f), GuardPushback(0.0f) {}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type")
 	EHitBoxType Type;

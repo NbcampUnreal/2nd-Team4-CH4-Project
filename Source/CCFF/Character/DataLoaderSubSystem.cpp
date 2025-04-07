@@ -16,7 +16,7 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 		StatDataTable=StatDataFinder.Object;
 	}
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> MovementStatDataFinder(TEXT("/Game/Character/DataTables/DT_MovementsStats.DT_MovementsStats"));
+	static ConstructorHelpers::FObjectFinder<UDataTable> MovementStatDataFinder(TEXT("/Game/CCFF/DataTables/DT_MovementStat.DT_MovementStat"));
 	if (MovementStatDataFinder.Succeeded())
 	{
 		MovementStatsDataTable=MovementStatDataFinder.Object;
@@ -34,6 +34,13 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 	if (AttackCollisionDataFinder.Succeeded())
 	{
 		AttackCollisionDataTable=AttackCollisionDataFinder.Object;
+	}
+	
+	// Find Character Stats Data Table and Initialize Data Table Variable
+	static ConstructorHelpers::FObjectFinder<UDataTable> HitDataFinder(TEXT("/Game/CCFF/DataTables/DT_HitData.DT_HitData"));
+	if (HitDataFinder.Succeeded())
+	{
+		HitBoxDataTable=HitDataFinder.Object;
 	}
 	
 	// Find BattleModifiers Data Table and Initialize Data Table Variable
@@ -103,6 +110,20 @@ FAttackCollisionData UDataLoaderSubSystem::InitializeAttackCollisionData(const F
 		}
 	}
 	return FAttackCollisionData();
+}
+
+FHitBoxData UDataLoaderSubSystem::InitializeHitBoxData(const FName RowName) const
+{
+	if (RowName.IsValid()&&HitBoxDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		if (FHitBoxData* TempStats=HitBoxDataTable->FindRow<FHitBoxData>(RowName,TEXT("")))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			return *TempStats;
+		}
+	}
+	return FHitBoxData();
 }
 
 FCharacterAnim UDataLoaderSubSystem::InitializeCharacterAnim(const FName RowName) const

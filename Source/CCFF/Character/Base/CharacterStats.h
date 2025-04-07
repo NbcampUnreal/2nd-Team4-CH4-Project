@@ -57,7 +57,9 @@ USTRUCT(BlueprintType)
 struct FCharacterMovementStats :public FTableRowBase
 {
 	GENERATED_BODY();
-
+public:
+	FCharacterMovementStats() : Gravity(0),GroundFriction(0),AirFriction(0),MaxAirSpeed(0),
+								MaxWalkSpeed(0),MaxRunSpeed(0),MaxFallSpeed(0) {}
 	// Movement property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
 	float Gravity;

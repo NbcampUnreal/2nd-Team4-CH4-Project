@@ -11,7 +11,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "BattleComponent.h"
-#include "CharacterAnim.h"
 #include "InputActionValue.h"
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
@@ -119,7 +118,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	// Apply Damage
 	UGameplayStatics::ApplyDamage(
 		OtherActor,                // 피해 대상
-		Stats.AttackPower,         // 공격력 (Character Stats 기반)
+		Stats.DamageModifier*100,  // 공격력 (Character Stats 기반)
 		GetController(),           // 공격한 플레이어의 컨트롤러
 		this,                      // 공격한 액터 (자기 자신)
 		UDamageType::StaticClass() // 기본 데미지 타입
@@ -181,17 +180,19 @@ void ABaseCharacter::PreLoadAttackCollisions()
 			{
 				const int32 n=Type->NumEnums();
 				AttackCollisions.SetNum(n-1);
+				HitBoxList.SetNum(n-1);
 				for (int32 i=0;i<n-1;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
 					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
 					const FName RowName=FName(CharacterType+"_"+TypeName);
 					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
+					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
 					if (Data.Scale!=FVector::ZeroVector)
 					{
 						//Create Collision and Attacth to Socket
 						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
-						AttackCollision->AttachToComponent(GetMesh(),FAttachmentTransformRules::KeepRelativeTransform,"Root");
+						AttackCollision->SetupAttachment(GetMesh());
 						AttackCollision->SetRelativeLocation(Data.Location);
 						AttackCollision->SetRelativeScale3D(Data.Scale);
 						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -201,6 +202,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 						AddInstanceComponent(AttackCollision);
 						AttackCollision->RegisterComponent();
 						AttackCollisions[i]=AttackCollision;
+						HitBoxList[i]=HitBoxData;
 					}
 				}
 			}
@@ -480,7 +482,7 @@ void ABaseCharacter::OnAttackBlocked() const
 void ABaseCharacter::ProcessHitReaction(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	ABaseCharacter* AttackData = Cast<ABaseCharacter>(DamageCauser);
-	if (AttackData && AttackData->)
+	if (AttackData && AttackData)
 	{
 		ReceiveGrabbed();
 		return;
