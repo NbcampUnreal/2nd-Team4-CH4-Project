@@ -1,7 +1,10 @@
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Components/TextBlock.h"
 
-void UBaseInGameWidget::UpdatePlayerInfo_Implementation(int Health, float RemainingTime)
+void UBaseInGameWidget::UpdateTimerText_Implementation(const FString& NewTime)
 {
-	// TODO :: UTextBlock Add
+	if (TimerText)
+	{
+		TimerText->SetText(FText::FromString(NewTime));
+	}
 }

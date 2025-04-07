@@ -13,17 +13,24 @@ class CCFF_API ATrainingGameState : public ABaseInGameState
 public:
 	ATrainingGameState();
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+	UFUNCTION(BlueprintCallable, Category = "Training Stats")
 	void AddDamage(float DamageAmount);
-	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+
+	UFUNCTION(BlueprintCallable, Category = "Training Stats")
 	void UpdateMaxCombo(int32 CurrentCombo);
-	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+
+	UFUNCTION(BlueprintCallable, Category = "Training Stats")
 	void CalculateDPS(float TrainingTime);
 
-	UPROPERTY(VisibleAnywhere, Category = "CCFF|Training")
+	UFUNCTION(BlueprintCallable, Category = "Training Stats")
+	void UpdateTrainingStats(float TrainingTime);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
 	float TotalDamage;
-	UPROPERTY(VisibleAnywhere, Category = "CCFF|Training")
+
+	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
 	int32 MaxCombo;
-	UPROPERTY(VisibleAnywhere, Category = "CCFF|Training")
+
+	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
 	float DPS;
 };

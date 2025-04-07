@@ -1,9 +1,10 @@
-#include "Framework/UI/TogglePauseWidget.h"  
-#include "Components/Button.h"  
-#include "Kismet/GameplayStatics.h"
-#include "Framework/HUD/BaseInGameHUD.h"
+﻿#include "Framework/UI/TogglePauseWidget.h"  
+#include "Framework/UI/ConfirmPopupWidget.h"
 #include "Framework/UI/SettingsWidget.h"
+#include "Framework/HUD/BaseInGameHUD.h"
 #include "Character/Base/CharacterController.h"
+#include "Components/Button.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void UTogglePauseWidget::NativeConstruct()
@@ -18,6 +19,8 @@ void UTogglePauseWidget::NativeConstruct()
 
    if (IsValid(LobbyButton))
 	   LobbyButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnLobbyButtonClicked);
+
+   bIsFocusable = true;
 }
 
 void UTogglePauseWidget::OnBackButtonClicked()
@@ -52,5 +55,33 @@ void UTogglePauseWidget::OnSettingButtonClicked()
 
 void UTogglePauseWidget::OnLobbyButtonClicked()  
 {
+	// TODO :: not yet..
+	if (!MoveLobbyPopup && MoveLobbyPopupClass)
+	{
+		MoveLobbyPopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), MoveLobbyPopupClass);
+		if (UConfirmPopupWidget* ConfirmPopup = Cast<UConfirmPopupWidget>(MoveLobbyPopup))
+		{
+			ConfirmPopup->SetMessage(FText::FromString(TEXT("로비 ㄱ?")));
+			ConfirmPopup->AddToViewport(10);
+			ConfirmPopup->OnConfirmPopupConfirmed.AddDynamic(this, &UTogglePauseWidget::OnMoveLobbyConfirmed);
+			ConfirmPopup->OnConfirmPopupCanceled.AddDynamic(this, &UTogglePauseWidget::OnMoveLobbyCanceled);
+		}
+	}
+}
+
+void UTogglePauseWidget::OnMoveLobbyConfirmed()
+{
 	UGameplayStatics::OpenLevel(this, FName(TEXT("MainMenuMap")));
+}
+
+void UTogglePauseWidget::OnMoveLobbyCanceled()
+{
+	if (MoveLobbyPopup)
+	{
+		//MoveLobbyPopup->RemoveFromParent();
+		MoveLobbyPopup->SetVisibility(ESlateVisibility::Collapsed);
+		MoveLobbyPopup = nullptr;
+	}
+
+	SetKeyboardFocus();
 }

@@ -6,6 +6,8 @@
 
 void ABaseInGameHUD::BeginPlay()
 {
+	Super::BeginPlay();
+
 	BaseInGameWidget = CreateAndAddWidget<UBaseInGameWidget>(BaseInGameWidgetClass, 0, ESlateVisibility::Visible);
 	TogglePauseWidget = CreateAndAddWidget<UTogglePauseWidget>(TogglePauseWidgetClass, 1, ESlateVisibility::Collapsed);
 	SettingsWidget = CreateAndAddWidget<USettingsWidget>(SettingsWidgetClass, 2, ESlateVisibility::Collapsed);

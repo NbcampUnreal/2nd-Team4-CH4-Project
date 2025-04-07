@@ -116,7 +116,7 @@ void USettingsWidget::OnCancelClicked()
 			HUD->HideSettingsWidget();
 		}*/
 
-		// Dahye
+		// Notice :: Dahye
 		AHUD* CurrentHUD = PlayerController->GetHUD();
 		if (CurrentHUD)
 		{

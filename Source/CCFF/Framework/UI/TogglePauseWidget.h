@@ -5,6 +5,7 @@
 #include "TogglePauseWidget.generated.h"
 
 class UButton;
+class UConfirmPopupWidget;
 
 UCLASS()
 class CCFF_API UTogglePauseWidget : public UUserWidget
@@ -23,6 +24,12 @@ protected:
 	UFUNCTION()
 	void OnLobbyButtonClicked();
 
+	UFUNCTION()
+	void OnMoveLobbyConfirmed();
+
+	UFUNCTION()
+	void OnMoveLobbyCanceled();
+
 	UPROPERTY(meta = (BindWidget))
 	UButton* BackButton;
 
@@ -31,4 +38,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* LobbyButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CCFF|UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UConfirmPopupWidget> MoveLobbyPopupClass;
+
+	UPROPERTY()
+	UConfirmPopupWidget* MoveLobbyPopup;
 };

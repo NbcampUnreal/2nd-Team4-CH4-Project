@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "BaseInGameWidget.generated.h"
 
+class UTextBlock;
 
 UCLASS()
 class CCFF_API UBaseInGameWidget : public UUserWidget
@@ -11,7 +12,11 @@ class CCFF_API UBaseInGameWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintNativeEvent, Category = "CCFF|HUD")
-	void UpdatePlayerInfo(int Health, float RemainingTime);
-	virtual void UpdatePlayerInfo_Implementation(int Health, float RemainingTime);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "CCFF|UI")
+	void UpdateTimerText(const FString& NewTime);
+	virtual void UpdateTimerText_Implementation(const FString& NewTime);
+
+protected:
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* TimerText;
 };
