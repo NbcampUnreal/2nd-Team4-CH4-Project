@@ -2,6 +2,7 @@
 #include "Items/Class/SpawnableItem.h"
 #include "Items/Manager/ItemManager.h"
 #include "Items/Manager/ItemPoolManager.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/GameInstance.h"
 
 AItemSpawner::AItemSpawner()
@@ -14,6 +15,9 @@ AItemSpawner::AItemSpawner()
     StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpawnerMesh"));
     StaticMesh->SetupAttachment(Scene);
     StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+    WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("CoolDownWidget"));
+	WidgetComponent->SetupAttachment(Scene);
 }
 
 void AItemSpawner::BeginPlay()

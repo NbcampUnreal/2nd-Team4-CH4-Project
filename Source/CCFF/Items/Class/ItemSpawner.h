@@ -8,6 +8,7 @@
 class ASpawnableItem;
 class UItemManager;
 class UItemPoolManager;
+class UWidgetComponent;
 
 UCLASS()
 class CCFF_API AItemSpawner : public AActor
@@ -17,6 +18,8 @@ class CCFF_API AItemSpawner : public AActor
 public:
 	AItemSpawner();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|UI")
+	UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|Spawn")
 	UDataTable* ItemDataTable;
 
