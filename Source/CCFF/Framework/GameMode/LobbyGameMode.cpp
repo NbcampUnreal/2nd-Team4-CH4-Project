@@ -9,9 +9,9 @@ ALobbyGameMode::ALobbyGameMode()
 	if (AvailableMapPaths.Num() == 0)
 	{
 		AvailableMapPaths = {
-			TEXT("/Game/CCFF/Maps/LobbyMap"),
-			TEXT("/Game/CCFF/Maps/LobbyMap"),
-			TEXT("/Game/CCFF/Maps/LobbyMap")
+			TEXT("/Game/CCFF/Maps/DesserMap"),
+			TEXT("/Game/CCFF/Maps/MushroomMap"),
+			TEXT("/Game/CCFF/Maps/RiverMap")
 		};
 	}
 }
