@@ -14,7 +14,7 @@ struct FBattleModifiers : public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FBattleModifiers() : CounterDamageModifier(0),CounterHitStunModifier(0),ComboCount(0),ComboDamageModifier(0),ComboHitStunModifier(0),
+	FBattleModifiers() : CounterDamageModifier(0), CounterHitlagModifier(0), CounterHitstunModifier(0), ComboCount(0), ComboDamageModifier(0), ComboHitstunModifier(0),
 						 ComboDiModifier(0),DiMultiplier(0),MaxDiBonusThreshold(0),MaxDiMultiplier(0),ArmorHitlag(0),ArmorDamageModifier(0),
 						 MaxComboBonusThreshold(0),MaxSuperMeterMultiplier(0),BurstGain(0) {}
 	
@@ -22,7 +22,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Counter")
 	float CounterDamageModifier;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Counter")
-	float CounterHitStunModifier;
+	float CounterHitlagModifier;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Counter")
+	float CounterHitstunModifier;
 	
 	// Combo Modifiers
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
@@ -30,7 +32,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
 	float ComboDamageModifier;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
-	float ComboHitStunModifier;
+	float ComboHitstunModifier;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
 	float ComboDiModifier;
 	

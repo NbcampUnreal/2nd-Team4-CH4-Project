@@ -4,7 +4,7 @@
 
 ATitleGameMode::ATitleGameMode()
 {
-	DefaultPawnClass = nullptr;
 	PlayerControllerClass = ATitlePlayerController::StaticClass();
+	DefaultPawnClass = nullptr;
 	HUDClass = ATitleHUD::StaticClass();
 }

@@ -10,11 +10,18 @@ class CCFF_API ATitlePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
-protected:
+public:
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void JoinServer(const FString& InIPAddress);
+
+protected:
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION()
 	void HandleAnyKey(FKey PressedKey);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<class ATitleHUD> TitleHUD;
 };

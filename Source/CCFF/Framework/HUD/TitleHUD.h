@@ -5,16 +5,25 @@
 #include "Framework/UI/BaseUserWidget.h"
 #include "TitleHUD.generated.h"
 
+UENUM(BlueprintType)
+enum class ETitleUIState : uint8
+{
+	ETITLE_PRESSSTART	UMETA(DisplayName = "Press Start"),
+	ETITLE_LOGIN		UMETA(DisplayName = "Login"),
+	ETITLE_MAX UMETA(Hidden)
+};
+
 UCLASS()
 class CCFF_API ATitleHUD : public AHUD
 {
 	GENERATED_BODY()
 	
 public:
+	ATitleHUD();
 	virtual void BeginPlay() override;
 
-	void SwitchUI(EOutGameUIState UIState);
 	void NotifyAnyKeyPressed();
+	void SwitchUI(ETitleUIState NewState);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -26,12 +35,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> LoginWidgetClass;
 
-private:
-	UPROPERTY()
-	UUserWidget* TitleWidgetInstance = nullptr;
+	UPROPERTY(VisibleAnyWhere, BlueprintReadWrite, Category = "UI")
+	TObjectPtr<UUserWidget> TitleWidgetInstance = nullptr;
 
-	UPROPERTY()
-	UUserWidget* SubWidget = nullptr;
+	UPROPERTY(VisibleAnyWhere, BlueprintReadWrite, Category = "UI")
+	TObjectPtr<UUserWidget> SubWidget = nullptr;
+
+private:
+	void RemoveCurrentWidget();
 
 	UFUNCTION()
 	void HandleLoginSuccess();

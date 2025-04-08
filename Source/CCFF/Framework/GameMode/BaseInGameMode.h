@@ -23,10 +23,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|GameMode|Round")
 	virtual void CheckGameConditions();
 
-protected:
-	UPROPERTY(EditAnywhere, Category = "CCFF|GameMode|Round")
-	float RoundDuration;
+	UPROPERTY()
+	float RoundTime;
 
+protected:
 	FTimerHandle GameTimerHandle;
 	FString MyClassName;
 

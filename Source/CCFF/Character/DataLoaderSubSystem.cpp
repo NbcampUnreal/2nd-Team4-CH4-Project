@@ -16,10 +16,10 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 		StatDataTable=StatDataFinder.Object;
 	}
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> MovementStatDataFinder(TEXT("/Game/CCFF/DataTables/DT_MovementStat.DT_MovementStat"));
-	if (MovementStatDataFinder.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UDataTable> BalanceStatDataFinder(TEXT("/Game/CCFF/DataTables/DT_BalanceStats.DT_BalanceStats"));
+	if (BalanceStatDataFinder.Succeeded())
 	{
-		MovementStatsDataTable=MovementStatDataFinder.Object;
+		BalanceStatsDataTable=BalanceStatDataFinder.Object;
 	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
@@ -70,18 +70,18 @@ FCharacterStats UDataLoaderSubSystem::InitializeStat(const FName RowName) const
 	return FCharacterStats();
 }
 
-FCharacterMovementStats UDataLoaderSubSystem::InitializeMovementStat(const FName RowName) const
+FCharacterBalanceStats UDataLoaderSubSystem::InitializeBalanceStat(const FName RowName) const
 {
-	if (RowName.IsValid()&&MovementStatsDataTable)
+	if (RowName.IsValid()&&BalanceStatsDataTable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
-		if (FCharacterMovementStats* TempStats=MovementStatsDataTable->FindRow<FCharacterMovementStats>(RowName,TEXT("")))
+		if (FCharacterBalanceStats* TempStats=BalanceStatsDataTable->FindRow<FCharacterBalanceStats>(RowName,TEXT("")))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
-	return FCharacterMovementStats();
+	return FCharacterBalanceStats();
 }
 
 FBattleModifiers UDataLoaderSubSystem::InitializeBattleModifiers(const FName RowName) const

@@ -6,8 +6,8 @@ ABaseInGameMode::ABaseInGameMode(const FObjectInitializer & ObjectInitializer) :
 {
 	GameStateClass = ABaseInGameState::StaticClass();
 
-	RoundDuration = 60.0f;
 	MyClassName = "BaseGameMode";
+	RoundTime = 60.0f;  // Default Value
 }
 
 void ABaseInGameMode::BeginPlay()
@@ -35,10 +35,20 @@ void ABaseInGameMode::StartRound()
 {
 	UE_LOG(LogTemp, Log, TEXT("[%s] Start Round!"), *MyClassName);
 
+	if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
+	{
+		BGameState->InitializeGameState();
+		BGameState->RoundProgress = ERoundProgress::InProgress;
+	}
+
 	// CheckCondition every second
 	GetWorldTimerManager().SetTimer(
-		GameTimerHandle, this, &ABaseInGameMode::CheckGameConditions, 1.0f, true
-		);
+		GameTimerHandle,
+		this,
+		&ABaseInGameMode::CheckGameConditions,
+		1.0f,
+		true
+	);
 }
 
 void ABaseInGameMode::EndRound()
@@ -46,9 +56,20 @@ void ABaseInGameMode::EndRound()
 	UE_LOG(LogTemp, Log, TEXT("[%s] End Round!"), *MyClassName);
 
 	GetWorldTimerManager().ClearTimer(GameTimerHandle);
+	
+	if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
+	{
+		BGameState->RoundProgress = ERoundProgress::Ended;
+	}
 }
 
 void ABaseInGameMode::CheckGameConditions()
 {
-	// Call EndRound() when condition is true
+	if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
+	{
+		if (BGameState->RemainingTime <= 0.0f)
+		{
+			EndRound();
+		}
+	}
 }
