@@ -361,7 +361,7 @@ void ABaseCharacter::NotifyControllerChanged()
 	}
 }
 
-void ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
+float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
 	float NewHealth = FMath::Clamp(Stats.Health - ScaledDamage, 0.0f, Stats.MaxHealth);
@@ -373,6 +373,7 @@ void ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 	{
 		OnDeath();
 	}
+	return ScaledDamage;
 }
 
 void ABaseCharacter::TakeHitstun(int32 Hitstun)
@@ -547,7 +548,7 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	TakeKnockback(HitData.KnockbackAngle, HitData.KnockbackForce);
 	BattleComponent->IncreaseCombo();
 
-	Attacker->OnAttackHit(Damage);
+	Attacker->OnAttackHit(TakeNormalDamage(Damage, HitData.MinimumDamage));
 	return;
 }
 

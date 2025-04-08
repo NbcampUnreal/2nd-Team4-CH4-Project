@@ -106,7 +106,7 @@ private:
 #pragma region CombatEffect
 	// === Damage & Reaction ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeNormalDamage(float Damage, float MinimumDamage);
+	float TakeNormalDamage(float Damage, float MinimumDamage);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void TakeHitstun(int32 Hitstun);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
