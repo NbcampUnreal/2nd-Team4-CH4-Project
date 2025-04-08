@@ -84,4 +84,10 @@ public:
 	float DiModifier;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Knockback")
 	float GuardPushback;
+
+
+	FVector GetWorldKnockbackDirection(const AActor* ReferenceActor) const
+	{
+		return ReferenceActor->GetActorRotation().RotateVector(KnockbackAngle);
+	}
 };

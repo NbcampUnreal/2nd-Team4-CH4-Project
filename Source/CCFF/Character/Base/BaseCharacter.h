@@ -70,8 +70,13 @@ protected:
 
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
+
 	UPROPERTY()
 	FVector StoredVelocity;
+	UPROPERTY()
+	FVector StoredKnockbackAngle;
+	UPROPERTY()
+	float StoredKnockbackForce;
 #pragma endregion
 
 #pragma region DataPreLoad
@@ -117,6 +122,10 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void EndHitlag();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
+	void TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce);
+	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
+	void EndHitlagAndTakeKnocback();
+	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void TakeBlockstun(int32 Blockstun);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void EndBlockstun();
@@ -144,7 +153,7 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void ReceiveGrabbed();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void Clash(FHitBoxData& HitData);
+	void Clash(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath() const;
 

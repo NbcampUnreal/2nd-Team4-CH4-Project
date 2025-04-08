@@ -401,6 +401,7 @@ void ABaseCharacter::TakeHitstun(int32 Hitstun)
 
 	float ScaledHitstun = BattleComponent->ComboStaleHitstun(Hitstun);
 	CurrentCharacterState = ECharacterState::Hitted;
+	BattleComponent->IncreaseCombo();
 
 	GetWorldTimerManager().ClearTimer(HitstunTimerHandle);
 
@@ -427,11 +428,9 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
-		if (Movement->MovementMode != MOVE_None)
-		{
-			StoredVelocity = Movement->Velocity;
-			Movement->DisableMovement();
-		}
+		StoredVelocity = Movement->Velocity;
+		Movement->StopMovementImmediately();
+		Movement->SetMovementMode(MOVE_Flying);
 	}
 	GetMesh()->bPauseAnims = true;
 
@@ -446,6 +445,39 @@ void ABaseCharacter::EndHitlag()
 		Movement->SetMovementMode(MOVE_Walking);
 		Movement->Velocity = StoredVelocity;
 	}
+	GetMesh()->bPauseAnims = false;
+}
+
+void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce)
+{
+	UE_LOG(LogTemp, Warning, TEXT("TakeHitlagAndStoredKnockback"));
+	if (Hitlag == 0)
+	{
+		return;
+		TakeKnockback(KnockbackAngle, KnockbackForce);
+	}
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->StopMovementImmediately();
+		Movement->SetMovementMode(MOVE_Flying);
+	}
+	StoredKnockbackAngle = KnockbackAngle;
+	StoredKnockbackForce = KnockbackForce;
+
+	GetMesh()->bPauseAnims = true;
+
+	GetWorldTimerManager().ClearTimer(HitlagTimerHandle);
+	GetWorldTimerManager().SetTimer(HitlagTimerHandle, this, &ABaseCharacter::EndHitlagAndTakeKnocback, Hitlag / 60.0f, false);
+}
+
+void ABaseCharacter::EndHitlagAndTakeKnocback()
+{
+	UE_LOG(LogTemp, Warning, TEXT("EndHitlagAndTakeKnocback"));
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->SetMovementMode(MOVE_Walking);
+	}
+	TakeKnockback(StoredKnockbackAngle, StoredKnockbackForce);
 	GetMesh()->bPauseAnims = false;
 }
 
@@ -473,6 +505,7 @@ void ABaseCharacter::EndBlockstun()
 void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce)
 {
 	FVector KnockbackVelocity = BattleComponent->KnockbackDir(KnockbackAngle, KnockbackForce, CurrentMoveInput, BalanceStats.DiModifier);
+	UE_LOG(LogTemp, Warning, TEXT("KnockbackAngle: %s, KnockbackForce: %f"), *KnockbackVelocity.ToString(), KnockbackForce);
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->StopMovementImmediately();
@@ -548,20 +581,18 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	int32 VictimHitlag = HitData.VictimHitlag;
 	int32 Hitstun = HitData.Hitstun;
 	float Damage = HitData.Damage;
-
 	if (CurrentCharacterState == ECharacterState::Attack || CurrentCharacterState == ECharacterState::Grab)
 	{
-		// VictimHitlag = FMath::RoundToInt(VictimHitlag * CurrentBattleModifiers.CounterHitlagModifier);
-		// Hitstun = FMath::RoundToInt(Hitstun * CurrentBattleModifiers.CounterHitlagModifier);
-		// Damage *= CurrentBattleModifiers.CounterDamageModifier;
-		// //카운터 사운드
+		VictimHitlag = FMath::RoundToInt(VictimHitlag * BattleComponent->Modifiers.CounterHitlagModifier);
+		Hitstun = FMath::RoundToInt(Hitstun * BattleComponent->Modifiers.CounterHitlagModifier);
+		Damage *= BattleComponent->Modifiers.CounterDamageModifier;
+		//카운터 사운드
 	}
 
 	CurrentResistanceState = EResistanceState::Normal;
-	TakeHitlag(VictimHitlag);
+	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 	TakeHitstun(Hitstun);
 	TakeNormalDamage(Damage, HitData.MinimumDamage);
-	TakeKnockback(HitData.KnockbackAngle, HitData.KnockbackForce);
 	BattleComponent->IncreaseCombo();
 
 	Attacker->OnAttackHit(TakeNormalDamage(Damage, HitData.MinimumDamage));
@@ -570,21 +601,21 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 
 void ABaseCharacter::ReceiveArmorHit(ABaseCharacter* Attacker, FHitBoxData& HitData)
 {
-	// float ArmorDamage = HitData.Damage * CurrentBattleModifiers.ArmorDamageModifier;
-	// TakeHitlag(CurrentBattleModifiers.ArmorHitlag);
-	// TakeNormalDamage(ArmorDamage, 0.0f);
-	// //아머 이펙트
-	// //아머 사운드
-	// Attacker->OnAttackHit(ArmorDamage);
+	float ArmorDamage = HitData.Damage * BattleComponent->Modifiers.ArmorDamageModifier;
+	TakeHitlag(BattleComponent->Modifiers.ArmorHitlag);
+	TakeNormalDamage(ArmorDamage, 0.0f);
+	//아머 이펙트
+	//아머 사운드
+	Attacker->OnAttackHit(ArmorDamage);
 	return;
 }
 
 void ABaseCharacter::ReceiveBlock(ABaseCharacter* Attacker, FHitBoxData& HitData)
 {
+	TakeKnockback(HitData.GetWorldKnockbackDirection(Attacker), HitData.GuardPushback);
 	TakeBlockstun(HitData.Blockstun);
 	TakeNormalDamage(HitData.GuardDamage, 0.0f);
 	ModifyGuardMeter(-HitData.GuardMeterDamage);
-	TakeKnockback(HitData.KnockbackAngle, HitData.GuardPushback);
 	//가드 이펙트
 	//가드 사운드
 	Attacker->OnAttackBlocked();
@@ -605,10 +636,9 @@ void ABaseCharacter::ReceiveGrabbed()
 	CurrentCharacterState = ECharacterState::Grabbed;
 }
 
-void ABaseCharacter::Clash(FHitBoxData& HitData)
+void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 {
-	TakeHitlag(HitBoxList[CurrentActivatedCollision].Hitlag);
-	TakeKnockback(HitData.KnockbackAngle, HitData.KnockbackForce);
+	TakeHitlagAndStoredKnockback(HitBoxList[CurrentActivatedCollision].Hitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 }
 
 void ABaseCharacter::OnDeath() const
