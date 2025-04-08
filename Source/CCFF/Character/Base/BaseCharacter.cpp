@@ -86,7 +86,7 @@ float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamag
 	AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
+	
 	ABaseCharacter* Attacker = Cast<ABaseCharacter>(DamageCauser);
 	ProcessHitReaction(Attacker, HitData);
 	
@@ -380,7 +380,7 @@ void ABaseCharacter::NotifyControllerChanged()
 float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
-	float NewHealth = FMath::Clamp(Stats.Health - ScaledDamage, 0.0f, Stats.MaxHealth);
+	float NewHealth = FMath::Clamp(Stats.Health - ScaledDamage * Stats.DamageTakenModifier, 0.0f, Stats.MaxHealth);
 	Stats.Health = NewHealth;
 
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
