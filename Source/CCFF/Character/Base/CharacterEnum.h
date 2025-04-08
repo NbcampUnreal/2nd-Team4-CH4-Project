@@ -9,7 +9,7 @@ enum class ECharacterState : uint8
 	Normal		UMETA(DisplayName = "Normal"),
 	Hitted		UMETA(DisplayName = "Hitted"),
 	Block 		UMETA(DisplayName = "Block"),
-	BlockStun	UMETA(DisplayName = "BlockStun"),
+	Blockstun	UMETA(DisplayName = "Blockstun"),
 	Dodge		UMETA(DisplayName = "Dodge"),
 	Attack		UMETA(DisplayName = "Attack"),
 	Grab		UMETA(DisplayName = "Grab"),

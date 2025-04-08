@@ -60,19 +60,21 @@ public:
 #pragma endregion 
 	
 protected:
-
 #pragma region Timer
 	// === Timers ===
 	UPROPERTY()
 	FTimerHandle HitstunTimerHandle;
 	UPROPERTY()
-	FTimerHandle HitLagTimerHandle;
+	FTimerHandle HitlagTimerHandle;
 	UPROPERTY()
-	FTimerHandle BlockStunTimerHandle;
+	FTimerHandle BlockstunTimerHandle;
+
+	UPROPERTY()
+	FVector2D CurrentMoveInput;
 	UPROPERTY()
 	FVector StoredVelocity;
 #pragma endregion
-protected:
+
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterStats();
@@ -93,14 +95,15 @@ protected:
 	void StopJump(const FInputActionValue& Value);
 
 #pragma endregion
+
 #pragma region AttackFunctions
 	void Attack1(const FInputActionValue& Value);
 	void Attack2(const FInputActionValue& Value);
 	void Attack3(const FInputActionValue& Value);
 #pragma endregion
-#pragma region CombatEffect
 
 private:
+#pragma region CombatEffect
 	// === Damage & Reaction ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void TakeNormalDamage(float Damage, float MinimumDamage);
@@ -109,48 +112,44 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void EndHitstun();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeHitLag(int32 Hitlag);
+	void TakeHitlag(int32 Hitlag);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void EndHitLag();
+	void EndHitlag();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeBlockStun(int32 BlockStun);
+	void TakeBlockstun(int32 Blockstun);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void EndBlockStun();
+	void EndBlockstun();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeKnockback(FVector KnockbackAngle, float KnockbackForce, FVector2D DIInput);
+	void TakeKnockback(FVector KnockbackAngle, float KnockbackForce);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void GuardCrush();
 
 #pragma endregion
 
 #pragma region CombatReaction
-
-private:
 	// === Hit Reaction ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnAttackHit() const;
+	void OnAttackHit(float Damage);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnAttackBlocked() const;
+	void OnAttackBlocked();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ProcessHitReaction(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+	void ProcessHitReaction(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveNormalHit(AActor* DamageCauser);
+	void ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveArmorHit(float Damage) const;
+	void ReceiveArmorHit(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveBlock(AActor* DamageCauser) const;
+	void ReceiveBlock(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void ReceiveGrabbed();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void Clash(AActor* DamageCauser) const;
+	void Clash(FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath() const;
 
-#pragma endregion
+#pragma endregion	
 
-	
 protected:
-	
 #pragma region AttackCollision
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
 	int32 CurrentActivatedCollision;
@@ -182,7 +181,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterAnim Anim;
 #pragma endregion
-protected:
+
 #pragma region Components
 	// === Components ===
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -196,7 +195,6 @@ protected:
 #pragma endregion
 	
 private:
-
 #pragma region Meter
 	// === Meter Handling ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")

@@ -13,6 +13,7 @@ float UBattleComponent::GetMeterGainFromDamageTaken(float Damage) const
 {
 	const float ComboRatio = FMath::Clamp((float)Modifiers.ComboCount / Modifiers.MaxComboBonusThreshold, 0.0f, 1.0f);
 	const float Scaling = FMath::Lerp(1.0f, Modifiers.MaxSuperMeterMultiplier, ComboRatio);
+
 	const float SuperMeterGain = Damage * 0.5f * Scaling;
 	return SuperMeterGain;
 }
@@ -26,7 +27,6 @@ FVector UBattleComponent::KnockbackDir(FVector KnockbackAngle, float KnockbackFo
 	FVector DiAdjustment = FVector(NormalizedDi.X, NormalizedDi.Y, 0.0f) * Scaling * DiModifier;
 
 	FVector FinalKnockback = KnockbackDir * KnockbackForce + DiAdjustment;
-
 	return FinalKnockback;
 }
 
@@ -46,7 +46,7 @@ int32 UBattleComponent::ComboStaleHitstun(int32 Hitstun) const
 	{
 		return Hitstun;
 	}
-	float ScaledStun = Hitstun * FMath::Pow(Modifiers.ComboHitStunModifier, Modifiers.ComboCount);
+	float ScaledStun = Hitstun * FMath::Pow(Modifiers.ComboHitstunModifier, Modifiers.ComboCount);
 	return FMath::Max(FMath::RoundToInt(ScaledStun), 1);
 }
 
