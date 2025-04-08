@@ -12,14 +12,31 @@ class CCFF_API ATrainingGameMode : public ABaseInGameMode
 
 public:
 	ATrainingGameMode(const FObjectInitializer& ObjectInitializer);
+	
+	virtual void BeginPlay() override;
 
-	void StartRound() override;
-	void EndRound() override;
+	UFUNCTION()
+	void SetRoundTime(float InTime);
+
+	void StartTraining();
+	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
 
+#pragma region TrainingData
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+	void AddDamage(float DamageAmount);
+
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+	void UpdateTrainingStats();
+
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Training")
+	void RegisterTrainingBotDamageEvents();
+
+	UFUNCTION()
+	void HandleBotDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+#pragma endregion	
+
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|HUD")
-	TSubclassOf<class UUserWidget> HUDWidgetClass;
 	UPROPERTY()
-	UUserWidget* TrainingHUD;
+	FTimerHandle TrainingStatusTimerHandle;
 };

@@ -1,9 +1,11 @@
 #include "Framework/UI/TrainingWidget.h"
+#include "Framework/GameMode/TrainingGameMode.h"
+#include "Framework/GameState/TrainingGameState.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
 #include "Components/TextBlock.h"
-#include "TimeManagementClasses.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void UTrainingWidget::NativeConstruct()
@@ -20,7 +22,7 @@ void UTrainingWidget::NativeConstruct()
 		ResetButton->OnClicked.AddDynamic(this, &UTrainingWidget::OnResetButtonClicked);
 	}
 
-	UpdateTimerText(TEXT("00:00"));
+	UpdateTimer(0.0f);
 }
 
 
@@ -28,69 +30,45 @@ void UTrainingWidget::OnStartButtonClicked()
 {
 	if (IsValid(TimeInputBox))
 	{
+		// Get TimeInputBox
 		const FString InputStr = TimeInputBox->GetText().ToString();
 		float EnterTime = FCString::Atof(*InputStr);
-
 		if (EnterTime < 0.f)
 			EnterTime = 0.f;
 
-		CurrentTime = EnterTime;
-
-		int32 Minutes = FMath::FloorToInt(CurrentTime / 60.0f);
-		int32 Seconds = FMath::FloorToInt(CurrentTime) % 60;
-		FString FormattedTime = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
-
-		if (APlayerController* PC = GetOwningPlayer())
+		// Set Data in GameMode
+		if (ATrainingGameMode* TGameMode = Cast<ATrainingGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
-			if (ABaseInGameHUD* HUD = Cast<ABaseInGameHUD>(PC->GetHUD()))
-			{
-				if (UBaseInGameWidget* BaseWidget = HUD->GetBaseInGameWidget())
-				{
-					BaseWidget->UpdateTimerText(FormattedTime);
-				}
-			}
+			TGameMode->SetRoundTime(EnterTime);
+			TGameMode->StartTraining();
 		}
-
-		// initialize timer
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UTrainingWidget::UpdateTimer, 1.0f, true);
 	}
 }
 
 void UTrainingWidget::OnResetButtonClicked()
 {
-	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	ATrainingGameMode* TGameMode = Cast<ATrainingGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	ATrainingGameState* TGameState = Cast<ATrainingGameState>(UGameplayStatics::GetGameState(GetWorld()));
 
-	CurrentTime = 0.0f;
-	if (APlayerController* PC = GetOwningPlayer())
+
+	if (IsValid(TGameMode) && IsValid(TGameState))
 	{
-		if (ABaseInGameHUD* HUD = Cast<ABaseInGameHUD>(PC->GetHUD()))
-		{
-			if (UBaseInGameWidget* BaseWidget = HUD->GetBaseInGameWidget())
-			{
-				BaseWidget->UpdateTimerText(TEXT("00:00"));
-			}
-		}
+		TGameMode->EndRound();
+		TGameState->InitializeGameState();
+		UpdateTimer(TGameState->GetRemainingTime());
+		UpdateTrainingStatsData(TGameState->GetTotalDamage(), TGameState->GetDPS());
 	}
-
-	// TODO : Add Initialize Total damame, max combo, dps, TimeText 60
 }
 
-void UTrainingWidget::UpdateTimer()
+void UTrainingWidget::UpdateTimer(float CurrentTime)
 {
+	ATrainingGameState* TGameState = Cast<ATrainingGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!TGameState) return;
 
-	CurrentTime -= 1.0f;
-
-	if (CurrentTime <= 0.0f)
+	if (TGameState->GetRoundProgress() != ERoundProgress::InProgress)
 	{
 		CurrentTime = 0.0f;
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 	}
-
-	int32 Minutes = FMath::FloorToInt(CurrentTime / 60.0f);
-	int32 Seconds = FMath::FloorToInt(CurrentTime) % 60;
-	FString FormattedTime = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 
 	if (APlayerController* PC = GetOwningPlayer())
 	{
@@ -98,22 +76,20 @@ void UTrainingWidget::UpdateTimer()
 		{
 			if (UBaseInGameWidget* BaseWidget = HUD->GetBaseInGameWidget())
 			{
-				BaseWidget->UpdateTimerText(FormattedTime);
+				BaseWidget->UpdateTimerText(CurrentTime);
+				return;
 			}
 		}
 	}
 }
 
-void UTrainingWidget::UpdateTrainingStatsData(float TotalDamage, int32 MaxCombo, float DPS)
+void UTrainingWidget::UpdateTrainingStatsData(float TotalDamage, float DPS)
 {
 	if (TotalDamageText)
 	{
 		TotalDamageText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), TotalDamage)));
 	}
-	if (MaxComboText)
-	{
-		MaxComboText->SetText(FText::FromString(FString::FromInt(MaxCombo)));
-	}
+
 	if (DPSText)
 	{
 		DPSText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), DPS)));
