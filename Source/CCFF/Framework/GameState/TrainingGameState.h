@@ -13,24 +13,24 @@ class CCFF_API ATrainingGameState : public ABaseInGameState
 public:
 	ATrainingGameState();
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void AddDamage(float DamageAmount);
+	void InitializeGameState() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void UpdateMaxCombo(int32 CurrentCombo);
+	FORCEINLINE void SetRoundProgress(ERoundProgress NewProgress) { StateProgress = NewProgress; }
+	FORCEINLINE ERoundProgress GetRoundProgress() { return StateProgress; }
+	FORCEINLINE float GetTotalDamage() const { return TotalDamage; }
+	FORCEINLINE void SetTotalDamage(float Damage) { TotalDamage = Damage; }
+	FORCEINLINE float GetDPS() const { return DPS; }
+	FORCEINLINE void SetDPS(float InDPS) { DPS = InDPS; }
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void CalculateDPS(float TrainingTime);
+	ERoundProgress StateProgress;
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void UpdateTrainingStats(float TrainingTime);
+#pragma region DPS
+	float RemainingTime;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
+	UPROPERTY(BlueprintReadOnly, Category = "CCFF|Training Stats")
 	float TotalDamage;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
-	int32 MaxCombo;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
+	UPROPERTY(BlueprintReadOnly, Category = "CCFF|Training Stats")
 	float DPS;
+#pragma endregion
 };

@@ -13,8 +13,8 @@ class CCFF_API UBaseInGameWidget : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "CCFF|UI")
-	void UpdateTimerText(const FString& NewTime);
-	virtual void UpdateTimerText_Implementation(const FString& NewTime);
+	void UpdateTimerText(const float NewTime);
+	virtual void UpdateTimerText_Implementation(const float NewTime);
 
 protected:
 	UPROPERTY(meta = (BindWidgetOptional))
