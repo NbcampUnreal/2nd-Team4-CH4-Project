@@ -80,10 +80,21 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterAnim();
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
+	FString NetModeString = UDamageHelper::GetRoleString(this);
+	FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
+	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+}
+
+void ABaseCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	FString NetModeString = UDamageHelper::GetRoleString(this);
+	FString CombinedString = FString::Printf(TEXT("BaseCharacter::PossessedBy() %s [%s]"), *UDamageHelper::GetNetModeString(this), *NetModeString);
+	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
 float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent,
-	AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
+                                                AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
