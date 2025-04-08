@@ -1,72 +1,79 @@
 #include "Framework/HUD/TitleHUD.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Framework/Controller/TitlePlayerController.h"
 #include "Framework/UI/LoginWidget.h"
 #include "Kismet/GameplayStatics.h"
+
+ATitleHUD::ATitleHUD()
+	: TitleWidgetInstance(nullptr), SubWidget(nullptr)
+{
+}
 
 void ATitleHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (TitleWidgetClass)
+	if (IsValid(TitleWidgetClass) == true)
 	{
 		TitleWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), TitleWidgetClass);
-		if (TitleWidgetInstance)
+		if (IsValid(TitleWidgetInstance) == true)
 		{
 			TitleWidgetInstance->AddToViewport();
 		}
 	}
 
-	SwitchUI(EOutGameUIState::EOGUI_TITLE);
+	SwitchUI(ETitleUIState::ETITLE_PRESSSTART);
+
 }
 
-void ATitleHUD::SwitchUI(EOutGameUIState UIState)
+void ATitleHUD::NotifyAnyKeyPressed()
 {
-	if (SubWidget)
+	if (IsValid(SubWidget) == true)
 	{
-		SubWidget->RemoveFromParent();
-		SubWidget = nullptr;
+		SwitchUI(ETitleUIState::ETITLE_LOGIN);
 	}
+}
+
+void ATitleHUD::SwitchUI(ETitleUIState UIState)
+{
+	RemoveCurrentWidget();
 
 	TSubclassOf<UUserWidget> WidgetClass = nullptr;
 
 	switch (UIState)
 	{
-	case EOutGameUIState::EOGUI_TITLE:
+	case ETitleUIState::ETITLE_PRESSSTART:
 		WidgetClass = PressStartWidgetClass;
 		break;
-	case EOutGameUIState::EOGUI_LOGIN:
+	case ETitleUIState::ETITLE_LOGIN:
 		WidgetClass = LoginWidgetClass;
 		break;
 	default:
 		break;
 	}
 
-	if (!WidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[HUD] WidgetClass is NULL for UIState %d"), static_cast<int32>(UIState));
-		return;
-	}
-
-	SubWidget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
-
-
-	if (WidgetClass)
+	if (IsValid(WidgetClass) == true)
 	{
 		SubWidget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
-		if (SubWidget)
+		if (IsValid(SubWidget) == true)
 		{
 			SubWidget->AddToViewport();
 
-			if (ULoginWidget* Login = Cast<ULoginWidget>(SubWidget))
+			if (ULoginWidget* LoginWidget = Cast<ULoginWidget>(SubWidget))
 			{
-				Login->OnLoginSuccess.AddDynamic(this, &ATitleHUD::HandleLoginSuccess);
+				LoginWidget->OnLoginSuccess.AddDynamic(this, &ATitleHUD::HandleLoginSuccess);
 			}
 		}
 	}
 }
 
-void ATitleHUD::NotifyAnyKeyPressed()
+void ATitleHUD::RemoveCurrentWidget()
 {
-	SwitchUI(EOutGameUIState::EOGUI_LOGIN);
+	if (IsValid(SubWidget) == true)
+	{
+		SubWidget->RemoveFromParent();
+		SubWidget = nullptr;
+	}
 }
 
 void ATitleHUD::HandleLoginSuccess()

@@ -4,16 +4,22 @@
 #include "Framework/UI/BaseUserWidget.h"
 #include "SelectModeWidget.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnArenaModeRequested);
+
 UCLASS()
 class CCFF_API USelectModeWidget : public UBaseUserWidget
 {
 	GENERATED_BODY()
 
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnArenaModeRequested OnArenaModeRequested;
+
 protected:
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()
-	void OnAdventrueClicked();
+	void OnAdventureClicked();
 
 	UFUNCTION()
 	void OnArenaClicked();
