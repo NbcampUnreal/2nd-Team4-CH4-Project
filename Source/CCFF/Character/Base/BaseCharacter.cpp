@@ -464,8 +464,8 @@ void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector Knockbac
 	UE_LOG(LogTemp, Warning, TEXT("TakeHitlagAndStoredKnockback"));
 	if (Hitlag == 0)
 	{
-		return;
 		TakeKnockback(KnockbackAngle, KnockbackForce);
+		return;
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{

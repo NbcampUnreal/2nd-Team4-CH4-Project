@@ -79,11 +79,17 @@ protected:
 	FTimerHandle HitlagTimerHandle;
 	UPROPERTY()
 	FTimerHandle BlockstunTimerHandle;
+#pragma endregion
 
+#pragma region Cached variables
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
 	UPROPERTY()
 	FVector StoredVelocity;
+	UPROPERTY()
+	FVector StoredKnockbackAngle;
+	UPROPERTY()
+	float StoredKnockbackForce;
 #pragma endregion
 
 #pragma region DataPreLoad
@@ -115,22 +121,6 @@ protected:
 	void Attack3(const FInputActionValue& Value);
 #pragma endregion
 
-protected:
-#pragma region Timer
-	// === Timers ===
-	UPROPERTY()
-	FTimerHandle HitstunTimerHandle;
-	UPROPERTY()
-	FTimerHandle HitlagTimerHandle;
-	UPROPERTY()
-	FTimerHandle BlockstunTimerHandle;
-
-	UPROPERTY()
-	FVector2D CurrentMoveInput;
-	UPROPERTY()
-	FVector StoredVelocity;
-#pragma endregion
-	
 protected:
 #pragma region AttackCollisionData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
