@@ -30,10 +30,4 @@ public:
 		AController* EventInstigator,
 		AActor* DamageCauser,
 		FHitBoxData& HitData);
-	
-	// virtual float ApplyDamage(AActor* DamagedActor, float BaseDamage, AController* EventInstigator,
-	// 	AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass, FHitBoxData HitData) = 0;
-	//
-	// virtual float TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
-	// 	class AController* EventInstigator, AActor* DamageCauser, FHitBoxData HitData) = 0;
 };

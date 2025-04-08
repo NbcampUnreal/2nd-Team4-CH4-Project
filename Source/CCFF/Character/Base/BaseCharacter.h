@@ -8,7 +8,6 @@
 #include "CharacterStats.h"
 #include "CharacterAnim.h"
 #include "CharacterEnum.h"
-#include "BattleModifiers.h"
 #include "DamageAble.h"
 #include "InputActionValue.h"
 #include "Character/Base/DamageAble.h"
@@ -79,11 +78,13 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
-	void PreLoadCharacterMovementStats();
+	void PreLoadCharacterBalanceStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadAttackCollisions();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterAnim();
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadBattleModifiers();
 #pragma endregion
 	
 #pragma region MoveFunction
@@ -166,9 +167,6 @@ protected:
 	//Character State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	ECharacterState CurrentCharacterState;
-	//BattleModifier
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	FBattleModifiers CurrentBattleModifiers;
 	//Character Resistance State
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	EResistanceState CurrentResistanceState;
@@ -176,7 +174,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterStats Stats;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
-	FCharacterMovementStats MovementStats;
+	FCharacterBalanceStats BalanceStats;
 	//Attack and Hitted Animation Data
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
 	FCharacterAnim Anim;
