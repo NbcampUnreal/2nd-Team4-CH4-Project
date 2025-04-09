@@ -17,30 +17,13 @@ ABasePreviewPawn::ABasePreviewPawn()
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	SkeletalMesh->SetupAttachment(RootComponent);
 
- //   SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
- //   SpringArm->SetupAttachment(RootComponent);
- //   SpringArm->TargetArmLength = 150.f;
- //   SpringArm->bUsePawnControlRotation = false;
- //   SpringArm->bInheritPitch = false;
- //   SpringArm->bInheritYaw = false;
- //   SpringArm->bInheritRoll = false;
 
-	//SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
-	//SceneCapture->SetupAttachment(SpringArm);
-	//SceneCapture->bCaptureEveryFrame = true;
-	//SceneCapture->bCaptureOnMovement = false;
-
-    CustomizationComponent = CreateDefaultSubobject<UCharacterCustomizationComponent>(TEXT("CharacterCustomizationComponent"));
 }
 
 void ABasePreviewPawn::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//if (RenderTarget)
-	//{
-	//	SceneCapture->TextureTarget = RenderTarget;
-	//}
+    CustomizationComponent = CreateDefaultSubobject<UCharacterCustomizationComponent>(TEXT("CharacterCustomizationComponent"));
 }
 
 void ABasePreviewPawn::SetPreviewSkeletalMesh(USkeletalMesh* NewMesh)
@@ -93,9 +76,4 @@ void ABasePreviewPawn::UnequipAll()
 
     EquippedMeshComponents.Empty();
     EquippedItems.Empty();
-}
-
-UTextureRenderTarget2D* ABasePreviewPawn::GetRenderTarget() const
-{
-    return RenderTarget;
 }

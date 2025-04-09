@@ -34,12 +34,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Preview")
     void UnequipAll();
 
-    /** Returns Render Target for UI */
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    UTextureRenderTarget2D* GetRenderTarget() const;
-
-    /** SkeletalMeshComponent Getter (for customize component) */
-    USkeletalMeshComponent* GetSkeletalMesh() const { return SkeletalMesh; }
 protected:
     virtual void BeginPlay() override;
 
@@ -47,12 +41,7 @@ protected:
 	USceneComponent* SceneRoot;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USkeletalMeshComponent* SkeletalMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USpringArmComponent* SpringArm;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    USceneCaptureComponent2D* SceneCapture;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    UTextureRenderTarget2D* RenderTarget;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Customization")
     UCharacterCustomizationComponent* CustomizationComponent;
 
