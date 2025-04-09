@@ -23,7 +23,7 @@ void ALobbyGameMode::BeginPlay()
 
 	for (int32 i = 0; i < 4; i++)
 	{
-		FString TagName = FString::Printf(TEXT("Slot_&d"), i);
+		FString TagName = FString::Printf(TEXT("Slot_%d"), i);
 		FName Tag(*TagName);
 
 		TArray<AActor*> FoundActors;
