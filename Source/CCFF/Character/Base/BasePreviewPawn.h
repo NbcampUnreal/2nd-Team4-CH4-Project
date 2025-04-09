@@ -9,7 +9,7 @@ class USceneCaptureComponent2D;
 class UTextureRenderTarget2D;
 class UCustomizationItemAsset;
 class USpringArmComponent;
-
+class UCharacterCustomizationComponent;
 /**
  * Base Pawn for Previewing Customization Items
  */
@@ -38,6 +38,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Preview")
     UTextureRenderTarget2D* GetRenderTarget() const;
 
+    /** SkeletalMeshComponent Getter (for customize component) */
+    USkeletalMeshComponent* GetSkeletalMesh() const { return SkeletalMesh; }
 protected:
     virtual void BeginPlay() override;
 
@@ -47,14 +49,12 @@ protected:
 	USkeletalMeshComponent* SkeletalMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USpringArmComponent* SpringArm;
-
-    /** Scene Capture */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     USceneCaptureComponent2D* SceneCapture;
-
-    /** Render Target for Scene Capture */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     UTextureRenderTarget2D* RenderTarget;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Customization")
+    UCharacterCustomizationComponent* CustomizationComponent;
 
     /** Equipped MeshComponents */
     UPROPERTY(Transient)

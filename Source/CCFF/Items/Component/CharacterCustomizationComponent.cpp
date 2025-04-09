@@ -48,3 +48,4 @@ void UCharacterCustomizationComponent::UnequipSlot(EEquipSlot Slot)
 
     EquippedItems.Remove(Slot);
 }
+
