@@ -106,9 +106,10 @@ float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamag
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
 {
-	if (!NotifyName.IsValid()||AttackCollisions.IsEmpty()) return;
 	// Determin the type of attack by name
-	FString NotifyNameString=NotifyName.ToString();
+	FString NotifyNameString = NotifyName.ToString();
+
+	if (!NotifyName.IsValid()||AttackCollisions.IsEmpty()) return;
 	// Hitbox 
 	if(NotifyNameString.Contains(TEXT("Hitbox")))
 	{
@@ -161,7 +162,8 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	
+	bIsCancelable = true;
+	CurrentCharacterState = ECharacterState::Normal;
 }
 
 void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
@@ -283,10 +285,9 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
-
 	CurrentMoveInput = MovementVector;
 
-	if (Controller != nullptr)
+	if (Controller != nullptr && CurrentCharacterState == ECharacterState::Normal)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -298,16 +299,16 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		FVector MoveDirection = ForwardDirection * MovementVector.Y + RightDirection * MovementVector.X;
+		// 이동 처리
+		AddMovementInput(MoveDirection);
 	}
 }
 
 void ABaseCharacter::StartJump(const FInputActionValue& Value)
 {
 	// Jump 함수는 Character가 기본 제공
-	if (Value.Get<bool>())
+	if (Value.Get<bool>() && CurrentCharacterState == ECharacterState::Normal)
 	{
 		Jump();
 	}
@@ -327,6 +328,10 @@ void ABaseCharacter::Attack1(const FInputActionValue& Value)
 	//메시 유효 
 	if (!GetMesh()) return;
 
+	//캔슬 가능여부 확인
+	if (!bIsCancelable) return;
+	bIsCancelable = false;
+
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	//둘다 유효
 	if (AnimInstance&&Anim.AttackMontage1)
@@ -336,12 +341,17 @@ void ABaseCharacter::Attack1(const FInputActionValue& Value)
 		//몽타주 끝났을 때 이벤트 바인딩
 		AnimInstance->OnMontageEnded.Clear();
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+		CurrentCharacterState = ECharacterState::Attack;
 	}
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
 	//메시 유효 
 	if (!GetMesh()) return;
+	
+	//캔슬 가능여부 확인
+	if (!bIsCancelable) return;
+	bIsCancelable = false;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	//둘다 유효
@@ -352,12 +362,17 @@ void ABaseCharacter::Attack2(const FInputActionValue& Value)
 		//몽타주 끝났을 때 이벤트 바인딩
 		AnimInstance->OnMontageEnded.Clear();
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+		CurrentCharacterState = ECharacterState::Attack;
 	}
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
 {
 	//메시 유효 
 	if (!GetMesh()) return;
+	
+	//캔슬 가능여부 확인
+	if (!bIsCancelable) return;
+	bIsCancelable = false;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	//둘다 유효
@@ -368,6 +383,7 @@ void ABaseCharacter::Attack3(const FInputActionValue& Value)
 		//몽타주 끝났을 때 이벤트 바인딩
 		AnimInstance->OnMontageEnded.Clear();
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+		CurrentCharacterState = ECharacterState::Attack;
 	}
 }
 
@@ -439,9 +455,11 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
-		StoredVelocity = Movement->Velocity;
-		Movement->StopMovementImmediately();
-		Movement->SetMovementMode(MOVE_Flying);
+		if (Movement->MovementMode != MOVE_None)
+		{
+			StoredVelocity = Movement->Velocity;
+			Movement->DisableMovement();
+		}
 	}
 	GetMesh()->bPauseAnims = true;
 
@@ -461,7 +479,6 @@ void ABaseCharacter::EndHitlag()
 
 void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TakeHitlagAndStoredKnockback"));
 	if (Hitlag == 0)
 	{
 		TakeKnockback(KnockbackAngle, KnockbackForce);
@@ -469,8 +486,10 @@ void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector Knockbac
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
-		Movement->StopMovementImmediately();
-		Movement->SetMovementMode(MOVE_Flying);
+		if (Movement->MovementMode != MOVE_None)
+		{
+			Movement->DisableMovement();
+		}
 	}
 	StoredKnockbackAngle = KnockbackAngle;
 	StoredKnockbackForce = KnockbackForce;
@@ -483,7 +502,6 @@ void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector Knockbac
 
 void ABaseCharacter::EndHitlagAndTakeKnocback()
 {
-	UE_LOG(LogTemp, Warning, TEXT("EndHitlagAndTakeKnocback"));
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->SetMovementMode(MOVE_Walking);
@@ -516,7 +534,6 @@ void ABaseCharacter::EndBlockstun()
 void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce)
 {
 	FVector KnockbackVelocity = BattleComponent->KnockbackDir(KnockbackAngle, KnockbackForce, CurrentMoveInput, BalanceStats.DiModifier);
-	UE_LOG(LogTemp, Warning, TEXT("KnockbackAngle: %s, KnockbackForce: %f"), *KnockbackVelocity.ToString(), KnockbackForce);
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->StopMovementImmediately();
@@ -601,12 +618,11 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	}
 
 	CurrentResistanceState = EResistanceState::Normal;
-	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 	TakeHitstun(Hitstun);
-	TakeNormalDamage(Damage, HitData.MinimumDamage);
-	BattleComponent->IncreaseCombo();
+	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
+	float DealtDamage = TakeNormalDamage(Damage, HitData.MinimumDamage);
 
-	Attacker->OnAttackHit(TakeNormalDamage(Damage, HitData.MinimumDamage));
+	Attacker->OnAttackHit(DealtDamage);
 	return;
 }
 

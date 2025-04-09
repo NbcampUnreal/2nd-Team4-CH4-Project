@@ -85,6 +85,9 @@ protected:
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
 	UPROPERTY()
+	bool bIsCancelable = true;
+
+	UPROPERTY()
 	FVector StoredVelocity;
 	UPROPERTY()
 	FVector StoredKnockbackAngle;
