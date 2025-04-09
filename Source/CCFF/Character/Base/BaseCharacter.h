@@ -116,8 +116,13 @@ protected:
 #pragma endregion
 
 #pragma region AttackFunctions
+	UFUNCTION()
+	void PlayAttackMontage(const int32 Num);
+	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack3(const FInputActionValue& Value);
 #pragma endregion
 

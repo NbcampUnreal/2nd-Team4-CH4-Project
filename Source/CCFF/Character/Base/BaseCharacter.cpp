@@ -93,8 +93,12 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
-float ABaseCharacter::TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent,
-                                                AController* EventInstigator, AActor* DamageCauser, FHitBoxData& HitData)
+float ABaseCharacter::TakeDamage_Implementation(
+	float DamageAmount,
+	const FDamageEvent& DamageEvent,
+	AController* EventInstigator,
+	AActor* DamageCauser,
+	FHitBoxData& HitData)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
@@ -197,6 +201,7 @@ void ABaseCharacter::PreLoadCharacterAnim()
 	{
 		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
 		{
+			Anim.AttackMontage.SetNum(3);
 			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
 		}
 	}
@@ -321,54 +326,33 @@ void ABaseCharacter::StopJump(const FInputActionValue& Value)
 		StopJumping();
 	}
 }
-
-void ABaseCharacter::Attack1(const FInputActionValue& Value)
+void ABaseCharacter::PlayAttackMontage(const int32 Num)
 {
 	//메시 유효 
 	if (!GetMesh()) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	//둘다 유효
-	if (AnimInstance&&Anim.AttackMontage1)
+	if (AnimInstance&&Anim.AttackMontage[Num])
 	{
 		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.AttackMontage1);
+		AnimInstance->Montage_Play(Anim.AttackMontage[Num]);
 		//몽타주 끝났을 때 이벤트 바인딩
 		AnimInstance->OnMontageEnded.Clear();
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
 	}
+}
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	PlayAttackMontage(0);
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	//메시 유효 
-	if (!GetMesh()) return;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.AttackMontage2)
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.AttackMontage2);
-		//몽타주 끝났을 때 이벤트 바인딩
-		AnimInstance->OnMontageEnded.Clear();
-		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
-	}
+	PlayAttackMontage(1);
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
 {
-	//메시 유효 
-	if (!GetMesh()) return;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.AttackMontage3)
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.AttackMontage3);
-		//몽타주 끝났을 때 이벤트 바인딩
-		AnimInstance->OnMontageEnded.Clear();
-		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
-	}
+	PlayAttackMontage(2);
 }
 
 void ABaseCharacter::NotifyControllerChanged()
