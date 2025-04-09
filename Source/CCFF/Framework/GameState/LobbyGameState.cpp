@@ -4,20 +4,32 @@
 
 void ALobbyGameState::UpdateAllowStartGame()
 {
-	bAllowStartGame = AreAllPlayersReady();
+	const bool bNewAllowStart = EvaluateStartCondition();
+
+	if (bAllowStartGame != bNewAllowStart)
+	{
+		bAllowStartGame = bNewAllowStart;
+	}
 }
 
-bool ALobbyGameState::AreAllPlayersReady() const
+bool ALobbyGameState::EvaluateStartCondition() const
 {
 	for (APlayerState* PlayerState : PlayerArray)
 	{
 		const ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(PlayerState);
-		if (LobbyPlayerState && LobbyPlayerState->IsReady() == false)
+		if (IsValid(LobbyPlayerState) && LobbyPlayerState->IsReady() == false)
 		{
 			return false;
 		}
 	}
 	return true;
+}
+
+void ALobbyGameState::OnRep_bAllowStartGame()
+{
+	UE_LOG(LogTemp, Log, TEXT("[LobbyGameState] OnRep_bAllowStartGame: %s"), bAllowStartGame ? TEXT("true") : TEXT("false"));
+
+	OnAllowStartGameChanged.Broadcast(bAllowStartGame);
 }
 
 void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
