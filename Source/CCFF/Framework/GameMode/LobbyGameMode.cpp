@@ -2,6 +2,7 @@
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
+#include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
 ALobbyGameMode::ALobbyGameMode()
@@ -9,11 +10,61 @@ ALobbyGameMode::ALobbyGameMode()
 	if (AvailableMapPaths.Num() == 0)
 	{
 		AvailableMapPaths = {
-			TEXT("/Game/CCFF/Maps/DesserMap"),
+			TEXT("/Game/CCFF/Maps/DesertMap"),
 			TEXT("/Game/CCFF/Maps/MushroomMap"),
 			TEXT("/Game/CCFF/Maps/RiverMap")
 		};
 	}
+}
+
+void ALobbyGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	for (int32 i = 0; i < 4; i++)
+	{
+		FString TagName = FString::Printf(TEXT("Slot_&d"), i);
+		FName Tag(*TagName);
+
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundActors);
+
+		if (FoundActors.Num() > 0)
+		{
+			PlayerSpawnSlots.Add(FoundActors[0]);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[ALobbyGameMode] BeginPlay : Spawn slot with tag [%s] not found"), *TagName);
+		}
+	}
+}
+
+void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	int32 IndexToAssign = AssignedSlotIndices.Num();
+	AssignedSlotIndices.Add(NewPlayer, IndexToAssign);
+
+	if (!PlayerSpawnSlots.IsValidIndex(IndexToAssign))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] PostLogin : Not enough slot positions!"));
+		return;
+	}
+
+	FVector SpawnLocation = PlayerSpawnSlots[IndexToAssign]->GetActorLocation();
+	FRotator SpawnRotation = PlayerSpawnSlots[IndexToAssign]->GetActorRotation();
+
+	FActorSpawnParameters Params;
+	Params.Owner = NewPlayer;
+
+	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, SpawnLocation, SpawnRotation, Params);
+	if (IsValid(NewPawn))
+	{
+		UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] PostLogin : Spawned lobby cactus for player %s"), *NewPlayer->GetName());
+	}
+
 }
 
 void ALobbyGameMode::NotifyPlayerReadyStatusChanged()
@@ -22,36 +73,37 @@ void ALobbyGameMode::NotifyPlayerReadyStatusChanged()
 	if (LobbyGameState)
 	{
 		LobbyGameState->UpdateAllowStartGame();
+
+		if (LobbyGameState->EvaluateStartCondition())
+		{
+			StartGameWithDelay();
+		}
 	}
+}
+
+void ALobbyGameMode::StartGameWithDelay()
+{
+	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] StartGameWithDelay : All players ready. Starting countdown..."));
+	GetWorld()->GetTimerManager().SetTimer(
+		GameStartTimerHandle,
+		this,
+		&ALobbyGameMode::StartGame,
+		10.0f,
+		false);
 }
 
 void ALobbyGameMode::StartGame()
 {
 	ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
-	if (LobbyGameState == nullptr || !LobbyGameState->AreAllPlayersReady())
+	if (LobbyGameState == nullptr || !LobbyGameState->EvaluateStartCondition())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[ALobbyGameMode] StartGame : Cannot start game: Not all players are ready."));
 		return;
 	}
 
-	const FString SelectedMap = SelectMapForMatch();;
-	UE_LOG(LogTemp, Log, TEXT("All players ready. Starting game on map: %s"), *SelectedMap);
+	int32 RandomIndex = FMath::RandRange(0, AvailableMapPaths.Num() - 1);
+	const FString& SelectedMap = AvailableMapPaths[RandomIndex];
+	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] StartGame : All players ready. Starting game on map: %s"), *SelectedMap);
 
 	GetWorld()->ServerTravel(SelectedMap + TEXT("?listen"));
-}
-
-FString ALobbyGameMode::SelectMapForMatch() const
-{
-	if (AvailableMapPaths.Num() == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No available battle maps found. Returning to lobby map."));
-		return TEXT("/Game/CCFF/Maps/LobbyMap");
-	}
-
-	if (SelectedMapIndex >= 0 && AvailableMapPaths.IsValidIndex(SelectedMapIndex))
-	{
-		return AvailableMapPaths[SelectedMapIndex];
-	}
-
-	return AvailableMapPaths[FMath::RandRange(0, AvailableMapPaths.Num() - 1)];
 }
