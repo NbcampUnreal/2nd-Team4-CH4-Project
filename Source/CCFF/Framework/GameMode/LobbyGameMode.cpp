@@ -23,7 +23,7 @@ void ALobbyGameMode::BeginPlay()
 
 	for (int32 i = 0; i < 4; i++)
 	{
-		FString TagName = FString::Printf(TEXT("Slot_&d"), i);
+		FString TagName = FString::Printf(TEXT("Slot_%d"), i);
 		FName Tag(*TagName);
 
 		TArray<AActor*> FoundActors;
@@ -59,12 +59,9 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	FActorSpawnParameters Params;
 	Params.Owner = NewPlayer;
 
-	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, SpawnLocation, SpawnRotation, Params);
-	if (IsValid(NewPawn))
-	{
-		UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] PostLogin : Spawned lobby cactus for player %s"), *NewPlayer->GetName());
-	}
-
+	FTransform SpawnTransform(SpawnRotation, SpawnLocation);
+	RestartPlayerAtTransform(NewPlayer, SpawnTransform);
+	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] PostLogin : Restarted player %s at slot %d"), *NewPlayer->GetName(), IndexToAssign);
 }
 
 void ALobbyGameMode::NotifyPlayerReadyStatusChanged()
