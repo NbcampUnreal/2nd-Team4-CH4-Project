@@ -13,6 +13,9 @@
 #include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
+class UUW_HPWidget;
+class UStatusComponent;
+class UHPWidgetComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UBattleComponent;
@@ -29,14 +32,8 @@ public:
 	ABaseCharacter();
 
 public:
-#pragma region GetFunction
-	FORCEINLINE float GetMaxHealth() const { return Stats.MaxHealth; }
-	FORCEINLINE float GetHealth() const { return Stats.Health; }
-#pragma endregion
-	
-#pragma region SetFunction
-	FORCEINLINE void SetMaxHealth(const float& Value) { Stats.MaxHealth = Value; }
-	FORCEINLINE void SetHealth(const float& Value) { Stats.Health = Value; }
+#pragma region HPWidget
+	void SetHPWidget(UUW_HPWidget* InHPWidget);
 #pragma endregion
 protected:
 #pragma region Override
@@ -46,6 +43,7 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Tick(float DeltaTime) override;
 
 	//Interface Override Functions
 	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
@@ -208,17 +206,22 @@ protected:
 
 #pragma endregion	
 
-private:
+protected:
 #pragma region Components
 	// === Components ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBattleComponent* BattleComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UItemInteractionComponent* ItemInteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UHPWidgetComponent> HPWidgetComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStatusComponent> StatusComponent;
 #pragma endregion
 	
 private:
@@ -233,5 +236,4 @@ private:
 #pragma endregion
 	
 };
-
 

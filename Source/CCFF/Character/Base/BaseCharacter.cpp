@@ -11,12 +11,17 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "BattleComponent.h"
+#include "HPWidgetComponent.h"
 #include "InputActionValue.h"
+#include "StatusComponent.h"
+#include "UW_HPWidget.h"
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
 #include "Components/SphereComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Character/DamageHelper.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -56,6 +61,14 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	//Create Status Component and HPWidgetComp
+	StatusComponent=CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
+	HPWidgetComponent=CreateDefaultSubobject<UHPWidgetComponent>(TEXT("HPWidgetComp"));
+	HPWidgetComponent->SetupAttachment(GetRootComponent());
+	HPWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 85.f));
+	HPWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HPWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	//Create BattleComponent
 	BattleComponent=CreateDefaultSubobject<UBattleComponent>(TEXT("BattleComponent"));
 	
@@ -65,6 +78,17 @@ ABaseCharacter::ABaseCharacter()
 	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
 	
 	CurrentActivatedCollision=-1;
+}
+
+void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
+{
+	UUW_HPWidget* HPWidget=Cast<UUW_HPWidget>(InHPWidget);
+	if (IsValid(HPWidget)==true)
+	{
+		HPWidget->InitializeHPWidget(StatusComponent);
+		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnCurrentHPChange);
+		StatusComponent->OnMaxHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnMaxHPChange);
+	}
 }
 
 void ABaseCharacter::BeginPlay()
@@ -83,6 +107,19 @@ void ABaseCharacter::BeginPlay()
 	FString NetModeString = UDamageHelper::GetRoleString(this);
 	FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+}
+
+void ABaseCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// // Client (Rotating Widget to focus camera)
+	// if (IsValid(HPWidgetComponent)==true&&HasAuthority()==false)
+	// {
+	// 	FVector WidgetCompLocation=HPWidgetComponent->GetComponentLocation();
+	// 	FVector LocalPlayerCameraLocation = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
+	// 	HPWidgetComponent->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(WidgetCompLocation, LocalPlayerCameraLocation));
+	// }
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)
@@ -201,7 +238,6 @@ void ABaseCharacter::PreLoadCharacterAnim()
 	{
 		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
 		{
-			Anim.AttackMontage.SetNum(3);
 			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
 		}
 	}
