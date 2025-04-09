@@ -12,18 +12,22 @@ class CCFF_API ALobbyGameMode : public AGameModeBase
 public:
 	ALobbyGameMode();
 
+	virtual void BeginPlay() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
 	void NotifyPlayerReadyStatusChanged();
 
-	UFUNCTION(BlueprintCallable)
+	void StartGameWithDelay();
 	void StartGame();
 
-protected:
-	virtual FString SelectMapForMatch() const;
+	UPROPERTY()
+	TArray<AActor*> PlayerSpawnSlots;
+
+	TMap<APlayerController*, int32> AssignedSlotIndices;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
 	TArray<FString> AvailableMapPaths;
 
-	UPROPERTY(EditAnywhere, Category = "Lobby")
-	int32 SelectedMapIndex = -1;
+	FTimerHandle GameStartTimerHandle;
 
 };
