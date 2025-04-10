@@ -1,4 +1,4 @@
-#include "Framework/GameMode/ArenaGameMode.h"
+ï»¿#include "Framework/GameMode/ArenaGameMode.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "Framework/HUD/ArenaModeHUD.h"
 #include "Framework/HUD/BaseInGameHUD.h"
@@ -47,7 +47,6 @@ void AArenaGameMode::InternalStartRound()
 	{
 		if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
 		{
-			// À§Á¬ ¼û±â±â
 			ArenaModeHUD->HideCountdownWidget();
 		}
 	}
@@ -74,7 +73,7 @@ void AArenaGameMode::EndRound()
 		ArenaGameState->SetRemainingTime(RoundTime);
 	}
 
-	// TODO :: °á°úÈ­¸éÀ¸·Î ÀÌµ¿ Ãß°¡
+	// TODO :: ê²°ê³¼í™”ë©´ìœ¼ë¡œ ì´ë™ ì¶”ê°€
 } 
 
 void AArenaGameMode::CheckGameConditions()
@@ -83,7 +82,7 @@ void AArenaGameMode::CheckGameConditions()
 
 	Super::CheckGameConditions();
 
-	// TODO :: ³²Àº ÇÃ·¹ÀÌ¾î 1¸íÀÏ ¶§ Á¾·á
+	// TODO :: ë‚¨ì€ í”Œë ˆì´ì–´ 1ëª…ì¼ ë•Œ ì¢…ë£Œ
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
 	{
@@ -125,8 +124,8 @@ void AArenaGameMode::UpdateArenaStats()
 			}
 		}
 
-		// TODO :: ÇÃ·¹ÀÌ¾îÃ¼·Â
-		// TODO :: KO ÆÇÁ¤
+		// TODO :: í”Œë ˆì´ì–´ì²´ë ¥
+		// TODO :: KO íŒì •
 
 	}
 }
@@ -137,7 +136,7 @@ void AArenaGameMode::UpdatePlayerRating()
 
 void AArenaGameMode::UpdateCountdown()
 {
-	// CountdownText ÀúÀå
+	// CountdownText ì €ì¥
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
@@ -145,14 +144,14 @@ void AArenaGameMode::UpdateCountdown()
 
 		APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
 
-		// À§Á¬¿¡ º¸³¿
+		// ìœ„ì ¯ì— ë³´ëƒ„
 		if (IsValid(MyPlayerController))
 		{
 			if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
 			{
 				if (UCountdownWidget* CountdownWidget = ArenaModeHUD->GetCountdownWidget())
 				{
-					// TODO :: Ä«¿îÆ®´Ù¿î ³¡³ª¸é ¾Èº¸ÀÌ°Ô
+					// TODO :: ì¹´ìš´íŠ¸ë‹¤ìš´ ëë‚˜ë©´ ì•ˆë³´ì´ê²Œ
 					if (ArenaGameState->GetCountdownTime() <= 0.0f)
 					{
 						CountdownWidget->SetCountdownText("START");
@@ -171,7 +170,7 @@ void AArenaGameMode::UpdateCountdown()
 					}
 				}
 
-				// -1¾¿ ÇØÁÖ°í
+				// -1ì”© í•´ì£¼ê³ 
 				CountdownTime -= 1.0f;
 				ArenaGameState->SetCountdownTime(CountdownTime);
 			}

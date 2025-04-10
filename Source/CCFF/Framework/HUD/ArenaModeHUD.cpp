@@ -3,6 +3,8 @@
 
 void AArenaModeHUD::BeginPlay()
 {
+	Super::BeginPlay();
+
 	CountdownWidget = CreateAndAddWidget<UCountdownWidget>(CountdownWidgetClass, 1, ESlateVisibility::Visible);
 }
 
