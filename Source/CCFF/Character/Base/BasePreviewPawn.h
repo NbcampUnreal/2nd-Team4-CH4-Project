@@ -2,17 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Items/DataAsset/CustomizationItemAsset.h"
 #include "BasePreviewPawn.generated.h"
 
-class USceneCaptureComponent2D;
-class UTextureRenderTarget2D;
-class UCustomizationItemAsset;
-class USpringArmComponent;
+class USkeletalMeshComponent;
+class UCharacterCustomizationComponent;
 
-/**
- * Base Pawn for Previewing Customization Items
- */
 UCLASS()
 class CCFF_API ABasePreviewPawn : public APawn
 {
@@ -21,46 +15,18 @@ class CCFF_API ABasePreviewPawn : public APawn
 public:
     ABasePreviewPawn();
 
-    /** Change Skeletal Mesh */
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void SetPreviewSkeletalMesh(USkeletalMesh* NewMesh);
 
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void EquipPreviewItem(UCustomizationItemAsset* ItemData);
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    USceneComponent* SceneRoot;
 
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void UnequipSlot(EEquipSlot Slot);
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    USkeletalMeshComponent* PreviewMesh;
 
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void UnequipAll();
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UCharacterCustomizationComponent* CustomizationComponent;
 
-    /** Returns Render Target for UI */
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    UTextureRenderTarget2D* GetRenderTarget() const;
+    void InitializePreview(FName CharacterID, class AMainMenuPlayerState* PlayerState);
 
 protected:
-    virtual void BeginPlay() override;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USceneComponent* SceneRoot;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USkeletalMeshComponent* SkeletalMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USpringArmComponent* SpringArm;
-
-    /** Scene Capture */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    USceneCaptureComponent2D* SceneCapture;
-
-    /** Render Target for Scene Capture */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    UTextureRenderTarget2D* RenderTarget;
-
-    /** Equipped MeshComponents */
-    UPROPERTY(Transient)
-    TMap<EEquipSlot, UStaticMeshComponent*> EquippedMeshComponents;
-
-    /** Equipped Item Data */
-    UPROPERTY(Transient)
-    TMap<EEquipSlot, UCustomizationItemAsset*> EquippedItems;
+	virtual void BeginPlay() override;
 };

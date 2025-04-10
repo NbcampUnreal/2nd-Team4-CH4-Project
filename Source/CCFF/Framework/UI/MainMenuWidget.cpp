@@ -28,6 +28,16 @@ void UMainMenuWidget::NativeConstruct()
 		SettingButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleSettingClicked);
 	}
 
+	if (LockerRoomButton && !LockerRoomButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleLockerRoomClicked))
+	{
+		LockerRoomButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleLockerRoomClicked);
+	}
+
+	if (ShopButton && !ShopButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleShopClicked))
+	{
+		ShopButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleShopClicked);
+	}
+
 	if (ExitGameButton && !ExitGameButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleExitGameClicked))
 	{
 		ExitGameButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleExitGameClicked);
@@ -79,6 +89,32 @@ void UMainMenuWidget::HandlePlayClicked()
 		if (HUD)
 		{
 			HUD->ShowSelectModeWidget();
+		}
+	}
+}
+
+void UMainMenuWidget::HandleLockerRoomClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowLockerRoomWidget();
+		}
+	}
+}
+
+void UMainMenuWidget::HandleShopClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowShopWidget();
 		}
 	}
 }
