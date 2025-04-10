@@ -20,6 +20,12 @@ protected:
 	void HandlePlayClicked();
 
 	UFUNCTION()
+	void HandleLockerRoomClicked();
+
+	UFUNCTION()
+	void HandleShopClicked();
+
+	UFUNCTION()
 	void HandleSettingClicked();
 
 	UFUNCTION()

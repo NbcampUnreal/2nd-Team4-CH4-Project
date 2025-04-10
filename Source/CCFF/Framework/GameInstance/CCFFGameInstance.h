@@ -39,6 +39,6 @@ private:
 	FPlayerMetaData PlayerMeta;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = true))
-	FString ServerIP = TEXT("127.0.0.1");
+	FString ServerIP = TEXT("127.0.0.1:7777");
 
 };

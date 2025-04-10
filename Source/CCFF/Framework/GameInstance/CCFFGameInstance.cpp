@@ -58,9 +58,9 @@ void UCCFFGameInstance::StartFindSessions(APlayerController* OwnerPlayerControll
 
 	FSessionInfo Session;
 	Session.SessionName = TEXT("Test Room");
-	Session.CurrentPlayers = 0;
+	Session.CurrentPlayers = 1;
 	Session.MaxPlayers = 4;
-	Session.IPAddress = TEXT("127.0.0.1");
+	Session.IPAddress = TEXT("127.0.0.1:7777");
 
 	DummySessions.Add(Session);
 

@@ -1,6 +1,7 @@
 #include "Framework/UI/ArenaModeWidget.h"
 #include "Components/Button.h"
 #include "Components/Scrollbox.h"
+#include "Components/EditableTextBox.h"
 #include "Framework/UI/ArenaSessionListEntry.h"
 #include "Framework/Online/SessionDataStruct.h"
 #include "Framework/Controller/MainMenuPlayerController.h"
@@ -20,9 +21,10 @@ void UArenaModeWidget::NativeConstruct()
 		BackButton->OnClicked.AddDynamic(this, &UArenaModeWidget::OnBackButtonClicked);
 	}
 
-	if (UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>())
+	UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (GameInstance)
 	{
-		if (GameInstance && !GameInstance->OnSessionsFound.IsAlreadyBound(this, &UArenaModeWidget::UpdateSessionList))
+		if (!GameInstance->OnSessionsFound.IsAlreadyBound(this, &UArenaModeWidget::UpdateSessionList))
 		{
 			GameInstance->OnSessionsFound.AddDynamic(this, &UArenaModeWidget::UpdateSessionList);
 		}
@@ -84,14 +86,22 @@ void UArenaModeWidget::UpdateSessionList(const TArray<struct FSessionInfo>& Foun
 {
 	ClearSessionList();
 
+	UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
+	const FString DefaultIP = GameInstance ? GameInstance->GetServerIP() : TEXT("127.0.0.1:7777");
+
 	if (IsValid(SessionListBox) == false || IsValid(SessionEntryClass) == false)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[UArenaModeWidget] UpdateSessionList : SessionListBox or SessionEntryClass is NULL!"));
 		return;
 	}
 
-	for (const FSessionInfo& Session : FoundSessions)
+	for (FSessionInfo Session : FoundSessions)
 	{
+		if (Session.IPAddress.IsEmpty())
+		{
+			Session.IPAddress = DefaultIP;
+		}
+
 		UArenaSessionListEntry* Entry = CreateWidget<UArenaSessionListEntry>(this, SessionEntryClass);
 		if (IsValid(Entry) == true)
 		{
