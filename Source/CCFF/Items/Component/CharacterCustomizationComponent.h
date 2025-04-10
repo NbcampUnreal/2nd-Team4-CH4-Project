@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Items/DataAsset/CustomizationItemAsset.h"
-#include "Items/Structure/CustomizationPresetTypes.h"
+#include "Items/DataTable/CustomItemData.h"
 #include "CharacterCustomizationComponent.generated.h"
+
+class UDataTable;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
@@ -14,21 +15,19 @@ class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 public:
     UCharacterCustomizationComponent();
 
-    // 캐릭터에 커스터마이징 적용
-    UFUNCTION(BlueprintCallable, Category = "Customization")
-    void ApplyCustomization(const FCustomizationPreset& Preset);
+    UFUNCTION()
+	void EquipItemByID(int32 ItemID);
+    UFUNCTION(BlueprintCallable)
+	void EquipItem(FCustomItemData ItemData);
 
-    // 현재 커스터마이징 초기화
-    UFUNCTION(BlueprintCallable, Category = "Customization")
-    void ClearCustomization();
+    UFUNCTION(BlueprintCallable)
+    void UnequipItem(EItemSlot Slot);
 
 protected:
     virtual void BeginPlay() override;
 
-    // 부착된 StaticMeshComponent 목록
-    UPROPERTY()
-    TMap<EEquipSlot, UStaticMeshComponent*> AttachedMeshes;
+    UDataTable* CustomItemDataTable;
 
-    // 내부에서 Socket에 StaticMeshComponent 붙이는 함수
-    void AttachItemToSlot(EEquipSlot Slot, UStaticMesh* Mesh, FName SocketName);
+    UPROPERTY()
+    TMap<EItemSlot, UStaticMeshComponent*> EquippedItems;
 };

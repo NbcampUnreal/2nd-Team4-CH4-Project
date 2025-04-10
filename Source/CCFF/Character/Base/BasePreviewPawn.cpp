@@ -38,6 +38,6 @@ void ABasePreviewPawn::InitializePreview(FName CharacterID, AMainMenuPlayerState
 
     if (CustomizationComponent)
     {
-        CustomizationComponent->ApplyCustomization(*Preset);
+    /*    CustomizationComponent->ApplyCustomization(*Preset);*/
     }
 }
