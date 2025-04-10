@@ -4,24 +4,31 @@
 #include "Character/Base/BasePreviewPawn.h"
 #include "LobbyPreviewPawn.generated.h"
 
+class UWidgetComponent;
+
 UCLASS()
 class CCFF_API ALobbyPreviewPawn : public ABasePreviewPawn
 {
 	GENERATED_BODY()
-	
+
 public:
 	ALobbyPreviewPawn();
 
+protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void OnRep_PlayerState() override;
 
-	void SetPlayerName(const FString& Name);
-	void SetReadyState(bool bReady);
+public:
+	void SetPlayerName(const FString& InName);
+	void SetReadyState(bool bIsReady);
 
-protected:
+private:
 	UPROPERTY(VisibleAnywhere, Category = "UI")
-	class UWidgetComponent* NameTagWidget;
+	TObjectPtr<UWidgetComponent> NameTagWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = "UI")
-	class UWidgetComponent* ReadyStatusWidget;
+	TObjectPtr<UWidgetComponent> ReadyStatusWidget;
 
+	bool bNameSet = false;
 };

@@ -25,7 +25,7 @@ public:
 	void OnRep_PlayerNickname();
 
 protected:
-	UPROPERTY(Replicated = OnRep_ReadyStated)
+	UPROPERTY(Replicated = OnRep_ReadyState)
 	bool bIsReady = false;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerNickname)

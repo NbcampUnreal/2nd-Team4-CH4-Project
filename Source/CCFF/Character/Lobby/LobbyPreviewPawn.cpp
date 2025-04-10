@@ -6,39 +6,68 @@
 
 ALobbyPreviewPawn::ALobbyPreviewPawn()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	NameTagWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameTagWidget"));
 	NameTagWidget->SetupAttachment(RootComponent);
+	NameTagWidget->SetWidgetClass(UPreviewNameTagWidget::StaticClass());
+	NameTagWidget->SetTickWhenOffscreen(true);
 
 	ReadyStatusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("ReadyStatusWidget"));
 	ReadyStatusWidget->SetupAttachment(RootComponent);
+	ReadyStatusWidget->SetWidgetClass(UPreviewReadyStatusWidget::StaticClass());
+	ReadyStatusWidget->SetTickWhenOffscreen(true);
+}
+
+void ALobbyPreviewPawn::BeginPlay()
+{
+	Super::BeginPlay();
+	bNameSet = false;
+}
+
+void ALobbyPreviewPawn::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!bNameSet)
+	{
+		if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
+		{
+			if (ALobbyPlayerState* LPS = Cast<ALobbyPlayerState>(GetPlayerState()))
+			{
+				NameWidget->SetPlayerName(LPS->GetPlayerNickname());
+				bNameSet = true;
+			}
+		}
+	}
+
+	if (UPreviewReadyStatusWidget* StatusWidget = Cast<UPreviewReadyStatusWidget>(ReadyStatusWidget->GetUserWidgetObject()))
+	{
+		if (ALobbyPlayerState* LPS = Cast<ALobbyPlayerState>(GetPlayerState()))
+		{
+			StatusWidget->SetReadyState(LPS->IsReady());
+		}
+	}
 }
 
 void ALobbyPreviewPawn::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-
-	ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(GetPlayerState());
-	if (LobbyPlayerState)
-	{
-		SetPlayerName(LobbyPlayerState->GetPlayerNickname());
-		SetReadyState(LobbyPlayerState->IsReady());
-	}
+	bNameSet = false;
 }
 
 void ALobbyPreviewPawn::SetPlayerName(const FString& InName)
 {
-	UPreviewNameTagWidget* Widget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject());
-	if (Widget)
+	if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
 	{
-		Widget->SetPlayerName(InName);
+		NameWidget->SetPlayerName(InName);
 	}
 }
 
-void ALobbyPreviewPawn::SetReadyState(bool bReady)
+void ALobbyPreviewPawn::SetReadyState(bool bIsReady)
 {
-	UPreviewReadyStatusWidget* Widget = Cast<UPreviewReadyStatusWidget>(NameTagWidget->GetUserWidgetObject());
-	if (Widget)
+	if (UPreviewReadyStatusWidget* StatusWidget = Cast<UPreviewReadyStatusWidget>(ReadyStatusWidget->GetUserWidgetObject()))
 	{
-		Widget->SetReadyState(bReady);
+		StatusWidget->SetReadyState(bIsReady);
 	}
 }
