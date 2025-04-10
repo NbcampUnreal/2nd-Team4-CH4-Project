@@ -93,6 +93,13 @@ protected:
 	FVector StoredKnockbackAngle;
 	UPROPERTY()
 	float StoredKnockbackForce;
+	UPROPERTY()
+	float LastAttackStartTime;
+	UPROPERTY()
+	float ServerDelay;
+	UPROPERTY()
+	float PrevMontagePlayTime;
+	
 #pragma endregion
 
 #pragma region DataPreLoad
@@ -120,9 +127,9 @@ protected:
 
 #pragma region AttackFunctions
 	UFUNCTION(Server,Reliable,WithValidation)
-	void ServerRPCAttack(const int32 Num);
-	UFUNCTION(NetMulticast,Reliable)
-	void MulticastRPCAttack(const int32 Num);
+	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
+	UFUNCTION(Client,Unreliable)
+	void ClientRPCPlayAttackMontage(const int32 Num, ABaseCharacter* InTargetCharacter);
 	UFUNCTION()
 	void PlayAttackMontage(const int32& Num);
 	UFUNCTION()
@@ -247,6 +254,8 @@ private:
 #pragma endregion
 	
 };
+
+
 
 
 

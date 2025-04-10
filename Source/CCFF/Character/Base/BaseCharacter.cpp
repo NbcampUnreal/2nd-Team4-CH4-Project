@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "BattleComponent.h"
+#include "EngineUtils.h"
 #include "HPWidgetComponent.h"
 #include "InputActionValue.h"
 #include "StatusComponent.h"
@@ -20,11 +21,16 @@
 #include "Components/BoxComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Character/DamageHelper.h"
+#include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 
 
 // Sets default values
-ABaseCharacter::ABaseCharacter()
+ABaseCharacter::ABaseCharacter():
+	CurrentActivatedCollision(-1),
+	bCanAttack(true),
+	ServerDelay(0.f),
+	LastAttackStartTime(0.f)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -75,9 +81,6 @@ ABaseCharacter::ABaseCharacter()
 	CurrentResistanceState=EResistanceState::Normal;
 	
 	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
-	
-	CurrentActivatedCollision=-1;
-	bCanAttack=true;
 }
 
 void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
@@ -159,16 +162,17 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
 {
-	if (!HasAuthority()) //Client Logic
+	if (!HasAuthority())
 	{
+		//Client logic
+		// Particle, Effect
 		FString NotifyNameString = NotifyName.ToString();
 		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
 		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
 		DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
-		// Particle, Effect 
 		return;
 	}
-	//Server Logic
+	// Server logic
 	// Determin the type of attack by name
 	FString NotifyNameString = NotifyName.ToString();
 
@@ -207,10 +211,13 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority()) return;
+	// Server Logic
 	// Except self
 	if (!OtherActor || OtherActor == this) return;
+	UE_LOG(LogTemp,Warning,TEXT("Overlapped Actor: %s"),*OtherActor->GetName());
+	
 	float DamageAmount=BalanceStats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
-	UE_LOG(LogTemp,Warning,TEXT("Damage: %f, Overlapped Actor: %s"),DamageAmount,*OtherActor->GetName());
 	UDamageHelper::ApplyDamage(
 	OtherActor,                // 피해 대상
 	DamageAmount,			   // 공격력 (Character Stats 기반)
@@ -220,7 +227,6 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	HitBoxList[CurrentActivatedCollision]
 	);
 }
-
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -234,21 +240,17 @@ void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 }
 
 
-void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num)
+void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InStartAttackTime)
 {
 	UE_LOG(LogTemp,Warning,TEXT("ServerRPC Called with %d !!"),Num);
-	MulticastRPCAttack(Num);
-}
-
-bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num)
-{
-	return true;
-}
-void ABaseCharacter::MulticastRPCAttack_Implementation(const int32 Num)
-{
-	if (HasAuthority()==true)
+	ServerDelay=GetWorld()->GetTimeSeconds()-InStartAttackTime;
+	const float MontagePlayTime=Anim.AttackMontage[Num]->GetPlayLength();
+	// 0<=ServerDelay<=MontagePlayTime
+	ServerDelay=FMath::Clamp(ServerDelay,0.f,MontagePlayTime);
+	PrevMontagePlayTime=MontagePlayTime;
+	// Consider ServerDelay Timer (Can Attack)
+	if (KINDA_SMALL_NUMBER<MontagePlayTime-ServerDelay)
 	{
-		const float MontagePlayTime=Anim.AttackMontage[Num]->GetPlayLength();
 		bCanAttack=false;
 		OnRep_CanAttack();
 		FTimerHandle Handle;
@@ -257,10 +259,43 @@ void ABaseCharacter::MulticastRPCAttack_Implementation(const int32 Num)
 			bCanAttack=true;
 			OnRep_CanAttack();
 		}),
-		MontagePlayTime,false);
+		MontagePlayTime-ServerDelay,false,-1.f);
 	}
-			
+	LastAttackStartTime=InStartAttackTime;
 	PlayAttackMontage(Num);
+	
+	for (APlayerController* PC:TActorRange<APlayerController>(GetWorld()))
+	{
+		if (IsValid(PC)==true&&GetController()!=PC) // Find Other Client
+		{
+			if (ABaseCharacter* OtherClientCharacter=Cast<ABaseCharacter>(PC->GetPawn()))
+			{
+				OtherClientCharacter->ClientRPCPlayAttackMontage(Num,this);
+			}
+		}
+	}
+}
+
+bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num, float InStartAttackTime)
+{
+	// First Attack input
+	if (LastAttackStartTime==0.f)
+	{
+		return true;
+	}
+	const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
+	if (!bIsValid)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
+	}
+	return bIsValid;
+}
+void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, ABaseCharacter* InTargetCharacter)
+{
+	if (IsValid(InTargetCharacter)==true)
+	{
+		InTargetCharacter->PlayAttackMontage(Num);
+	}
 }
 
 void ABaseCharacter::OnRep_CanAttack()
@@ -280,7 +315,14 @@ void ABaseCharacter::Attack1(const FInputActionValue& Value)
 	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
-		ServerRPCAttack(0);		
+		ServerRPCAttack(0,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		// Play Montage in Owning Client
+		if (HasAuthority()==false&&IsLocallyControlled()==true)
+		{
+			bCanAttack=false;
+			OnRep_CanAttack();
+			PlayAttackMontage(0);
+		}
 	}
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
@@ -288,7 +330,13 @@ void ABaseCharacter::Attack2(const FInputActionValue& Value)
 	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Attack2 Called !!"));
-		ServerRPCAttack(1);		
+		ServerRPCAttack(1,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		if (HasAuthority()==false&&IsLocallyControlled()==true)
+		{
+			bCanAttack=false;
+			OnRep_CanAttack();
+			PlayAttackMontage(1);
+		}
 	}
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
@@ -296,7 +344,13 @@ void ABaseCharacter::Attack3(const FInputActionValue& Value)
 	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
     {
 		UE_LOG(LogTemp,Warning,TEXT("Attack3 Called !!"));
-    	ServerRPCAttack(2);		
+		ServerRPCAttack(2,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		if (HasAuthority()==false&&IsLocallyControlled()==true)
+		{
+			bCanAttack=false;
+			OnRep_CanAttack();
+			PlayAttackMontage(2);
+		}
     }
 }
 
