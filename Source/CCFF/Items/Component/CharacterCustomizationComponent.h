@@ -3,62 +3,32 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Items/DataAsset/CustomizationItemAsset.h"
-#include "Items/Structure/CustomizationPreset.h"
+#include "Items/Structure/CustomizationPresetTypes.h"
 #include "CharacterCustomizationComponent.generated.h"
 
-USTRUCT(BlueprintType)
-struct FEquippedItemEntry
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EEquipSlot Slot;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ItemID;
-
-	FEquippedItemEntry() : Slot(EEquipSlot::None), ItemID(NAME_None) {}
-	FEquippedItemEntry(EEquipSlot InSlot, FName InItemID) : Slot(InSlot), ItemID(InItemID) {}
-};
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:	
-	UCharacterCustomizationComponent();
+public:
+    UCharacterCustomizationComponent();
 
-	UFUNCTION(Server, Reliable)
-	void Server_EquipItem(UCustomizationItemAsset* ItemData);
-	void Server_EquipItem_Implementation(UCustomizationItemAsset* ItemData);
+    // 캐릭터에 커스터마이징 적용
+    UFUNCTION(BlueprintCallable, Category = "Customization")
+    void ApplyCustomization(const FCustomizationPreset& Preset);
 
-	UFUNCTION(BlueprintCallable, Category = "Customization")
-	void EquipItem(UCustomizationItemAsset* ItemData);
-	UFUNCTION(BlueprintCallable, Category = "Customization")
-	void UnequipSlot(EEquipSlot Slot);
-	
-	UFUNCTION(BlueprintCallable)
-	void ApplyPreset(int32 Index);
-	UFUNCTION(BlueprintCallable)
-	void SaveCurrentToPreset(int32 Index);
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    // 현재 커스터마이징 초기화
+    UFUNCTION(BlueprintCallable, Category = "Customization")
+    void ClearCustomization();
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_EquippedItems)
-	TArray<FEquippedItemEntry> EquippedItems;
-	UPROPERTY()
-	TMap<EEquipSlot, UStaticMeshComponent*> EquippedMeshComponents;
+    virtual void BeginPlay() override;
 
-	UPROPERTY()
-	TArray<FCustomizationPreset> Presets;
+    // 부착된 StaticMeshComponent 목록
+    UPROPERTY()
+    TMap<EEquipSlot, UStaticMeshComponent*> AttachedMeshes;
 
-	void BeginPlay() override;
-	void UnequipAll();
-	UFUNCTION()
-	void OnRep_EquippedItems();
-
-private:
-	UCustomizationItemAsset* FindCustomizationAssetByID(FName ItemID);
+    // 내부에서 Socket에 StaticMeshComponent 붙이는 함수
+    void AttachItemToSlot(EEquipSlot Slot, UStaticMesh* Mesh, FName SocketName);
 };

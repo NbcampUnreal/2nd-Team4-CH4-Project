@@ -2,17 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "Items/DataAsset/CustomizationItemAsset.h"
 #include "BasePreviewPawn.generated.h"
 
-class USceneCaptureComponent2D;
-class UTextureRenderTarget2D;
-class UCustomizationItemAsset;
-class USpringArmComponent;
+class USkeletalMeshComponent;
 class UCharacterCustomizationComponent;
-/**
- * Base Pawn for Previewing Customization Items
- */
+
 UCLASS()
 class CCFF_API ABasePreviewPawn : public APawn
 {
@@ -21,35 +15,18 @@ class CCFF_API ABasePreviewPawn : public APawn
 public:
     ABasePreviewPawn();
 
-    /** Change Skeletal Mesh */
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void SetPreviewSkeletalMesh(USkeletalMesh* NewMesh);
-
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void EquipPreviewItem(UCustomizationItemAsset* ItemData);
-
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void UnequipSlot(EEquipSlot Slot);
-
-    UFUNCTION(BlueprintCallable, Category = "Preview")
-    void UnequipAll();
-
-protected:
-    virtual void BeginPlay() override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USceneComponent* SceneRoot;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USkeletalMeshComponent* SkeletalMesh;
+    USceneComponent* SceneRoot;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Customization")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    USkeletalMeshComponent* PreviewMesh;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     UCharacterCustomizationComponent* CustomizationComponent;
 
-    /** Equipped MeshComponents */
-    UPROPERTY(Transient)
-    TMap<EEquipSlot, UStaticMeshComponent*> EquippedMeshComponents;
+    void InitializePreview(FName CharacterID, class AMainMenuPlayerState* PlayerState);
 
-    /** Equipped Item Data */
-    UPROPERTY(Transient)
-    TMap<EEquipSlot, UCustomizationItemAsset*> EquippedItems;
+protected:
+	virtual void BeginPlay() override;
 };
