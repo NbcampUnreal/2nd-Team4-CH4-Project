@@ -1,11 +1,8 @@
 #include "Character/Base/BasePreviewPawn.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Items/Component/CharacterCustomizationComponent.h"
-#include "Engine/TextureRenderTarget2D.h"
-
+#include "Framework/PlayerState/MainMenuPlayerState.h"
 
 ABasePreviewPawn::ABasePreviewPawn()
 {
@@ -14,66 +11,33 @@ ABasePreviewPawn::ABasePreviewPawn()
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
-	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
-	SkeletalMesh->SetupAttachment(RootComponent);
+	PreviewMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
+	PreviewMesh->SetupAttachment(RootComponent);
 
-
+    CustomizationComponent = CreateDefaultSubobject<UCharacterCustomizationComponent>(TEXT("CustomizationComponent"));
 }
 
 void ABasePreviewPawn::BeginPlay()
 {
 	Super::BeginPlay();
-    CustomizationComponent = CreateDefaultSubobject<UCharacterCustomizationComponent>(TEXT("CharacterCustomizationComponent"));
 }
 
-void ABasePreviewPawn::SetPreviewSkeletalMesh(USkeletalMesh* NewMesh)
+void ABasePreviewPawn::InitializePreview(FName CharacterID, AMainMenuPlayerState* InPlayerState)
 {
-	if (NewMesh)
-	{
-        SkeletalMesh->SetSkeletalMesh(NewMesh);
-	}
-}
+    if (!InPlayerState) return;
 
-void ABasePreviewPawn::EquipPreviewItem(UCustomizationItemAsset* ItemData)
-{
-    if (!ItemData || !ItemData->Mesh) return;
+    const FCustomizationPreset* Preset = InPlayerState->GetCurrentPreset(CharacterID);
+    if (!Preset) return;
 
-    // 기존 슬롯 제거
-    UnequipSlot(ItemData->EquipSlot);
-
-    // 새 StaticMeshComponent 생성 및 부착
-    UStaticMeshComponent* NewComp = NewObject<UStaticMeshComponent>(this);
-    if (!NewComp) return;
-
-    NewComp->SetStaticMesh(ItemData->Mesh);
-    NewComp->RegisterComponent();
-    NewComp->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, ItemData->AttachSocketName);
-
-    EquippedMeshComponents.Add(ItemData->EquipSlot, NewComp);
-    EquippedItems.Add(ItemData->EquipSlot, ItemData);
-}
-
-void ABasePreviewPawn::UnequipSlot(EEquipSlot Slot)
-{
-    if (UStaticMeshComponent* Comp = EquippedMeshComponents.FindRef(Slot))
+    const FString MeshPath = FString::Printf(TEXT("/Game/Characters/%s/SK_%s.SK_%s"), *CharacterID.ToString(), *CharacterID.ToString(), *CharacterID.ToString());
+    USkeletalMesh* CharacterMesh = Cast<USkeletalMesh>(StaticLoadObject(USkeletalMesh::StaticClass(), nullptr, *MeshPath));
+    if (CharacterMesh)
     {
-        Comp->DestroyComponent();
-        EquippedMeshComponents.Remove(Slot);
+        PreviewMesh->SetSkeletalMesh(CharacterMesh);
     }
 
-    EquippedItems.Remove(Slot);
-}
-
-void ABasePreviewPawn::UnequipAll()
-{
-    for (auto& Pair : EquippedMeshComponents)
+    if (CustomizationComponent)
     {
-        if (Pair.Value)
-        {
-            Pair.Value->DestroyComponent();
-        }
+        CustomizationComponent->ApplyCustomization(*Preset);
     }
-
-    EquippedMeshComponents.Empty();
-    EquippedItems.Empty();
 }

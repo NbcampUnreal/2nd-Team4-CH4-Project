@@ -39,4 +39,6 @@ public:
 protected:
 	UPROPERTY()
 	FTimerHandle TrainingStatusTimerHandle;
+
+	// TODO :: 타이머 베이스로 테스트해보기
 };

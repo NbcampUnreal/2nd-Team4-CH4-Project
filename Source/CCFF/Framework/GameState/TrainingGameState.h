@@ -15,14 +15,12 @@ public:
 
 	void InitializeGameState() override;
 
-	FORCEINLINE void SetRoundProgress(ERoundProgress NewProgress) { StateProgress = NewProgress; }
-	FORCEINLINE ERoundProgress GetRoundProgress() { return StateProgress; }
+	FORCEINLINE void SetRoundProgress(ERoundProgress NewProgress) { RoundProgress = NewProgress; }
+	FORCEINLINE ERoundProgress GetRoundProgress() { return RoundProgress; }
 	FORCEINLINE float GetTotalDamage() const { return TotalDamage; }
 	FORCEINLINE void SetTotalDamage(float Damage) { TotalDamage = Damage; }
 	FORCEINLINE float GetDPS() const { return DPS; }
 	FORCEINLINE void SetDPS(float InDPS) { DPS = InDPS; }
-
-	ERoundProgress StateProgress;
 
 #pragma region DPS
 	float RemainingTime;

@@ -30,14 +30,14 @@ void ATrainingGameMode::StartTraining()
 		TGameState->SetRemainingTime(RoundTime);
 	}	
 
-	GetWorld()->GetTimerManager().SetTimer(TrainingStatusTimerHandle, this, &ATrainingGameMode::UpdateTrainingStats, 1.0f, true);
+	GetWorld()->GetTimerManager().SetTimer(GameTimerHandle, this, &ATrainingGameMode::UpdateTrainingStats, 1.0f, true);
 }
 
 void ATrainingGameMode::EndRound()
 {
 	Super::EndRound();
 
-	GetWorldTimerManager().ClearTimer(TrainingStatusTimerHandle);
+	GetWorldTimerManager().ClearTimer(GameTimerHandle);
 	RoundTime = 0.0f;
 	
 	if (ATrainingGameState* TGameState = GetGameState<ATrainingGameState>())
