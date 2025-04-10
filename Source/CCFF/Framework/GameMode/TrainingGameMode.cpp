@@ -127,9 +127,9 @@ void ATrainingGameMode::SetRoundTime(float InTime)
 {
 	RoundTime = InTime;
 
-	if (ABaseInGameState* TGameState = GetGameState<ABaseInGameState>())
+	if (ATrainingGameState* TGameState = GetGameState<ATrainingGameState>())
 	{
-		TGameState->SetRemainingTime(InTime);
+		TGameState->SetRemainingTime(RoundTime);
 	}
 }
 
