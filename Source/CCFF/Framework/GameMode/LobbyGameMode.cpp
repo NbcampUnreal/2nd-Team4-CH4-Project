@@ -5,6 +5,7 @@
 #include "Character/Lobby/LobbyPreviewPawn.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "EngineUtils.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
@@ -63,19 +64,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	Params.Owner = NewPlayer;
 
 	ALobbyPreviewPawn* PreviewPawn = GetWorld()->SpawnActor<ALobbyPreviewPawn>(PreviewPawnClass, SpawnLocation, SpawnRotation, Params);
-	if (PreviewPawn)
-	{
-		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(NewPlayer);
-		ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(NewPlayer->PlayerState);
+	if (!PreviewPawn) return;
 
-		if (IsValid(LobbyPlayerController) == false || IsValid(LobbyPlayerState) == false)
-		{
-			return;
-		}
+	ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(NewPlayer);
+	if (!IsValid(LobbyPlayerController)) return;
 
-		PreviewPawn->SetPlayerName(LobbyPlayerState->GetPlayerNickname());
-		PreviewPawn->SetReadyState(LobbyPlayerState->IsReady());
-	}
+	LobbyPlayerController->Possess(PreviewPawn);
+	LobbyPlayerController->SetLobbyCameraView();
 }
 
 void ALobbyGameMode::NotifyPlayerReadyStatusChanged()

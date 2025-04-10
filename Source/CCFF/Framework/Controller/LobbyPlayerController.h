@@ -18,9 +18,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerToggleReady();
 
-protected:
 	void SetLobbyCameraView();
 
+protected:
 	void ShowLobbyUI();
 	
 	void HandleLocalSetup();

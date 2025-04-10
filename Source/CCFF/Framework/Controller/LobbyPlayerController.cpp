@@ -24,7 +24,6 @@ void ALobbyPlayerController::BeginPlay()
 
 void ALobbyPlayerController::HandleLocalSetup()
 {
-	SetLobbyCameraView();
 	ShowLobbyUI();
 }
 
