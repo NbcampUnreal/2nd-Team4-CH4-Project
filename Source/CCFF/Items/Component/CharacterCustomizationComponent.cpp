@@ -1,9 +1,9 @@
-#include "Items/Component/CharacterCustomizationComponent.h"
-#include "GameFramework/Actor.h"
+#include "CharacterCustomizationComponent.h"
+#include "GameFramework/Character.h"
+#include "Engine/SkeletalMesh.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Items/Structure/CustomizationPresetTypes.h"
-#include "Items/DataAsset/CustomizationItemAsset.h"
+#include "Engine/DataTable.h"
 
 UCharacterCustomizationComponent::UCharacterCustomizationComponent()
 {
@@ -12,50 +12,93 @@ UCharacterCustomizationComponent::UCharacterCustomizationComponent()
 
 void UCharacterCustomizationComponent::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
+
+	static const FString DataTablePath = TEXT("/Game/CCFF/DataTables/CustomItemData.CustomItemData");
+	CustomItemDataTable = LoadObject<UDataTable>(nullptr, *DataTablePath);
+	if (!CustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load ItemSpawnTable."));
+	}
 }
 
-// clear all customization items
-void UCharacterCustomizationComponent::ClearCustomization()
+void UCharacterCustomizationComponent::EquipItemByID(int32 ItemID)
 {
-    for (auto& Elem : AttachedMeshes)
+    if (!CustomItemDataTable)
     {
-        if (Elem.Value)
-        {
-            Elem.Value->DestroyComponent();
-        }
+        UE_LOG(LogTemp, Warning, TEXT("Item DataTable is not set."));
+        return;
     }
-    AttachedMeshes.Empty();
-}
 
-void UCharacterCustomizationComponent::ApplyCustomization(const FCustomizationPreset& Preset)
-{
-    ClearCustomization();
+    static const FString ContextString(TEXT("Item Lookup"));
+    FCustomItemData* FoundItem = CustomItemDataTable->FindRow<FCustomItemData>(FName(*FString::FromInt(ItemID)), ContextString);
 
-    for (const auto& Pair : Preset.EquippedItems)
+    if (!FoundItem)
     {
-        const FEquippedItemData& ItemData = Pair.Value;
-
-        const FStringAssetReference AssetRef(TEXT("/Game/Customization/Items/") + ItemData.ItemID.ToString() + TEXT(".") + ItemData.ItemID.ToString());
-        UCustomizationItemAsset* ItemAsset = Cast<UCustomizationItemAsset>(AssetRef.TryLoad());
-        if (!ItemAsset || !ItemAsset->Mesh) continue;
-
-        AttachItemToSlot(ItemAsset->EquipSlot, ItemAsset->Mesh, ItemAsset->AttachSocketName);
+        UE_LOG(LogTemp, Warning, TEXT("Item ID %d not found in DataTable."), ItemID);
+        return;
     }
+
+    EquipItem(*FoundItem);
 }
 
-void UCharacterCustomizationComponent::AttachItemToSlot(EEquipSlot Slot, UStaticMesh* Mesh, FName SocketName)
+// 특정 아이템 장착
+void UCharacterCustomizationComponent::EquipItem(FCustomItemData ItemData)
 {
-    if (!Mesh || !GetOwner()) return;
+    if (ItemData.Slot == EItemSlot::None)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Item slot is None. Cannot equip."));
+        return;
+    }
 
-    USkeletalMeshComponent* Skeletal = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
-    if (!Skeletal || !Skeletal->DoesSocketExist(SocketName)) return;
+    // 기존 장착 아이템 해제
+    UnequipItem(ItemData.Slot);
 
-    UStaticMeshComponent* MeshComp = NewObject<UStaticMeshComponent>(GetOwner());
-    MeshComp->RegisterComponent();
-    MeshComp->SetStaticMesh(Mesh);
-    MeshComp->AttachToComponent(Skeletal, FAttachmentTransformRules::SnapToTargetIncludingScale, SocketName);
-    MeshComp->SetRelativeLocation(FVector::ZeroVector);
+    // 소유 캐릭터의 Skeletal Mesh 가져오기
+    APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (!OwnerPawn)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Owner is not a valid Pawn."));
+        return;
+    }
 
-    AttachedMeshes.Add(Slot, MeshComp);
+    USkeletalMeshComponent* MeshComp = nullptr;
+    if (ACharacter* Character = Cast<ACharacter>(OwnerPawn))
+    {
+        MeshComp = Character->GetMesh();
+    }
+    else
+    {
+        MeshComp = OwnerPawn->FindComponentByClass<USkeletalMeshComponent>();
+    }
+
+    if (!MeshComp)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshComponent not found on Owner."));
+        return;
+    }
+
+    // 새로운 아이템 생성 및 장착
+    UStaticMeshComponent* NewItemComponent = NewObject<UStaticMeshComponent>(OwnerPawn);
+    if (!NewItemComponent)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to create StaticMeshComponent for item."));
+        return;
+    }
+
+    NewItemComponent->RegisterComponent();
+    NewItemComponent->SetStaticMesh(ItemData.ItemMesh.LoadSynchronous());
+    NewItemComponent->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, ItemData.SocketName);
+
+    EquippedItems.Add(ItemData.Slot, NewItemComponent);
+}
+
+// 특정 슬롯의 아이템 해제
+void UCharacterCustomizationComponent::UnequipItem(EItemSlot Slot)
+{
+    if (UStaticMeshComponent** FoundItem = EquippedItems.Find(Slot))
+    {
+        (*FoundItem)->DestroyComponent();
+        EquippedItems.Remove(Slot);
+    }
 }

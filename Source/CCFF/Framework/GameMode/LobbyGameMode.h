@@ -23,6 +23,9 @@ public:
 	UPROPERTY()
 	TArray<AActor*> PlayerSpawnSlots;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Lobby")
+	TSubclassOf<class ALobbyPreviewPawn> PreviewPawnClass;
+	
 	TMap<APlayerController*, int32> AssignedSlotIndices;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Lobby")

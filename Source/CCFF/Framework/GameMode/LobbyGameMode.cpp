@@ -2,11 +2,14 @@
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
+#include "Character/Lobby/LobbyPreviewPawn.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
+	DefaultPawnClass = nullptr;
+
 	if (AvailableMapPaths.Num() == 0)
 	{
 		AvailableMapPaths = {
@@ -44,7 +47,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	int32 IndexToAssign = AssignedSlotIndices.Num();
+	const int32 IndexToAssign = AssignedSlotIndices.Num();
 	AssignedSlotIndices.Add(NewPlayer, IndexToAssign);
 
 	if (!PlayerSpawnSlots.IsValidIndex(IndexToAssign))
@@ -59,9 +62,20 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	FActorSpawnParameters Params;
 	Params.Owner = NewPlayer;
 
-	FTransform SpawnTransform(SpawnRotation, SpawnLocation);
-	RestartPlayerAtTransform(NewPlayer, SpawnTransform);
-	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] PostLogin : Restarted player %s at slot %d"), *NewPlayer->GetName(), IndexToAssign);
+	ALobbyPreviewPawn* PreviewPawn = GetWorld()->SpawnActor<ALobbyPreviewPawn>(PreviewPawnClass, SpawnLocation, SpawnRotation, Params);
+	if (PreviewPawn)
+	{
+		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(NewPlayer);
+		ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(NewPlayer->PlayerState);
+
+		if (IsValid(LobbyPlayerController) == false || IsValid(LobbyPlayerState) == false)
+		{
+			return;
+		}
+
+		PreviewPawn->SetPlayerName(LobbyPlayerState->GetPlayerNickname());
+		PreviewPawn->SetReadyState(LobbyPlayerState->IsReady());
+	}
 }
 
 void ALobbyGameMode::NotifyPlayerReadyStatusChanged()

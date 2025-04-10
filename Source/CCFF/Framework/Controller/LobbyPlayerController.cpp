@@ -3,9 +3,8 @@
 #include "Framework/GameMode/LobbyGameMode.h"
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
-#include "Kismet/GameplayStatics.h"
-
 #include "Framework/UI/LobbyWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
@@ -14,10 +13,7 @@ void ALobbyPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		HandleLocalSetup();
-	}
-
-	if (HasAuthority() == true)
-	{
+		
 		UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
 		if (GameInstance)
 		{
@@ -40,11 +36,6 @@ void ALobbyPlayerController::SetLobbyCameraView()
 	if (FoundCameras.Num() > 0)
 	{
 		SetViewTargetWithBlend(FoundCameras[0], 0.5f);
-		UE_LOG(LogTemp, Log, TEXT("[LobbyPlayerController] ServerSetNickname: Set view target to LobbyCam"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[LobbyPlayerController] ServerSetNickname: No LobbyCam found"));
 	}
 }
 
@@ -53,7 +44,6 @@ void ALobbyPlayerController::ShowLobbyUI()
 	if (LobbyWidgetClass && !LobbyWidgetInstance)
 	{
 		LobbyWidgetInstance = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
-
 		if (LobbyWidgetInstance)
 		{
 			LobbyWidgetInstance->AddToViewport();
