@@ -54,7 +54,7 @@ void USelectModeWidget::OnTrainingRoomClicked()
 
 void USelectModeWidget::HandleTrainingPopupConfirmed()
 {
-	UGameplayStatics::OpenLevel(this, FName("Game/CCFF/Maps/TrainingMap"));
+	UGameplayStatics::OpenLevel(this, FName("/Game/CCFF/Maps/TrainingMap"));
 }
 
 void USelectModeWidget::HandleTrainingPopupCanceled()

@@ -2,6 +2,7 @@
 #include "Framework/UI/MainMenuWidget.h"
 #include "Framework/UI/ArenaModeWidget.h"
 #include "Framework/UI/SelectModeWidget.h"
+#include "Framework/UI/LockerRoomWidget.h"
 #include "Framework/UI/SettingsWidget.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -87,6 +88,29 @@ void AMainMenuHUD::ShowArenaWidget()
 	}
 
 	PushWidget(ArenaModeWidget);
+}
+
+void AMainMenuHUD::ShowLockerRoomWidget()
+{
+	if (LockerRoomWidgetClass)
+	{
+		if (!LockerRoomWidget)
+		{
+			LockerRoomWidget = CreateWidget<ULockerRoomWidget>(GetWorld(), LockerRoomWidgetClass);
+		}
+
+		if (!LockerRoomWidget->OnBackToMainMenuRequested.IsBoundToObject(this))
+		{
+			LockerRoomWidget->OnBackToMainMenuRequested.BindUObject(this, &AMainMenuHUD::ReturnToPreviousWidget);
+		}
+
+		PushWidget(LockerRoomWidget);
+	}
+}
+
+void AMainMenuHUD::ShowShopWidget()
+{
+	// TODO : 
 }
 
 void AMainMenuHUD::ShowSettingsWidget()
