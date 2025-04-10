@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,6 +5,9 @@
 #include "LockerRoomWidget.generated.h"
 
 DECLARE_DELEGATE(FOnBackToMainMenuRequested);
+
+class UButton;
+class UTextBlock;
 
 UCLASS()
 class CCFF_API ULockerRoomWidget : public UBaseUserWidget
@@ -16,15 +17,76 @@ class CCFF_API ULockerRoomWidget : public UBaseUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	// Function to be called when the "Back" button is clicked
 	UFUNCTION(BlueprintCallable)
 	void RequestReturnToMainMenu();
 	
-	// Delegate to notify MainMenuHUD to return to the previous widget
 	FOnBackToMainMenuRequested OnBackToMainMenuRequested;
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	class UButton* BackButton;
+	UButton* BackButton;
 
+	UPROPERTY(meta = (BindWidget))
+	UButton* L_PresetButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* R_PresetButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* L_HeadButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* R_HeadButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* L_FaceButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* R_FaceButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* L_ShoulderButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* R_ShoulderButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* SaveButton;
+	UPROPERTY(meta = (BindWidget))
+	UButton* ClearButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PresetNumberText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* HeadNameText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* FaceNameText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ShoulderNameText;
+
+	APawn* PreviewPawn;
+
+private:
+	UFUNCTION()
+	void OnLeftPresetButtonClicked();
+	UFUNCTION()
+	void OnRightPresetButtonClicked();
+	UFUNCTION()
+	void OnLeftHeadButtonClicked();
+	UFUNCTION()
+	void OnRightHeadButtonClicked();
+	UFUNCTION()
+	void OnLeftFaceButtonClicked();
+	UFUNCTION()
+	void OnRightFaceButtonClicked();
+	UFUNCTION()
+	void OnLeftShoulderButtonClicked();
+	UFUNCTION()
+	void OnRightShoulderButtonClicked();
+	UFUNCTION()
+	void OnSaveButtonClicked();
+	UFUNCTION()
+	void OnClearButtonClicked();
+
+
+	void InitializePreviewPawn();
+
+	int32 CurrentPresetIndex = 0;
+	int32 CurrentHeadIndex = 0;
+	int32 CurrentFaceIndex = 0;
+	int32 CurrentShoulderIndex = 0;
 };

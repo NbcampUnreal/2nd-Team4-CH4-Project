@@ -14,9 +14,8 @@ class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 
 public:
     UCharacterCustomizationComponent();
-
     UFUNCTION()
-	void EquipItemByID(int32 ItemID);
+	void EquipItemByID(int32 ItemID, EItemSlot Slot);
     UFUNCTION(BlueprintCallable)
 	void EquipItem(FCustomItemData ItemData);
 
@@ -26,7 +25,9 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    UDataTable* CustomItemDataTable;
+    UDataTable* HeadCustomItemDataTable;
+	UDataTable* FaceCustomItemDataTable;
+	UDataTable* ShoulderCustomItemDataTable;
 
     UPROPERTY()
     TMap<EItemSlot, UStaticMeshComponent*> EquippedItems;
