@@ -13,3 +13,4 @@ void UBaseInGameWidget::UpdateTimerText_Implementation(const float NewTime)
 		TimerText->SetText(FText::FromString(FormattedTime));
 	}
 }
+
