@@ -13,6 +13,7 @@
 #include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
+class UBoxComponent;
 class UUW_HPWidget;
 class UStatusComponent;
 class UHPWidgetComponent;
@@ -44,10 +45,10 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//Interface Override Functions
 	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
-
 #pragma endregion
 
 #pragma region AttackAnimation
@@ -84,7 +85,8 @@ protected:
 	FVector2D CurrentMoveInput;
 	UPROPERTY()
 	bool bIsCancelable = true;
-
+	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
+	uint8 bCanAttack : 1;
 	UPROPERTY()
 	FVector StoredVelocity;
 	UPROPERTY()
@@ -117,14 +119,20 @@ protected:
 #pragma endregion
 
 #pragma region AttackFunctions
+	UFUNCTION(Server,Reliable,WithValidation)
+	void ServerRPCAttack(const int32 Num);
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastRPCAttack(const int32 Num);
 	UFUNCTION()
-	void PlayAttackMontage(const int32 Num);
+	void PlayAttackMontage(const int32& Num);
 	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
 	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
 	UFUNCTION()
 	void Attack3(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnRep_CanAttack();
 #pragma endregion
 
 protected:
@@ -132,7 +140,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
 	int32 CurrentActivatedCollision;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
-	TArray<UShapeComponent*> AttackCollisions;
+	TArray<UBoxComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
 	TArray<FHitBoxData> HitBoxList;
 #pragma endregion
@@ -143,10 +151,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	FString CharacterType;
 	//Character State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	ECharacterState CurrentCharacterState;
 	//Character Resistance State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	EResistanceState CurrentResistanceState;
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
@@ -239,4 +247,6 @@ private:
 #pragma endregion
 	
 };
+
+
 

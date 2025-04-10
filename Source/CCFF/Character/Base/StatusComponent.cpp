@@ -11,14 +11,15 @@ UStatusComponent::UStatusComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
+	//Initialize Status
 	MaxHP=100;
 	CurrentHP=MaxHP;
-	// ...
-}
-
-void UStatusComponent::OnRep_Health()
-{
-	
+	SuperMeter=0;
+	MaxSuperMeter=100;
+	BurstMeter=0;
+	MaxBurstMeter=100;
+	//Set Replicate
+	SetIsReplicatedByDefault(true);
 }
 
 void UStatusComponent::SetCurrentHP(float InCurrentHP)
@@ -45,10 +46,36 @@ void UStatusComponent::SetMaxHP(float InMaxHP)
 	OnMaxHPChanged.Broadcast(MaxHP);
 }
 
+void UStatusComponent::SetBurstMeter(float InBurstMeter)
+{
+}
+
+void UStatusComponent::SetSuperMeter(float InSuperMeter)
+{
+}
+
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass,CurrentHP);
 	DOREPLIFETIME(ThisClass,MaxHP);
+}
+
+void UStatusComponent::OnRep_MaxHP()
+{
+	OnMaxHPChanged.Broadcast(MaxHP);
+}
+
+void UStatusComponent::OnRep_CurrentHP()
+{
+	OnCurrentHPChanged.Broadcast(CurrentHP);
+}
+
+void UStatusComponent::OnRep_BurstMeter()
+{
+}
+
+void UStatusComponent::OnRep_SuperMeter()
+{
 }

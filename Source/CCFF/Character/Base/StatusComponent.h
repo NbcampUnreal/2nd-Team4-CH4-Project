@@ -18,27 +18,56 @@ class CCFF_API UStatusComponent : public UActorComponent
 public:
 	// Sets default values for this component's properties
 	UStatusComponent();
-
+	
+#pragma region GetFunction
 	FORCEINLINE float GetCurrentHP() const { return CurrentHP; }
-	void SetCurrentHP(float InCurrentHP);
-	
 	FORCEINLINE float GetMaxHP() const { return MaxHP; }
-	void SetMaxHP(float InMaxHP);
+	FORCEINLINE float GetBurstMeter() const { return BurstMeter; }
+	FORCEINLINE float GetSuperMeter() const { return SuperMeter; }
+	FORCEINLINE float GetMaxBurstMeter() const { return BurstMeter; }
+	FORCEINLINE float GetMaxSuperMeter() const { return SuperMeter; }
+#pragma endregion
 	
+#pragma region SetFunction
+	void SetCurrentHP(float InCurrentHP);
+	void SetMaxHP(float InMaxHP);
+	void SetBurstMeter(float InBurstMeter);
+	void SetSuperMeter(float InSuperMeter);
+#pragma endregion
+
+#pragma region AddFunction
+	float AddCurrentHP(float Amount);
+	float AddBurstMeter(float Amount);
+	float AddSuperMeter(float Amount);
+#pragma endregion
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 protected:
 	UFUNCTION()
-	void OnRep_Health();
-	
+	void OnRep_MaxHP();
+	UFUNCTION()
+	void OnRep_CurrentHP();
+	UFUNCTION()
+	void OnRep_BurstMeter();
+	UFUNCTION()
+	void OnRep_SuperMeter();
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
-	float CurrentHP;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
-	float MaxHP;
-
 	FOnCurrentHPChangedDelegate OnCurrentHPChanged;
 	FOnDeathDelegate OnDeath;
 	FOnMaxHPChangedDelegate OnMaxHPChanged;
+private:
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentHP)
+	float CurrentHP;
+	UPROPERTY(ReplicatedUsing=OnRep_MaxHP)
+	float MaxHP;
+
+	UPROPERTY(Replicated)
+	float MaxSuperMeter;
+	UPROPERTY(Replicated)
+	float MaxBurstMeter;
+	UPROPERTY(Replicated)
+	float BurstMeter;
+	UPROPERTY(Replicated)
+	float SuperMeter;
 
 };

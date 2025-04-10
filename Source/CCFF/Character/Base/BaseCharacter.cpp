@@ -17,11 +17,10 @@
 #include "UW_HPWidget.h"
 #include "Character/DataLoaderSubSystem.h"
 #include "Character/Base/AttackCollisionData.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Character/DamageHelper.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -30,7 +29,7 @@ ABaseCharacter::ABaseCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
 		
-	// Don't rotate when the controller rotates. Let that just affect the camera.
+	// Don't rotate when the controller rotates.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -78,6 +77,7 @@ ABaseCharacter::ABaseCharacter()
 	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
 	
 	CurrentActivatedCollision=-1;
+	bCanAttack=true;
 }
 
 void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
@@ -94,18 +94,22 @@ void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	//애니메이션 Notify 이벤트 연결
+	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNotify);
+		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
 	}
+	//Initialize struct variables
 	PreLoadCharacterStats();
 	PreLoadAttackCollisions();
 	PreLoadCharacterAnim();
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
+	
 	FString NetModeString = UDamageHelper::GetRoleString(this);
 	FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
+	UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
@@ -145,8 +149,26 @@ float ABaseCharacter::TakeDamage_Implementation(
 	return ActualDamage;
 }
 
+void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass,CurrentCharacterState);
+	DOREPLIFETIME(ThisClass,CurrentResistanceState);
+	DOREPLIFETIME(ThisClass,bCanAttack);
+}
+
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
 {
+	if (!HasAuthority()) //Client Logic
+	{
+		FString NotifyNameString = NotifyName.ToString();
+		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
+		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
+		DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+		// Particle, Effect 
+		return;
+	}
+	//Server Logic
 	// Determin the type of attack by name
 	FString NotifyNameString = NotifyName.ToString();
 
@@ -187,7 +209,6 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 {
 	// Except self
 	if (!OtherActor || OtherActor == this) return;
-	
 	float DamageAmount=BalanceStats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
 	UE_LOG(LogTemp,Warning,TEXT("Damage: %f, Overlapped Actor: %s"),DamageAmount,*OtherActor->GetName());
 	UDamageHelper::ApplyDamage(
@@ -212,113 +233,82 @@ void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-void ABaseCharacter::PreLoadCharacterStats()
+
+void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num)
 {
-	if (UGameInstance* GameInstance=GetGameInstance())
-	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			Stats=Loader->InitializeStat(FName("0"));
-		}
-	}
+	UE_LOG(LogTemp,Warning,TEXT("ServerRPC Called with %d !!"),Num);
+	MulticastRPCAttack(Num);
 }
 
-void ABaseCharacter::PreLoadCharacterBalanceStats()
+bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num)
 {
-	if (UGameInstance* GameInstance=GetGameInstance())
+	return true;
+}
+void ABaseCharacter::MulticastRPCAttack_Implementation(const int32 Num)
+{
+	if (HasAuthority()==true)
 	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		const float MontagePlayTime=Anim.AttackMontage[Num]->GetPlayLength();
+		bCanAttack=false;
+		OnRep_CanAttack();
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle,FTimerDelegate::CreateLambda([&]()
 		{
-			BalanceStats=Loader->InitializeBalanceStat(FName(CharacterType));
-		}
+			bCanAttack=true;
+			OnRep_CanAttack();
+		}),
+		MontagePlayTime,false);
 	}
+			
+	PlayAttackMontage(Num);
 }
 
-void ABaseCharacter::PreLoadCharacterAnim()
+void ABaseCharacter::OnRep_CanAttack()
 {
-	if (UGameInstance* GameInstance=GetGameInstance())
+	if (bCanAttack==true)
 	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
-		}
-	}
-}
-
-void ABaseCharacter::PreLoadBattleModifiers()
-{
-	if (UGameInstance* GameInstance=GetGameInstance())
-	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			BattleComponent->Modifiers=Loader->InitializeBattleModifiers(FName("0"));
-		}
-	}
-}
-
-void ABaseCharacter::PreLoadAttackCollisions()
-{
-	if (UGameInstance* GameInstance=GetGameInstance())
-	{
-		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
-		{
-			if (UEnum* Type=StaticEnum<EAttackType>())
-			{
-				const int32 n=Type->NumEnums();
-				AttackCollisions.SetNum(n-1);
-				HitBoxList.SetNum(n-1);
-				for (int32 i=0;i<n-1;i++)
-				{
-					FString TypeName=Type->GetNameStringByIndex(i);
-					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
-					const FName RowName=FName(CharacterType+"_"+TypeName);
-					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
-					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
-					if (Data.Scale!=FVector::ZeroVector)
-					{
-						//Create Collision and Attacth to mesh
-						UShapeComponent* AttackCollision = NewObject<UShapeComponent>(this,USphereComponent::StaticClass());
-						AttackCollision->SetupAttachment(GetMesh());
-						AttackCollision->SetRelativeLocation(Data.Location);
-						AttackCollision->SetRelativeScale3D(Data.Scale);
-						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-						//Bind Overlap Event
-						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
-						//Activate Components
-						AddInstanceComponent(AttackCollision);
-						AttackCollision->RegisterComponent();
-						AttackCollisions[i]=AttackCollision;
-						HitBoxList[i]=HitBoxData;
-					}
-				}
-			}
-		}
-	}
-}
-
-// Called to bind functionality to input
-void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		if (ACharacterController* MyController=Cast<ACharacterController>(GetController()))
-		{
-			// Moving
-			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
-		
-			// Jumping
-			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
-			//Attack Actions
-			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
-			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
-			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
-		}
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		GetCharacterMovement()->SetMovementMode(MOVE_None);
+	}
+}
+
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
+		ServerRPCAttack(0);		
+	}
+}
+void ABaseCharacter::Attack2(const FInputActionValue& Value)
+{
+	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Attack2 Called !!"));
+		ServerRPCAttack(1);		
+	}
+}
+void ABaseCharacter::Attack3(const FInputActionValue& Value)
+{
+	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+    {
+		UE_LOG(LogTemp,Warning,TEXT("Attack3 Called !!"));
+    	ServerRPCAttack(2);		
+    }
+}
+
+void ABaseCharacter::PlayAttackMontage(const int32& Num)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//둘다 유효
+	if (AnimInstance&&Anim.AttackMontage[Num])
+	{
+		//몽타주 실행
+		AnimInstance->Montage_Play(Anim.AttackMontage[Num]);
+		CurrentCharacterState = ECharacterState::Attack;
 	}
 }
 
@@ -363,63 +353,13 @@ void ABaseCharacter::StopJump(const FInputActionValue& Value)
 		StopJumping();
 	}
 }
-void ABaseCharacter::PlayAttackMontage(const int32 Num)
-{
-	//메시 유효 
-	if (!GetMesh()) return;
-
-	//캔슬 가능여부 확인
-	if (!bIsCancelable) return;
-	bIsCancelable = false;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.AttackMontage[Num])
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.AttackMontage[Num]);
-		//몽타주 끝났을 때 이벤트 바인딩
-		AnimInstance->OnMontageEnded.Clear();
-		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
-		CurrentCharacterState = ECharacterState::Attack;
-	}
-}
-void ABaseCharacter::Attack1(const FInputActionValue& Value)
-{
-	PlayAttackMontage(0);
-}
-void ABaseCharacter::Attack2(const FInputActionValue& Value)
-{
-	PlayAttackMontage(1);
-}
-void ABaseCharacter::Attack3(const FInputActionValue& Value)
-{
-	PlayAttackMontage(2);
-}
-
-void ABaseCharacter::NotifyControllerChanged()
-{
-	Super::NotifyControllerChanged();
-
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			if (ACharacterController* MyController = Cast<ACharacterController>(PlayerController))
-			{
-				Subsystem->AddMappingContext(MyController->DefaultMappingContext, 0);
-			}
-		}
-	}
-}
 
 float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
-	float NewHealth = FMath::Clamp(Stats.Health - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, Stats.MaxHealth);
-	Stats.Health = NewHealth;
-
+	float NewHealth = FMath::Clamp(StatusComponent->GetCurrentHP() - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, StatusComponent->GetMaxHP());
+	StatusComponent->SetCurrentHP(NewHealth);
+	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
 	if (NewHealth <= 0.0f)
@@ -543,6 +483,7 @@ void ABaseCharacter::EndBlockstun()
 
 void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce)
 {
+	
 	FVector KnockbackVelocity = BattleComponent->KnockbackDir(KnockbackAngle, KnockbackForce, CurrentMoveInput, BalanceStats.DiModifier);
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
@@ -695,12 +636,141 @@ void ABaseCharacter::ModifyGuardMeter(float Amount)
 
 void ABaseCharacter::ModifySuperMeter(float Amount)
 {
-	float NewSuperMeter = FMath::Clamp(Stats.SuperMeter + Amount, 0.0f, Stats.MaxSuperMeter);
-	Stats.SuperMeter = NewSuperMeter;
+	float NewSuperMeter = FMath::Clamp(StatusComponent->GetSuperMeter() + Amount, 0.0f, StatusComponent->GetMaxSuperMeter());
+	StatusComponent->SetSuperMeter(NewSuperMeter);
 }
 
 void ABaseCharacter::GainBurstMeter(float Amount)
 {
-	float NewBurstMeter = FMath::Clamp(Stats.BurstMeter + Amount, 0.0f, Stats.MaxBurstMeter);
-	Stats.BurstMeter = NewBurstMeter;
+	float NewBurstMeter = FMath::Clamp(StatusComponent->GetBurstMeter() + Amount, 0.0f, StatusComponent->GetMaxBurstMeter());
+	StatusComponent->SetBurstMeter(NewBurstMeter);
+}
+
+void ABaseCharacter::PreLoadCharacterStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Stats=Loader->InitializeStat(FName("0"));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadCharacterBalanceStats()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			BalanceStats=Loader->InitializeBalanceStat(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadCharacterAnim()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			Anim=Loader->InitializeCharacterAnim(FName(CharacterType));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadBattleModifiers()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			BattleComponent->Modifiers=Loader->InitializeBattleModifiers(FName("0"));
+		}
+	}
+}
+
+void ABaseCharacter::PreLoadAttackCollisions()
+{
+	if (UGameInstance* GameInstance=GetGameInstance())
+	{
+		if (UDataLoaderSubSystem* Loader=GameInstance->GetSubsystem<UDataLoaderSubSystem>())
+		{
+			if (UEnum* Type=StaticEnum<EAttackType>())
+			{
+				const int32 n=Type->NumEnums();
+				AttackCollisions.SetNum(n-1);
+				HitBoxList.SetNum(n-1);
+				for (int32 i=0;i<n-1;i++)
+				{
+					FString TypeName=Type->GetNameStringByIndex(i);
+					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
+					const FName RowName=FName(CharacterType+"_"+TypeName);
+					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
+					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
+					if (Data.Scale!=FVector::ZeroVector)
+					{
+						//Create Collision and Attacth to mesh
+						UBoxComponent* AttackCollision = NewObject<UBoxComponent>(this,UBoxComponent::StaticClass());
+						AttackCollision->SetupAttachment(GetMesh());
+						AttackCollision->SetRelativeLocation(Data.Location);
+						AttackCollision->SetRelativeRotation(Data.Rotation);
+						AttackCollision->SetBoxExtent(Data.Scale*50.f,false);
+						
+						AttackCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						//Bind Overlap Event
+						AttackCollision->OnComponentBeginOverlap.AddDynamic(this,&ABaseCharacter::OnAttackOverlap);
+						//Activate Components
+						AddInstanceComponent(AttackCollision);
+						AttackCollision->RegisterComponent();
+						AttackCollisions[i]=AttackCollision;
+						HitBoxList[i]=HitBoxData;
+					}
+				}
+			}
+		}
+	}
+}
+
+// Called to bind functionality to input
+void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	// Set up action bindings
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
+		if (ACharacterController* MyController=Cast<ACharacterController>(GetController()))
+		{
+			// Moving
+			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
+		
+			// Jumping
+			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+			//Attack Actions
+			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
+			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
+			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+}
+
+void ABaseCharacter::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+
+	// Add Input Mapping Context
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			if (ACharacterController* MyController = Cast<ACharacterController>(PlayerController))
+			{
+				Subsystem->AddMappingContext(MyController->DefaultMappingContext, 0);
+			}
+		}
+	}
 }
