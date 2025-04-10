@@ -21,6 +21,7 @@ enum class EHitBoxType : uint8
 	Normal			UMETA(DisplayName = "Normal"),
 	Throw			UMETA(DisplayName = "Throw"),
 	Burst			UMETA(DisplayName = "Burst"),
+	Projectile		UMETA(DisplayName = "Projectile"),
 };
 
 USTRUCT(BlueprintType)
@@ -49,7 +50,7 @@ struct FHitBoxData : public FTableRowBase
 	GENERATED_BODY();
 public:
 	FHitBoxData(): Type(EHitBoxType::Normal), Damage(0.0f), MinimumDamage(0.0f), GuardDamage(0.0f), GuardMeterDamage(0.0f),Hitstun(0.0f), Hitlag(0.0f),
-					VictimHitlag(0.0f), BlockStun(0.0f), KnockbackForce(0.0f), KnockbackAngle(0.0f), DiModifier(0.0f), GuardPushback(0.0f) {}
+					VictimHitlag(0.0f), Blockstun(0.0f), KnockbackForce(0.0f), KnockbackAngle(0.0f), DiModifier(0.0f), GuardPushback(0.0f) {}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type")
 	EHitBoxType Type;
@@ -72,7 +73,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 	int32 VictimHitlag;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
-	int32 BlockStun;
+	int32 Blockstun;
 
 	//Knockback
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Knockback")
@@ -83,4 +84,10 @@ public:
 	float DiModifier;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Knockback")
 	float GuardPushback;
+
+
+	FVector GetWorldKnockbackDirection(const AActor* ReferenceActor) const
+	{
+		return ReferenceActor->GetActorRotation().RotateVector(KnockbackAngle);
+	}
 };

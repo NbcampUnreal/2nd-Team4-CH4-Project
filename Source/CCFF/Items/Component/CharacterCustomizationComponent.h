@@ -1,33 +1,34 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Items/DataAsset/CustomizationItemAsset.h"
+#include "Items/Structure/CustomizationPresetTypes.h"
 #include "CharacterCustomizationComponent.generated.h"
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:	
-	UCharacterCustomizationComponent();
+public:
+    UCharacterCustomizationComponent();
 
-	UFUNCTION(Server, Reliable)
-	void Server_EquipItem(UCustomizationItemAsset* ItemData);
-	void Server_EquipItem_Implementation(UCustomizationItemAsset* ItemData);
+    // 캐릭터에 커스터마이징 적용
+    UFUNCTION(BlueprintCallable, Category = "Customization")
+    void ApplyCustomization(const FCustomizationPreset& Preset);
 
-	UFUNCTION(BlueprintCallable, Category = "Customization")
-	void EquipItem(UCustomizationItemAsset* ItemData);
-	UFUNCTION(BlueprintCallable, Category = "Customization")
-	void UnequipSlot(EEquipSlot Slot);
-	
+    // 현재 커스터마이징 초기화
+    UFUNCTION(BlueprintCallable, Category = "Customization")
+    void ClearCustomization();
+
 protected:
-	UPROPERTY()
-	TMap<EEquipSlot, UStaticMeshComponent*> EquippedMeshComponents;
-	UPROPERTY()
-	TMap<EEquipSlot, UCustomizationItemAsset*> EquippedItems;
+    virtual void BeginPlay() override;
+
+    // 부착된 StaticMeshComponent 목록
+    UPROPERTY()
+    TMap<EEquipSlot, UStaticMeshComponent*> AttachedMeshes;
+
+    // 내부에서 Socket에 StaticMeshComponent 붙이는 함수
+    void AttachItemToSlot(EEquipSlot Slot, UStaticMesh* Mesh, FName SocketName);
 };

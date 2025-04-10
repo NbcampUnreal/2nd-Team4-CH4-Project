@@ -25,7 +25,7 @@ public:
 	int32 ComboStaleHitstun(int32 Hitstun) const;
 	float ComboDiScaling() const;
 
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Modifiers", meta = (AllowPrivateAccess = "true"))
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Modifiers")
 	FBattleModifiers Modifiers;
 };

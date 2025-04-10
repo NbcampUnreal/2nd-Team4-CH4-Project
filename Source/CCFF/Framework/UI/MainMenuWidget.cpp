@@ -9,7 +9,7 @@ void UMainMenuWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	MenuButtons = {
-		EnterArenaButton,
+		PlayButton,
 		LockerRoomButton,
 		ShopButton,
 		SettingButton,
@@ -18,14 +18,24 @@ void UMainMenuWidget::NativeConstruct()
 
 	CurrentIndex = 0;
 
-	if (EnterArenaButton && !EnterArenaButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleEnterArenaClicked))
+	if (PlayButton && !PlayButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandlePlayClicked))
 	{
-		EnterArenaButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleEnterArenaClicked);
+		PlayButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandlePlayClicked);
 	}
 
 	if (SettingButton && !SettingButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleSettingClicked))
 	{
 		SettingButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleSettingClicked);
+	}
+
+	if (LockerRoomButton && !LockerRoomButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleLockerRoomClicked))
+	{
+		LockerRoomButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleLockerRoomClicked);
+	}
+
+	if (ShopButton && !ShopButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleShopClicked))
+	{
+		ShopButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleShopClicked);
 	}
 
 	if (ExitGameButton && !ExitGameButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleExitGameClicked))
@@ -70,7 +80,7 @@ void UMainMenuWidget::HandleEnterPressed()
 	}
 }
 
-void UMainMenuWidget::HandleEnterArenaClicked()
+void UMainMenuWidget::HandlePlayClicked()
 {
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
@@ -79,6 +89,32 @@ void UMainMenuWidget::HandleEnterArenaClicked()
 		if (HUD)
 		{
 			HUD->ShowSelectModeWidget();
+		}
+	}
+}
+
+void UMainMenuWidget::HandleLockerRoomClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowLockerRoomWidget();
+		}
+	}
+}
+
+void UMainMenuWidget::HandleShopClicked()
+{
+	APlayerController* PlayerController = GetOwningPlayer();
+	if (PlayerController)
+	{
+		AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
+		if (HUD)
+		{
+			HUD->ShowShopWidget();
 		}
 	}
 }

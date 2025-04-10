@@ -15,7 +15,7 @@ struct FCharacterStats :public FTableRowBase
 	
 public:
 	FCharacterStats(): MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
-					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0),DamageTakenModifier(0),DiModifier(0),DamageModifier(0), MaxHealth(0), Health(0) { }
+					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0), MaxHealth(0), Health(0) { }
 	
 
 	// Battle property
@@ -39,12 +39,6 @@ public:
 	float PerfectParryTick;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float AttackSuperGainMultiplier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
-	float DamageTakenModifier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
-	float DiModifier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
-	float DamageModifier;
 
 	// Health property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
@@ -54,12 +48,12 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FCharacterMovementStats :public FTableRowBase
+struct FCharacterBalanceStats :public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FCharacterMovementStats() : Gravity(0),GroundFriction(0),AirFriction(0),MaxAirSpeed(0),
-								MaxWalkSpeed(0),MaxRunSpeed(0),MaxFallSpeed(0) {}
+	FCharacterBalanceStats() : Gravity(0),GroundFriction(0),AirFriction(0),MaxAirSpeed(0),
+								MaxWalkSpeed(0),MaxRunSpeed(0),MaxFallSpeed(0),DamageTakenModifier(0),DiModifier(0),DamageModifier(0) {}
 	// Movement property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
 	float Gravity;
@@ -75,4 +69,10 @@ public:
 	float MaxRunSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Movement")
 	float MaxFallSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
+	float DamageTakenModifier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
+	float DiModifier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/CharacterBalance/Battle")
+	float DamageModifier;
 };
