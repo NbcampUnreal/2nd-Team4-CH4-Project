@@ -17,7 +17,7 @@ protected:
 	void HandleEnterPressed();
 
 	UFUNCTION()
-	void HandleEnterArenaClicked();
+	void HandlePlayClicked();
 
 	UFUNCTION()
 	void HandleSettingClicked();
@@ -32,7 +32,7 @@ protected:
 	void HandleExitGameCanceled();
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* EnterArenaButton;
+	class UButton* PlayButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* LockerRoomButton;

@@ -12,7 +12,6 @@ enum class EEquipSlot : uint8
     Head     UMETA(DisplayName = "Head"),
 	Face	 UMETA(DisplayName = "Face"),
     Shoulder UMETA(DisplayName = "Shoulder"),
-    Body     UMETA(DisplayName = "Body")
 };
 
 UCLASS()

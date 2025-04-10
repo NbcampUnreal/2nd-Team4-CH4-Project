@@ -13,12 +13,22 @@ public:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(Server, Reliable)
-	void ServerToggleReady();
+	void ServerSetNickname(const FString& InNickname);
 
 	UFUNCTION(Server, Reliable)
-	void ServerRequestStartGame();
+	void ServerToggleReady();
+
+protected:
+	void SetLobbyCameraView();
+
+	void ShowLobbyUI();
 	
-	UFUNCTION(Server, Reliable)
-	void ServerSetNickname(const FString& InNickname);
+	void HandleLocalSetup();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class ULobbyWidget> LobbyWidgetClass;
+
+	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class ULobbyWidget> LobbyWidgetInstance;
 
 };

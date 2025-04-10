@@ -9,7 +9,7 @@ void UMainMenuWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	MenuButtons = {
-		EnterArenaButton,
+		PlayButton,
 		LockerRoomButton,
 		ShopButton,
 		SettingButton,
@@ -18,9 +18,9 @@ void UMainMenuWidget::NativeConstruct()
 
 	CurrentIndex = 0;
 
-	if (EnterArenaButton && !EnterArenaButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleEnterArenaClicked))
+	if (PlayButton && !PlayButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandlePlayClicked))
 	{
-		EnterArenaButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleEnterArenaClicked);
+		PlayButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandlePlayClicked);
 	}
 
 	if (SettingButton && !SettingButton->OnClicked.IsAlreadyBound(this, &UMainMenuWidget::HandleSettingClicked))
@@ -70,7 +70,7 @@ void UMainMenuWidget::HandleEnterPressed()
 	}
 }
 
-void UMainMenuWidget::HandleEnterArenaClicked()
+void UMainMenuWidget::HandlePlayClicked()
 {
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
