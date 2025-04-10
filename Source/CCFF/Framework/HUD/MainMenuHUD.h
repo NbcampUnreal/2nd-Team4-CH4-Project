@@ -26,6 +26,12 @@ public:
 	void ShowArenaWidget();
 	
 	UFUNCTION()
+	void ShowLockerRoomWidget();
+
+	UFUNCTION()
+	void ShowShopWidget();
+
+	UFUNCTION()
 	void ShowSettingsWidget();
 	
 	UFUNCTION()
@@ -56,6 +62,12 @@ protected:
 	TSubclassOf<class UArenaModeWidget> ArenaModeWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class ULockerRoomWidget> LockerRoomWidgetClass;
+
+	// UPROPERTY(EditDefaultsOnly, Category = "UI")
+	// TSubclassOf<class UUserWidget> ShopWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class USettingsWidget> SettingsWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -69,6 +81,12 @@ protected:
 
 	UPROPERTY()
 	class UArenaModeWidget* ArenaModeWidget;
+
+	UPROPERTY()
+	class ULockerRoomWidget* LockerRoomWidget;
+
+	// UPROPERTY()
+	// class UUserWidget* ShopWidget;
 
 	UPROPERTY()
 	class USettingsWidget* SettingsWidget;
