@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "Framework/GameMode/BaseInGameMode.h"
@@ -16,38 +16,31 @@ public:
 
 	virtual void BeginPlay() override;
 
-	// ¶ó¿îµå ½ÃÀÛ/Á¾·á, Ã¼Å© ÇÔ¼ö (¼­¹ö ±ÇÇÑ¿¡¼­ ½ÇÇàµÊ)
-	virtual void StartRound() override;
+	void StartArenaRound();
 	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
 
 #pragma region Arena
-	// ¸ÖÆ¼ÇÃ·¹ÀÌ¿ë ¼­¹ö RPC ÇÔ¼ö (Å¬¶óÀÌ¾ğÆ®°¡ È£ÃâÇÏ¸é ¼­¹ö¿¡¼­ ½ÇÇà)
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_StartRound();
-	virtual void Server_StartRound_Implementation();
-	virtual bool Server_StartRound_Validate();
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_EndRound();
-	virtual void Server_EndRound_Implementation();
-	virtual bool Server_EndRound_Validate();
-	
-	void InternalStartRound();
-
-	// TODO :: ¾÷Àû ½Ã½ºÅÛ(¾î½Ã½ºÆ®, µîµî)
+	// TODO :: ì—…ì  ì‹œìŠ¤í…œ(ì–´ì‹œìŠ¤íŠ¸, ë“±ë“±)
 
 public:
 	void UpdateArenaStats();
 	void UpdatePlayerRating();
 	void UpdateCountdown();
 
+	UPROPERTY(EditDefaultsOnly, Category = "Arena")
 	float CountdownTime;
 
 #pragma endregion
 
 private:
+	UFUNCTION()
+	void MoveResultLevel();
+
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
+	FTimerHandle LevelTransitionTimerHandle;
+
+	bool bIsStartedRound;
 
 };

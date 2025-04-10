@@ -11,53 +11,47 @@ AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) : Su
 	GameStateClass = AArenaGameState::StaticClass();
 
 	MyClassName = "ArenaMode";
-	RoundTime = 60.0f;  // Default
-	CountdownTime = 3.0f;
+	RoundTime = 10.0f;  // Default
+	CountdownTime = 5.0f;
 }
 
 void AArenaGameMode::BeginPlay()
 {
-	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
-}
-
-void AArenaGameMode::StartRound()
-{
-	if (!HasAuthority()) { return; }
-
-	Super::StartRound();
+	Super::BeginPlay();
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
 		ArenaGameState->InitializeGameState();
-		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
+		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 	}
+		
+
+	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
+}
+
+void AArenaGameMode::StartArenaRound()
+{
+	if (!HasAuthority()) { return; }
+
+	//Super::StartRound();
+
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
+	if (IsValid(ArenaGameState))
+	{
+		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
+	}
+
+	// CheckCondition every second
+	GetWorld()->GetTimerManager().SetTimer(GameTimerHandle, this, &ABaseInGameMode::CheckGameConditions, 1.0f, true);
 
 	GetWorld()->GetTimerManager().SetTimer(ArenaTimerHandle, this, &AArenaGameMode::UpdateArenaStats, 1.0f, true);
 }
 
-
-
-void AArenaGameMode::InternalStartRound()
-{
-
-	APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
-	if (IsValid(MyPlayerController))
-	{
-		if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
-		{
-			ArenaModeHUD->HideCountdownWidget();
-		}
-	}
-
-	StartRound();
-}
-
-
 void AArenaGameMode::EndRound()
 {
-	if (!HasAuthority()) { return; }
+	if (!HasAuthority()) return;
 
 	Super::EndRound();
 
@@ -65,15 +59,22 @@ void AArenaGameMode::EndRound()
 	RoundTime = 0.0f;
 
 	UpdatePlayerRating();
-	
-	AArenaGameState* ArenaGameState = GetGameState<AArenaGameState>();
+
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
-		ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
 		ArenaGameState->SetRemainingTime(RoundTime);
+		ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
 	}
 
-	// TODO :: 결과화면으로 이동 추가
+    // Move Result Map
+	GetWorld()->GetTimerManager().SetTimer(
+		LevelTransitionTimerHandle,
+		this,
+		&AArenaGameMode::MoveResultLevel,
+		1.0f,
+		false
+	);
 } 
 
 void AArenaGameMode::CheckGameConditions()
@@ -86,47 +87,23 @@ void AArenaGameMode::CheckGameConditions()
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
 	{
+		if (ArenaGameState->GetRemainingTime() <= 0.0f)
+		{
+			EndRound();
+		}
 		// TODO :: Get PlayerState RemainPlayer Or Other Conditions
 	}
-
-	
 }
 
 void AArenaGameMode::UpdateArenaStats()
 {
-	if (!HasAuthority()) { return; }
+	if (!HasAuthority()) return;
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
 		float CurrentRemainingTime = ArenaGameState->GetRemainingTime();
-
-		if (CurrentRemainingTime <= 0.0f)
-		{
-			EndRound();
-		}
-		else
-		{
-			ArenaGameState->SetRemainingTime(CurrentRemainingTime - 1.0f);
-		}
-
-		// Update Timer
-		APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
-
-		if (IsValid(MyPlayerController))
-		{
-			if (ABaseInGameHUD* BaseInGameHUD = Cast<ABaseInGameHUD>(MyPlayerController->GetHUD()))
-			{
-				if (UBaseInGameWidget* BaseInGameWidget = BaseInGameHUD->GetBaseInGameWidget())
-				{
-					BaseInGameWidget->UpdateTimerText(ArenaGameState->GetRemainingTime());
-				}
-			}
-		}
-
-		// TODO :: 플레이어체력
-		// TODO :: KO 판정
-
+		ArenaGameState->SetRemainingTime(CurrentRemainingTime - 1.0f);
 	}
 }
 
@@ -136,66 +113,32 @@ void AArenaGameMode::UpdatePlayerRating()
 
 void AArenaGameMode::UpdateCountdown()
 {
-	// CountdownText 저장
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
-	if (IsValid(ArenaGameState))
+	if (!IsValid(ArenaGameState))
 	{
-		ArenaGameState->SetCountdownTime(CountdownTime);
-
-		APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
-
-		// 위젯에 보냄
-		if (IsValid(MyPlayerController))
-		{
-			if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
-			{
-				if (UCountdownWidget* CountdownWidget = ArenaModeHUD->GetCountdownWidget())
-				{
-					// TODO :: 카운트다운 끝나면 안보이게
-					if (ArenaGameState->GetCountdownTime() <= 0.0f)
-					{
-						CountdownWidget->SetCountdownText("START");
-
-						GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
-						GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::InternalStartRound, 1.0f, false);
-
-						return;
-					}
-					else
-					{
-						int32 TimeText = FMath::FloorToInt(ArenaGameState->GetCountdownTime());
-						FString FormattedTime = FString::Printf(TEXT("%d"), TimeText);
-
-						CountdownWidget->SetCountdownText(FormattedTime);
-					}
-				}
-
-				// -1씩 해주고
-				CountdownTime -= 1.0f;
-				ArenaGameState->SetCountdownTime(CountdownTime);
-			}
-		}
+		return;
 	}
+
+	ArenaGameState->CountdownTime = CountdownTime;
+
+	if (CountdownTime <= 0.0f)
+	{
+		ArenaGameState->bIsFinishCountdown = true;
+		GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
+		GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::StartArenaRound, 0.1f, false);
+		return;
+	}
+
+	CountdownTime -= 1.0f;
+	ArenaGameState->CountdownTime = CountdownTime;
 }
 
-void AArenaGameMode::Server_StartRound_Implementation()
+void AArenaGameMode::MoveResultLevel()
 {
-	StartRound();
+	if (!HasAuthority()) return;
+
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/MainMenuMap"));
 }
 
-bool AArenaGameMode::Server_StartRound_Validate()
-{
-	return true;
-}
-
-void AArenaGameMode::Server_EndRound_Implementation()
-{
-	EndRound();
-}
-
-bool AArenaGameMode::Server_EndRound_Validate()
-{
-	return true;
-}
 
 

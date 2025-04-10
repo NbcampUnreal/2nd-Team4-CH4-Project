@@ -55,7 +55,7 @@ void ABaseInGameMode::EndRound()
 {
 	UE_LOG(LogTemp, Log, TEXT("[%s] End Round!"), *MyClassName);
 
-	GetWorldTimerManager().ClearTimer(GameTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(GameTimerHandle);
 	
 	if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
 	{
@@ -65,11 +65,11 @@ void ABaseInGameMode::EndRound()
 
 void ABaseInGameMode::CheckGameConditions()
 {
-	if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
-	{
-		if (BGameState->RemainingTime <= 0.0f)
-		{
-			EndRound();
-		}
-	}
+	//if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
+	//{
+	//	if (BGameState->RemainingTime <= 0.0f)
+	//	{
+	//		EndRound();
+	//	}
+	//}
 }

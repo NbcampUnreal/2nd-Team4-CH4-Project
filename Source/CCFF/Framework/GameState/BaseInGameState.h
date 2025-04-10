@@ -24,17 +24,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
 	virtual void InitializeGameState();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
-	FORCEINLINE float GetRemainingTime() const { return RemainingTime; }
+	//UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
+	//virtual float GetRemainingTime() const { return RemainingTime; }
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
-	FORCEINLINE void SetRemainingTime(float InTime) { RemainingTime = InTime; }
+	//UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
+	//virtual void SetRemainingTime(float InTime) { RemainingTime = InTime; }
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "CCFF|GameState")
-	float RemainingTime;
+	//float RemainingTime;
 
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "CCFF|GameState")
 	ERoundProgress RoundProgress;
 };
