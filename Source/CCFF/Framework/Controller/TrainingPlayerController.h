@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
+#include "Character/Base/CharacterController.h"
 #include "TrainingPlayerController.generated.h"
 
 
 UCLASS()
-class CCFF_API ATrainingPlayerController : public APlayerController
+class CCFF_API ATrainingPlayerController : public ACharacterController
 {
 	GENERATED_BODY()
 
@@ -15,13 +15,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Training")
     void StartLocalTraining(float InTime);
 
+    void AddLocalDamage(float DamageAmount);
+
     // 위젯에서 호출: 로컬 훈련 종료
     UFUNCTION(BlueprintCallable, Category = "Training")
     void EndLocalTraining();
 
     // 훈련용 봇이 맞았을 때 호출
-    UFUNCTION(BlueprintCallable, Category = "Training")
-    void AddLocalDamage(float DamageAmount);
+    UFUNCTION(Client, Reliable)
+    void ClientAddLocalDamage(float Damage);
 	
 protected:
     // 매 초 호출될 내부 함수
@@ -31,6 +33,7 @@ protected:
     FTimerHandle LocalTrainingTimerHandle;
 
     // 로컬 변수
+    float LocalInitialTime;
     float LocalRemainingTime;
     float LocalTotalDamage;
     float LocalDPS;
