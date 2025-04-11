@@ -36,6 +36,9 @@ public:
 #pragma region HPWidget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 #pragma endregion
+#pragma region GetFunction
+	FORCEINLINE FString GetCharacterType() const { return CharacterType; };
+#pragma endregion
 protected:
 #pragma region Override
 
