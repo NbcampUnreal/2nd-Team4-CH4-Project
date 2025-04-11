@@ -16,7 +16,13 @@ protected:
     UFUNCTION()
     void OnReadyClicked();
 
+    UFUNCTION()
+    void OnBackClicked();
+
     UPROPERTY(meta = (BindWidget))
     class UButton* ReadyButton;
+
+    UPROPERTY(meta = (BindWidget))
+    class UButton* BackButton;
 
 };

@@ -4,6 +4,7 @@
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/UI/LobbyWidget.h"
+#include "Framework/UI/CountdownWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void ALobbyPlayerController::BeginPlay()
@@ -72,5 +73,31 @@ void ALobbyPlayerController::ServerToggleReady_Implementation()
 		{
 			LobbyGameMode->NotifyPlayerReadyStatusChanged();
 		}
+	}
+}
+
+void ALobbyPlayerController::UpdateCountdownWidget_Implementation(int32 NewTime)
+{
+	if (!CountdownWidgetInstance && CountdownWidgetClass)
+	{
+		CountdownWidgetInstance = CreateWidget<UCountdownWidget>(this, CountdownWidgetClass);
+		if (CountdownWidgetInstance)
+		{
+			CountdownWidgetInstance->AddToViewport();
+		}
+	}
+
+	if (CountdownWidgetInstance)
+	{
+		CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
+	}
+}
+
+void ALobbyPlayerController::ClientTeardownCountdown_Implementation()
+{
+	if (CountdownWidgetInstance)
+	{
+		CountdownWidgetInstance->RemoveFromParent();
+		CountdownWidgetInstance = nullptr;
 	}
 }

@@ -38,6 +38,12 @@ protected:
 
 	UPROPERTY()
 	class UConfirmPopupWidget* ExitGamePopup;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UCheckPopupWidget> ErrorPopupClass;
+
+	UPROPERTY()
+	class UCheckPopupWidget* ErrorPopup;
 #pragma endregion
 
 #pragma region UI Event Handlers

@@ -90,6 +90,12 @@ void ALobbyGameMode::NotifyPlayerReadyStatusChanged()
 void ALobbyGameMode::StartGameWithDelay()
 {
 	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] StartGameWithDelay : All players ready. Starting countdown..."));
+
+	if (ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>())
+	{
+		LobbyGameState->StartCountdownTimer();
+	}
+
 	GetWorld()->GetTimerManager().SetTimer(
 		GameStartTimerHandle,
 		this,
@@ -105,6 +111,14 @@ void ALobbyGameMode::StartGame()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[ALobbyGameMode] StartGame : Cannot start game: Not all players are ready."));
 		return;
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ALobbyPlayerController* PC = Cast<ALobbyPlayerController>(It->Get()))
+		{
+			PC->ClientTeardownCountdown();
+		}
 	}
 
 	int32 RandomIndex = FMath::RandRange(0, AvailableMapPaths.Num() - 1);

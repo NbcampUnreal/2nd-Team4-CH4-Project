@@ -20,6 +20,12 @@ public:
 
 	void SetLobbyCameraView();
 
+	UFUNCTION(Client, Reliable)
+	void UpdateCountdownWidget(int32 NewTime);
+
+	UFUNCTION(Client, Reliable)
+	void ClientTeardownCountdown();
+
 protected:
 	void ShowLobbyUI();
 	
@@ -30,5 +36,11 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class ULobbyWidget> LobbyWidgetInstance;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCountdownWidget> CountdownWidgetClass;
+
+	UPROPERTY()
+	UCountdownWidget* CountdownWidgetInstance;
 
 };
