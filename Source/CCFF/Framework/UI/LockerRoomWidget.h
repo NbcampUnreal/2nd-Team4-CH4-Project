@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Framework/UI/BaseUserWidget.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "LockerRoomWidget.generated.h"
+
 
 DECLARE_DELEGATE(FOnBackToMainMenuRequested);
 
@@ -82,6 +84,7 @@ private:
 	UFUNCTION()
 	void OnClearButtonClicked();
 
+	void SaveCurrentPreset(FPresetItemsindex& ItemIndexes);
 
 	void InitializePreviewPawn();
 

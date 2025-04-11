@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
-#include "Items/Structure/CustomizationPresetTypes.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "MainMenuPlayerState.generated.h"
 
 class UCustomizationItemAsset;
@@ -13,29 +13,17 @@ class CCFF_API AMainMenuPlayerState : public APlayerState
     GENERATED_BODY()
 
 public:
-    // Customization Presets Saved Data
-    UPROPERTY(BlueprintReadWrite)
-    TMap<FName, FCharacterCustomizationData> CharacterCustomizations;
+	void SavePreset(FName CharacterID, int32 PresetIndex);
 
-	// Currently Selected Character ID
-    UPROPERTY(BlueprintReadWrite)
-    FName CurrentCharacterID;
+protected:
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	// Item Equip and Unequip
-    UFUNCTION(BlueprintCallable)
-    void SetEquippedItem(FName CharacterID, EEquipSlot Slot, FName ItemID);
-    UFUNCTION(BlueprintCallable)
-    void RemoveEquippedItem(FName CharacterID, EEquipSlot Slot);
+private:
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterCustomizationPresets)
+	TArray <FCharacterCustomizationPreset> CharacterCustomizationPresets;
 
-    UFUNCTION(BlueprintCallable)
-    FName GetEquippedItemID(FName CharacterID, EEquipSlot Slot) const;
+	UFUNCTION()
+	void OnRep_CharacterCustomizationPresets();
 
-	// Saving Preset and Loading Preset of the Character
-    UFUNCTION(BlueprintCallable)
-    void SavePreset(FName CharacterID, int32 PresetIndex);
-    UFUNCTION(BlueprintCallable)
-    void LoadPreset(FName CharacterID, int32 PresetIndex);
 
-    // Get Preset Data of the Character
-    const FCustomizationPreset* GetCurrentPreset(FName CharacterID) const;
 };
