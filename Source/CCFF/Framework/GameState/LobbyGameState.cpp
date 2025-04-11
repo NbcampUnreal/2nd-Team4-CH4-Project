@@ -1,5 +1,6 @@
 #include "Framework/GameState/LobbyGameState.h"
 #include "Net/UnrealNetwork.h"
+#include "Framework/GameMode/LobbyGameMode.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
 
@@ -21,15 +22,40 @@ void ALobbyGameState::UpdateAllowStartGame()
 
 bool ALobbyGameState::EvaluateStartCondition() const
 {
+	int32 ReadyCount = GetReadyPlayerCount();
+	int32 TotalCount = GetPlayerCount();
+
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+	{
+		// Allow solo start only if flag is set
+		if (GM->bAllowSoloStart && TotalCount == 1 && ReadyCount == 1)
+		{
+			return true;
+		}
+	}
+
+	return TotalCount >= 2 && ReadyCount == TotalCount;
+}
+
+int32 ALobbyGameState::GetPlayerCount() const
+{
+	return PlayerArray.Num();
+}
+
+int32 ALobbyGameState::GetReadyPlayerCount() const
+{
+	int32 ReadyCount = 0;
+
 	for (APlayerState* PlayerState : PlayerArray)
 	{
 		const ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(PlayerState);
-		if (IsValid(LobbyPlayerState) && LobbyPlayerState->IsReady() == false)
+		if (IsValid(LobbyPlayerState) && LobbyPlayerState->IsReady())
 		{
-			return false;
+			ReadyCount++;
 		}
 	}
-	return true;
+
+	return ReadyCount;
 }
 
 void ALobbyGameState::OnRep_bAllowStartGame()

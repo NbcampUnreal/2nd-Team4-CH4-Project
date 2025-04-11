@@ -28,6 +28,12 @@ public:
 	void StartGameWithDelay();
 	void StartGame();
 
+#pragma region FORBID_SOLO_PLAYING
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Test")
+	bool bAllowSoloStart = false;
+
+#pragma endregion
+
 	UPROPERTY()
 	TArray<AActor*> PlayerSpawnSlots;
 

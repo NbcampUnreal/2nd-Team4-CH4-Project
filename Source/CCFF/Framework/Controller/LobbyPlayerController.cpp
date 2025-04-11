@@ -39,6 +39,25 @@ void ALobbyPlayerController::SetLobbyCameraView()
 	}
 }
 
+void ALobbyPlayerController::SetAllowSoloStart(int32 Allow)
+{
+	ServerSetAllowSoloStart(Allow);
+}
+
+void ALobbyPlayerController::ServerSetAllowSoloStart_Implementation(int32 Allow)
+{
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+	{
+		GM->bAllowSoloStart = (Allow > 0);
+		UE_LOG(LogTemp, Warning, TEXT("[Server] SetAllowSoloStart = %s"), Allow > 0 ? TEXT("true") : TEXT("false"));
+
+		if (ALobbyGameState* GS = GetWorld()->GetGameState<ALobbyGameState>())
+		{
+			GS->UpdateAllowStartGame();
+		}
+	}
+}
+
 void ALobbyPlayerController::ShowLobbyUI()
 {
 	if (LobbyWidgetClass && !LobbyWidgetInstance)

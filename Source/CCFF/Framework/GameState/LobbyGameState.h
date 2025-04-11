@@ -16,6 +16,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	bool EvaluateStartCondition() const;
 
+	UFUNCTION()
+	int32 GetPlayerCount() const;
+
+	UFUNCTION()
+	int32 GetReadyPlayerCount() const;
+
 	void UpdateAllowStartGame();
 
 	UFUNCTION()
