@@ -10,6 +10,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurrentHPChangedDelegate, float /*InPerce
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSuperMeterChangedDelegate, float /*InPercentage*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBurstMeterChangedDelegate, float /*InPercentage*/);
+DECLARE_MULTICAST_DELEGATE(FOnBlockMeterChangedDelegate);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class CCFF_API UStatusComponent : public UActorComponent
@@ -27,12 +28,15 @@ public:
 	FORCEINLINE float GetMaxBurstMeter() const { return BurstMeter; }
 	FORCEINLINE float GetSuperMeter() const { return SuperMeter; }
 	FORCEINLINE float GetMaxSuperMeter() const { return SuperMeter; }
+	FORCEINLINE float GetMaxBlockMeter() const { return MaxBlockMeter; }
+	FORCEINLINE float GetBlockMeter() const { return BlockMeter; }
 #pragma endregion
 	
 #pragma region SetFunction
 	void SetCurrentHP(const float InCurrentHP);
 	void SetSuperMeter(const float InSuperMeter);
 	void SetBurstMeter(const float InBurstMeter);
+	void SetBlockMeter(const float InBlockMeter);
 #pragma endregion
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
@@ -49,6 +53,7 @@ public:
 	FOnDeathDelegate OnDeathState;
 	FOnSuperMeterChangedDelegate OnSuperMeterChanged;
 	FOnBurstMeterChangedDelegate OnBurstMeterChanged;
+	FOnBlockMeterChangedDelegate OnGuardCrush;
 private:
 	UPROPERTY()
 	float MaxHP;
@@ -63,5 +68,9 @@ private:
 	float BurstMeter;
 	UPROPERTY(ReplicatedUsing=OnRep_SuperMeter)
 	float SuperMeter;
+	UPROPERTY(Replicated)
+	float BlockMeter;
+	UPROPERTY()
+	float MaxBlockMeter;
 
 };

@@ -18,6 +18,8 @@ UStatusComponent::UStatusComponent()
 	MaxSuperMeter=10000;
 	BurstMeter=0;
 	MaxBurstMeter=10000;
+	MaxBlockMeter=10000;
+	BlockMeter=10000;
 	//Set Replicate
 	SetIsReplicatedByDefault(true);
 }
@@ -54,6 +56,15 @@ void UStatusComponent::SetSuperMeter(float InSuperMeter)
 	}
 	float Percentage = FMath::Clamp(SuperMeter / MaxSuperMeter,0.f,1.f);
 	OnSuperMeterChanged.Broadcast(Percentage);
+}
+
+void UStatusComponent::SetBlockMeter(const float InBlockMeter)
+{
+	BlockMeter=InBlockMeter;
+	if (BlockMeter <= 0.0f)
+	{
+		OnGuardCrush.Broadcast();
+	}
 }
 
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

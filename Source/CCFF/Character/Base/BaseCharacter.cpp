@@ -28,10 +28,10 @@
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
+	CurrentActivatedCollision(-1),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
-	ServerDelay(0.f),
-	CurrentActivatedCollision(-1)
+	ServerDelay(0.f)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -124,6 +124,7 @@ void ABaseCharacter::BeginPlay()
 	if (StatusComponent)
 	{
 		StatusComponent->OnDeathState.AddUObject(this,&ABaseCharacter::OnDeath);
+		StatusComponent->OnGuardCrush.AddUObject(this,&ABaseCharacter::GuardCrush);
 	}
 	//Initialize struct variables
 	PreLoadCharacterStats();
@@ -698,12 +699,8 @@ void ABaseCharacter::OnDeath() const
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
 {
-	Stats.BlockMeter = FMath::Clamp(Stats.BlockMeter + Amount, 0.0f, Stats.MaxBlockMeter);
-
-	if (Stats.BlockMeter <= 0.0f)
-	{
-		GuardCrush();
-	}
+	float NewBlockMeter=StatusComponent->GetBlockMeter() + Amount;
+	StatusComponent->SetBlockMeter(NewBlockMeter);
 }
 
 void ABaseCharacter::ModifySuperMeter(float Amount)

@@ -14,19 +14,14 @@ struct FCharacterStats :public FTableRowBase
 	GENERATED_BODY();
 	
 public:
-	FCharacterStats():BurstMeterGain(0),MaxBlockMeter(0),BlockMeterGain(0),
-					  BlockMeter(0),PerfectParryTick(0),AttackSuperGainMultiplier(0) { }
+	FCharacterStats():BurstMeterGain(0),BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0) { }
 	
 
 	// Battle property
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float BurstMeterGain;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float MaxBlockMeter;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float BlockMeterGain;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float BlockMeter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float PerfectParryTick;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
