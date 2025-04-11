@@ -28,7 +28,7 @@ void UStatusComponent::SetCurrentHP(float InCurrentHP)
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
 	{
 		CurrentHP = 0.f;
-		OnDeath.Broadcast();
+		OnDeathState.Broadcast();
 	}
 	float Percentage = FMath::Clamp(CurrentHP / MaxHP,0.f,1.f);
 	OnCurrentHPChanged.Broadcast(Percentage);

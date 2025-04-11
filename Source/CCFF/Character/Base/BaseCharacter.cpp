@@ -121,6 +121,10 @@ void ABaseCharacter::BeginPlay()
 		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNotify);
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
 	}
+	if (StatusComponent)
+	{
+		StatusComponent->OnDeathState.AddUObject(this,&ABaseCharacter::OnDeath);
+	}
 	//Initialize struct variables
 	PreLoadCharacterStats();
 	PreLoadAttackCollisions();
@@ -704,13 +708,13 @@ void ABaseCharacter::ModifyGuardMeter(float Amount)
 
 void ABaseCharacter::ModifySuperMeter(float Amount)
 {
-	float NewSuperMeter = FMath::Clamp(StatusComponent->GetSuperMeter() + Amount, 0.0f, StatusComponent->GetMaxSuperMeter());
+	float NewSuperMeter = StatusComponent->GetSuperMeter()+Amount;
 	StatusComponent->SetSuperMeter(NewSuperMeter);
 }
 
 void ABaseCharacter::GainBurstMeter(float Amount)
 {
-	float NewBurstMeter = FMath::Clamp(StatusComponent->GetBurstMeter() + Amount, 0.0f, StatusComponent->GetMaxBurstMeter());
+	float NewBurstMeter = StatusComponent->GetBurstMeter()+Amount;
 	StatusComponent->SetBurstMeter(NewBurstMeter);
 }
 

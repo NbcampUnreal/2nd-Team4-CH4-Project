@@ -46,7 +46,7 @@ protected:
 	void OnRep_SuperMeter();
 public:
 	FOnCurrentHPChangedDelegate OnCurrentHPChanged;
-	FOnDeathDelegate OnDeath;
+	FOnDeathDelegate OnDeathState;
 	FOnSuperMeterChangedDelegate OnSuperMeterChanged;
 	FOnBurstMeterChangedDelegate OnBurstMeterChanged;
 private:
