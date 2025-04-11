@@ -1,9 +1,13 @@
-#include "CharacterCustomizationComponent.h"
+#include "Items/Component/CharacterCustomizationComponent.h"
 #include "GameFramework/Character.h"
 #include "Engine/SkeletalMesh.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Character/Base/BaseCharacter.h"
+#include "Character/Base/BasePreviewPawn.h"
+#include "Items/DataTable/CustomItemData.h"
+#include "Items/Structure/CustomizationPreset.h"
+#include "Framework/PlayerState/MainMenuPlayerState.h"
 #include "Engine/DataTable.h"
 
 UCharacterCustomizationComponent::UCharacterCustomizationComponent()
@@ -117,30 +121,75 @@ void UCharacterCustomizationComponent::UnequipAllItems()
 	EquippedItems.Empty();
 }
 
-void UCharacterCustomizationComponent::SaveCurrentPreset(int32 PresetIndex)
-{
-	UE_LOG(LogTemp, Log, TEXT("Saving current preset..."));
-}
-
-void UCharacterCustomizationComponent::Server_SaveCurrentPreset_Implementation(FName CharacterID, int32 PresetIndex)
-{
-}
-
-FName UCharacterCustomizationComponent::GetCharacterType() const
+void UCharacterCustomizationComponent::SavePreset(FPresetItemsindex PresetIndexes)
 {
     APawn* OwnerPawn = Cast<APawn>(GetOwner());
-    if (!OwnerPawn)
+    if (OwnerPawn)
     {
-        return TEXT("Unknown");
+        ABasePreviewPawn* PreviewPawn = Cast<ABasePreviewPawn>(OwnerPawn);
+        if (PreviewPawn)
+        {
+            PresetIndexes.HeadIndex = EquippedItems.Contains(EItemSlot::Head) ? EquippedItems[EItemSlot::Head]->GetUniqueID() : -1;
+            PresetIndexes.FaceIndex = EquippedItems.Contains(EItemSlot::Face) ? EquippedItems[EItemSlot::Face]->GetUniqueID() : -1;
+            PresetIndexes.ShoulderIndex = EquippedItems.Contains(EItemSlot::Shoulder) ? EquippedItems[EItemSlot::Shoulder]->GetUniqueID() : -1;
+        }
     }
 
-    // ACharacter에서 CharacterType 가져오기
-    ACharacter* OwnerCharacter = Cast<ACharacter>(OwnerPawn);
-	ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OwnerCharacter);
-    if (BaseCharacter)
+    FName CharacterID = GetCharacterID();
+
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC || !PC->IsLocalController())
     {
- 
+        UE_LOG(LogTemp, Warning, TEXT("SavePreset failed: No valid local PlayerController found."));
+        return;
     }
 
-    return OwnerPawn->GetFName();
+    Server_SavePreset(PC, CharacterID, PresetIndexes);
+
+    UE_LOG(LogTemp, Log, TEXT("Preset saved: CharacterID: %s, PresetIndex: %d, Head: %d, Face: %d, Shoulder: %d"),
+        *CharacterID.ToString(), PresetIndexes.PresetIndex, PresetIndexes.HeadIndex, PresetIndexes.FaceIndex, PresetIndexes.ShoulderIndex);
+}
+
+
+void UCharacterCustomizationComponent::Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset RPC Called"));
+
+    if (!PC)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: Invalid PlayerController."));
+        return;
+    }
+
+    AMainMenuPlayerState* PS = Cast<AMainMenuPlayerState>(PC->PlayerState);
+
+    if (!PS)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: PlayerState is NULL or wrong type. Actual PlayerState: %s"),
+            *GetNameSafe(PC->PlayerState));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset succeeded: Found PlayerState %s"), *PS->GetName());
+}
+
+FName UCharacterCustomizationComponent::GetCharacterID() const
+{
+    APawn* OwnerPawn = Cast<APawn>(GetOwner());
+
+    if (ACharacter* OwnerCharacter = Cast<ACharacter>(OwnerPawn))
+    {
+        ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OwnerCharacter);
+        if (BaseCharacter)
+        {
+            return FName(BaseCharacter->GetCharacterType());
+        }
+    }
+
+    if (ABasePreviewPawn* PreviewPawn = Cast<ABasePreviewPawn>(OwnerPawn))
+    {
+        return PreviewPawn->GetCharacterID();
+    }
+
+    return TEXT("Unknown");
 }
