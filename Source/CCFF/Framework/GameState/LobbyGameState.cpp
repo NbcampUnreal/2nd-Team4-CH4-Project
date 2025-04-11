@@ -11,6 +11,12 @@ void ALobbyGameState::UpdateAllowStartGame()
 	{
 		bAllowStartGame = bNewAllowStart;
 	}
+
+	if (!bNewAllowStart)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[LobbyGameState] All Ready ¡æ Not Ready : Countdown reset"));
+		ResetCountdown();
+	}
 }
 
 bool ALobbyGameState::EvaluateStartCondition() const
@@ -44,6 +50,17 @@ void ALobbyGameState::OnRep_RemainingCountdownTime()
 			LobbyPlayerController->UpdateCountdownWidget(RemainingCountdownTime);
 		}
 	}
+}
+
+void ALobbyGameState::ResetCountdown()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(CountdownTickHandle))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CountdownTickHandle);
+	}
+
+	RemainingCountdownTime = -1;
+	OnRep_RemainingCountdownTime();
 }
 
 void ALobbyGameState::StartCountdownTimer()

@@ -32,6 +32,9 @@ public:
 	UFUNCTION()
 	void OnRep_RemainingCountdownTime();
 
+	UFUNCTION()
+	void ResetCountdown();
+
 	void StartCountdownTimer();
 	void TickCountdownTimer();
 

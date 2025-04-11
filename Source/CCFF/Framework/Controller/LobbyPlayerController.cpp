@@ -89,7 +89,15 @@ void ALobbyPlayerController::UpdateCountdownWidget_Implementation(int32 NewTime)
 
 	if (CountdownWidgetInstance)
 	{
-		CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
+		if (NewTime >= 0)
+		{
+			CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
+		}
+		else
+		{
+			CountdownWidgetInstance->RemoveFromParent();
+			CountdownWidgetInstance = nullptr;
+		}
 	}
 }
 
