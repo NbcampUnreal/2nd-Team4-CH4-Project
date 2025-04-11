@@ -13,6 +13,10 @@
 #include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
+class UBoxComponent;
+class UUW_HPWidget;
+class UStatusComponent;
+class UHPWidgetComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UBattleComponent;
@@ -29,14 +33,11 @@ public:
 	ABaseCharacter();
 
 public:
-#pragma region GetFunction
-	FORCEINLINE float GetMaxHealth() const { return Stats.MaxHealth; }
-	FORCEINLINE float GetHealth() const { return Stats.Health; }
+#pragma region HPWidget
+	void SetHPWidget(UUW_HPWidget* InHPWidget);
 #pragma endregion
-	
-#pragma region SetFunction
-	FORCEINLINE void SetMaxHealth(const float& Value) { Stats.MaxHealth = Value; }
-	FORCEINLINE void SetHealth(const float& Value) { Stats.Health = Value; }
+#pragma region GetFunction
+	FORCEINLINE FString GetCharacterType() const { return CharacterType; };
 #pragma endregion
 protected:
 #pragma region Override
@@ -46,10 +47,11 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//Interface Override Functions
 	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
-
 #pragma endregion
 
 #pragma region AttackAnimation
@@ -86,13 +88,21 @@ protected:
 	FVector2D CurrentMoveInput;
 	UPROPERTY()
 	bool bIsCancelable = true;
-
+	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
+	uint8 bCanAttack : 1;
 	UPROPERTY()
 	FVector StoredVelocity;
 	UPROPERTY()
 	FVector StoredKnockbackAngle;
 	UPROPERTY()
 	float StoredKnockbackForce;
+	UPROPERTY()
+	float LastAttackStartTime;
+	UPROPERTY()
+	float ServerDelay;
+	UPROPERTY()
+	float PrevMontagePlayTime;
+	
 #pragma endregion
 
 #pragma region DataPreLoad
@@ -119,9 +129,20 @@ protected:
 #pragma endregion
 
 #pragma region AttackFunctions
+	UFUNCTION(Server,Reliable,WithValidation)
+	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
+	UFUNCTION(Client,Unreliable)
+	void ClientRPCPlayAttackMontage(const int32 Num, ABaseCharacter* InTargetCharacter);
+	UFUNCTION()
+	void PlayAttackMontage(const int32& Num);
+	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack3(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnRep_CanAttack();
 #pragma endregion
 
 protected:
@@ -129,7 +150,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
 	int32 CurrentActivatedCollision;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
-	TArray<UShapeComponent*> AttackCollisions;
+	TArray<UBoxComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
 	TArray<FHitBoxData> HitBoxList;
 #pragma endregion
@@ -140,10 +161,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	FString CharacterType;
 	//Character State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	ECharacterState CurrentCharacterState;
 	//Character Resistance State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	EResistanceState CurrentResistanceState;
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
@@ -206,17 +227,22 @@ protected:
 
 #pragma endregion	
 
-private:
+protected:
 #pragma region Components
 	// === Components ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBattleComponent* BattleComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UItemInteractionComponent* ItemInteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UHPWidgetComponent> HPWidgetComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStatusComponent> StatusComponent;
 #pragma endregion
 	
 private:
@@ -231,5 +257,8 @@ private:
 #pragma endregion
 	
 };
+
+
+
 
 

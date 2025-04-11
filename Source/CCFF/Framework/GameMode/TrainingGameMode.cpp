@@ -6,9 +6,13 @@
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Framework/Controller/TrainingPlayerController.h"
 
 ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+	PlayerControllerClass = ATrainingPlayerController::StaticClass();
+	GameStateClass = ATrainingGameState::StaticClass();
+
 	MyClassName = "TrainingMode";
 	RoundTime = 0.0f;  // Default
 }
@@ -22,31 +26,33 @@ void ATrainingGameMode::BeginPlay()
 
 void ATrainingGameMode::StartTraining()
 {
+	if (!HasAuthority()) return;
+
 	ATrainingGameState* TGameState = Cast<ATrainingGameState>(GameState);
 	if (IsValid(TGameState))
 	{
 		TGameState->InitializeGameState();
 		TGameState->SetRoundProgress(ERoundProgress::InProgress);
 		TGameState->SetRemainingTime(RoundTime);
-	}	
+	}
 
-	GetWorld()->GetTimerManager().SetTimer(TrainingStatusTimerHandle, this, &ATrainingGameMode::UpdateTrainingStats, 1.0f, true);
+	GetWorld()->GetTimerManager().SetTimer(GameTimerHandle, this, &ATrainingGameMode::UpdateTrainingStats, 1.0f, true);
 }
 
 void ATrainingGameMode::EndRound()
 {
+	if (!HasAuthority()) return;
+
 	Super::EndRound();
 
-	GetWorldTimerManager().ClearTimer(TrainingStatusTimerHandle);
+	GetWorldTimerManager().ClearTimer(GameTimerHandle);
 	RoundTime = 0.0f;
-	
+
 	if (ATrainingGameState* TGameState = GetGameState<ATrainingGameState>())
 	{
 		TGameState->SetRoundProgress(ERoundProgress::Ended);
 		TGameState->SetRemainingTime(RoundTime);
 	}
-	
-
 }
 
 void ATrainingGameMode::CheckGameConditions()
@@ -65,44 +71,64 @@ void ATrainingGameMode::AddDamage(float DamageAmount)
 
 void ATrainingGameMode::UpdateTrainingStats()
 {
+	if (!HasAuthority()) { return; }
+
 	// Update GameState Data
 	ATrainingGameState* TGameState = GetGameState<ATrainingGameState>();
-	
-	if (IsValid(TGameState))
+	if (!IsValid(TGameState)) return;
+
+	// 남은 시간 감소
+	float CurrentRemainingTime = TGameState->GetRemainingTime();
+	if (CurrentRemainingTime > 1.0f)
 	{
-		// Update RemainingTime
-		float CurrentRemainingTime = TGameState->GetRemainingTime();
-		if (CurrentRemainingTime > 1.0f)
-		{
-			float NewRemainingTime = CurrentRemainingTime - 1.0f;
-			TGameState->SetRemainingTime(NewRemainingTime);
-		}
-
-		// Calculate DPS
-		float ElapsedTime = RoundTime - TGameState->GetRemainingTime();
-		float NewDPS = (ElapsedTime > 0.0f) ? (TGameState->GetTotalDamage() / ElapsedTime) : 0.0f;
-		TGameState->SetDPS(NewDPS);
-
-		// Update HUD
-		APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
-
-		if (IsValid(MyPlayerController))
-		{
-			if (ATrainingModeHUD* THUD = Cast<ATrainingModeHUD>(MyPlayerController->GetHUD()))
-			{
-				if (UTrainingWidget* TWidget = THUD->GetTrainingWidget())
-				{
-					TWidget->UpdateTimer(TGameState->GetRemainingTime());
-					TWidget->UpdateTrainingStatsData(TGameState->GetTotalDamage(), TGameState->GetDPS());
-				}
-			}
-		}
-
-		if (TGameState->GetRemainingTime() <= 0.0f)
-		{
-			EndRound();
-		}
+		TGameState->SetRemainingTime(CurrentRemainingTime - 1.0f);
 	}
+	else
+	{
+		EndRound();
+	}
+
+	// DPS 계산
+	float Elapsed = RoundTime - TGameState->GetRemainingTime();
+	float NewDPS = (Elapsed > 0.0f) ? (TGameState->GetTotalDamage() / Elapsed) : 0.0f;
+	TGameState->SetDPS(NewDPS);
+
+
+	//if (IsValid(TGameState))
+	//{
+	//	// Update RemainingTime
+	//	float CurrentRemainingTime = TGameState->GetRemainingTime();
+	//	if (CurrentRemainingTime > 1.0f)
+	//	{
+	//		float NewRemainingTime = CurrentRemainingTime - 1.0f;
+	//		TGameState->SetRemainingTime(NewRemainingTime);
+	//	}
+
+	//	// Calculate DPS
+	//	float ElapsedTime = RoundTime - TGameState->GetRemainingTime();
+	//	float NewDPS = (ElapsedTime > 0.0f) ? (TGameState->GetTotalDamage() / ElapsedTime) : 0.0f;
+	//	TGameState->SetDPS(NewDPS);
+
+	//	// Update HUD
+	//	APlayerController* MyPlayerController = GetWorld()->GetFirstPlayerController();
+
+	//	if (IsValid(MyPlayerController))
+	//	{
+	//		if (ATrainingModeHUD* THUD = Cast<ATrainingModeHUD>(MyPlayerController->GetHUD()))
+	//		{
+	//			if (UTrainingWidget* TWidget = THUD->GetTrainingWidget())
+	//			{
+	//				TWidget->UpdateTimer(TGameState->GetRemainingTime());
+	//				TWidget->UpdateTrainingStatsData(TGameState->GetTotalDamage(), TGameState->GetDPS());
+	//			}
+	//		}
+	//	}
+
+	//	if (TGameState->GetRemainingTime() <= 0.0f)
+	//	{
+	//		EndRound();
+	//	}
+	//}
 }
 
 void ATrainingGameMode::RegisterTrainingBotDamageEvents()
@@ -127,9 +153,9 @@ void ATrainingGameMode::SetRoundTime(float InTime)
 {
 	RoundTime = InTime;
 
-	if (ABaseInGameState* TGameState = GetGameState<ABaseInGameState>())
+	if (ATrainingGameState* TGameState = GetGameState<ATrainingGameState>())
 	{
-		TGameState->SetRemainingTime(InTime);
+		TGameState->SetRemainingTime(RoundTime);
 	}
 }
 

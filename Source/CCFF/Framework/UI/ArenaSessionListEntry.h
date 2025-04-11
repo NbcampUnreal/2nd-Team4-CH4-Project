@@ -23,11 +23,17 @@ protected:
 	UFUNCTION()
 	void OnJoinButtonClicked();
 
+	UFUNCTION()
+	void OnIPAddressTextChanged(const FText& NewText);
+
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* SessionNameText;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* PlayerCountText;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UEditableTextBox> ServerIPEditableText;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* JoinButton;

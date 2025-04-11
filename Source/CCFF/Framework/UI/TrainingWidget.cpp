@@ -6,7 +6,7 @@
 #include "Components/EditableTextBox.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "Framework/Controller/TrainingPlayerController.h"
 
 void UTrainingWidget::NativeConstruct()
 {
@@ -28,36 +28,24 @@ void UTrainingWidget::NativeConstruct()
 
 void UTrainingWidget::OnStartButtonClicked()
 {
-	if (IsValid(TimeInputBox))
-	{
-		// Get TimeInputBox
-		const FString InputStr = TimeInputBox->GetText().ToString();
-		float EnterTime = FCString::Atof(*InputStr);
-		if (EnterTime < 0.f)
-			EnterTime = 0.f;
+	if (!TimeInputBox) return;
+	float EnterTime = FCString::Atof(*TimeInputBox->GetText().ToString());
+	EnterTime = FMath::Max(0.f, EnterTime);
 
-		// Set Data in GameMode
-		if (ATrainingGameMode* TGameMode = Cast<ATrainingGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-		{
-			TGameMode->SetRoundTime(EnterTime);
-			TGameMode->StartTraining();
-		}
+	if (ATrainingPlayerController* PC = Cast<ATrainingPlayerController>(GetOwningPlayer()))
+	{
+		PC->StartLocalTraining(EnterTime);
 	}
 }
 
 void UTrainingWidget::OnResetButtonClicked()
 {
-	ATrainingGameMode* TGameMode = Cast<ATrainingGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
-	ATrainingGameState* TGameState = Cast<ATrainingGameState>(UGameplayStatics::GetGameState(GetWorld()));
-
-
-	if (IsValid(TGameMode) && IsValid(TGameState))
+	if (ATrainingPlayerController* PC = Cast<ATrainingPlayerController>(GetOwningPlayer()))
 	{
-		TGameMode->EndRound();
-		TGameState->InitializeGameState();
-		UpdateTimer(TGameState->GetRemainingTime());
-		UpdateTrainingStatsData(TGameState->GetTotalDamage(), TGameState->GetDPS());
+		PC->EndLocalTraining();
 	}
+	UpdateTimer(0.f);
+	UpdateTrainingStatsData(0.f, 0.f);
 }
 
 void UTrainingWidget::UpdateTimer(float CurrentTime)

@@ -14,37 +14,24 @@ struct FCharacterStats :public FTableRowBase
 	GENERATED_BODY();
 	
 public:
-	FCharacterStats(): MaxSuperMeter(0),SuperMeter(0),MaxBurstMeter(0),BurstMeter(0),BurstMeterGain(0),MaxBlockMeter(0),BlockMeter(0),
-					   BlockMeterGain(0),PerfectParryTick(0),AttackSuperGainMultiplier(0), MaxHealth(0), Health(0) { }
+	FCharacterStats():BurstMeterGain(0),MaxBlockMeter(0),BlockMeterGain(0),
+					  BlockMeter(0),PerfectParryTick(0),AttackSuperGainMultiplier(0) { }
 	
 
 	// Battle property
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float MaxSuperMeter;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float SuperMeter;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float MaxBurstMeter;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float BurstMeter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float BurstMeterGain;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float MaxBlockMeter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
-	float BlockMeter;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float BlockMeterGain;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
+	float BlockMeter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float PerfectParryTick;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Battle")
 	float AttackSuperGainMultiplier;
-
-	// Health property
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
-	float MaxHealth;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat/SystemBalance/Health")
-	float Health;
+	
 };
 
 USTRUCT(BlueprintType)
