@@ -3,6 +3,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Character/Base/BaseCharacter.h"
 #include "Engine/DataTable.h"
 
 UCharacterCustomizationComponent::UCharacterCustomizationComponent()
@@ -82,63 +83,15 @@ void UCharacterCustomizationComponent::EquipItem(FCustomItemData ItemData)
         MeshComp = OwnerPawn->FindComponentByClass<USkeletalMeshComponent>();
     }
 
-    TArray<FName> SocketNames = MeshComp->GetAllSocketNames();
-
-    for (FName SocketName : SocketNames)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Available Socket: %s"), *SocketName.ToString());
-
-    }
-    if (!MeshComp)
-    {
-        UE_LOG(LogTemp, Error, TEXT("SkeletalMeshComponent not found on Owner."));
-        return;
-    }
-
-    if (MeshComp->SkeletalMesh)
-    {
-        UE_LOG(LogTemp, Log, TEXT("Character's SkeletalMesh: %s"), *MeshComp->SkeletalMesh->GetName());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Character's SkeletalMesh is NULL!"));
-    }
-
-    if (!MeshComp->DoesSocketExist(ItemData.SocketName))
-    {
-        UE_LOG(LogTemp, Error, TEXT("Socket %s does not exist on skeletal mesh: %s"),
-            *ItemData.SocketName.ToString(),
-            MeshComp->SkeletalMesh ? *MeshComp->SkeletalMesh->GetName() : TEXT("NULL"));
-    }
-
     UStaticMeshComponent* NewItemComponent = NewObject<UStaticMeshComponent>(OwnerPawn);
-    if (!NewItemComponent)
+    if (NewItemComponent)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create StaticMeshComponent for item."));
-        return;
-    }
         UStaticMesh* ItemMesh = ItemData.ItemMesh.LoadSynchronous();
-    NewItemComponent->SetStaticMesh(ItemMesh);
-
-    NewItemComponent->RegisterComponent();
-
-    if (!ItemMesh)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to load StaticMesh for item ID: %d"), ItemData.ItemID);
-        return;
+        NewItemComponent->SetStaticMesh(ItemMesh);
+        NewItemComponent->RegisterComponent();
+        NewItemComponent->AttachToComponent(MeshComp, FAttachmentTransformRules::KeepRelativeTransform, ItemData.SocketName);
     }
-
-    if (MeshComp->SkeletalMesh)
-    {
-        UE_LOG(LogTemp, Log, TEXT("SkeletalMesh Name: %s"), *MeshComp->SkeletalMesh->GetName());
-    }
-
-    NewItemComponent->AttachToComponent(MeshComp, FAttachmentTransformRules::KeepRelativeTransform, ItemData.SocketName);
-
-    UE_LOG(LogTemp, Log, TEXT("Attaching item '%s' to socket: %s on SkeletalMesh: %s"),
-        *ItemMesh->GetName(),
-        *ItemData.SocketName.ToString(),
-        *MeshComp->SkeletalMesh->GetName());
+    
 
     EquippedItems.Add(ItemData.Slot, NewItemComponent);
 }
@@ -150,4 +103,44 @@ void UCharacterCustomizationComponent::UnequipItem(EItemSlot Slot)
         (*FoundItem)->DestroyComponent();
         EquippedItems.Remove(Slot);
     }
+}
+
+void UCharacterCustomizationComponent::UnequipAllItems()
+{
+	for (auto& Item : EquippedItems)
+	{
+		if (Item.Value)
+		{
+			Item.Value->DestroyComponent();
+		}
+	}
+	EquippedItems.Empty();
+}
+
+void UCharacterCustomizationComponent::SaveCurrentPreset(int32 PresetIndex)
+{
+	UE_LOG(LogTemp, Log, TEXT("Saving current preset..."));
+}
+
+void UCharacterCustomizationComponent::Server_SaveCurrentPreset_Implementation(FName CharacterID, int32 PresetIndex)
+{
+}
+
+FName UCharacterCustomizationComponent::GetCharacterType() const
+{
+    APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (!OwnerPawn)
+    {
+        return TEXT("Unknown");
+    }
+
+    // ACharacter에서 CharacterType 가져오기
+    ACharacter* OwnerCharacter = Cast<ACharacter>(OwnerPawn);
+	ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(OwnerCharacter);
+    if (BaseCharacter)
+    {
+ 
+    }
+
+    return OwnerPawn->GetFName();
 }

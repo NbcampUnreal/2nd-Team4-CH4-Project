@@ -22,6 +22,7 @@ void ULockerRoomWidget::NativeConstruct()
     {
         R_PresetButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnRightPresetButtonClicked);
     }
+
     if (L_HeadButton && !L_HeadButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::OnLeftHeadButtonClicked))
     {
         L_HeadButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnLeftHeadButtonClicked);
@@ -30,6 +31,7 @@ void ULockerRoomWidget::NativeConstruct()
     {
         R_HeadButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnRightHeadButtonClicked);
     }
+
     if (L_FaceButton && !L_FaceButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::OnLeftFaceButtonClicked))
     {
         L_FaceButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnLeftFaceButtonClicked);
@@ -38,6 +40,7 @@ void ULockerRoomWidget::NativeConstruct()
     {
         R_FaceButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnRightFaceButtonClicked);
     }
+
     if (L_ShoulderButton && !L_ShoulderButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::OnLeftShoulderButtonClicked))
     {
         L_ShoulderButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnLeftShoulderButtonClicked);
@@ -46,13 +49,14 @@ void ULockerRoomWidget::NativeConstruct()
     {
         R_ShoulderButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnRightShoulderButtonClicked);
     }
-	if (SaveButton && !SaveButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::RequestReturnToMainMenu))
+
+	if (SaveButton && !SaveButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::OnSaveButtonClicked))
 	{
-		SaveButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::RequestReturnToMainMenu);
+		SaveButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnSaveButtonClicked);
 	}
-	if (ClearButton && !ClearButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::RequestReturnToMainMenu))
+	if (ClearButton && !ClearButton->OnClicked.IsAlreadyBound(this, &ULockerRoomWidget::OnClearButtonClicked))
 	{
-		ClearButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::RequestReturnToMainMenu);
+		ClearButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnClearButtonClicked);
 	}
 
 	InitializePreviewPawn();
@@ -155,11 +159,20 @@ void ULockerRoomWidget::OnSaveButtonClicked()
     UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
     if (CustomizationComp)
     {
-        
+		CustomizationComp->SaveCurrentPreset(CurrentPresetIndex);
     }
 }
 
 void ULockerRoomWidget::OnClearButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Clear Button Clicked"));
+	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
+	if (CustomizationComp)
+	{
+		CustomizationComp->UnequipAllItems();
+	}
+
+	CurrentHeadIndex = 0;
+	CurrentFaceIndex = 0;
+	CurrentShoulderIndex = 0;
 }
