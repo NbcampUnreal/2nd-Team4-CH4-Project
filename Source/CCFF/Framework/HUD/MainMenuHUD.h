@@ -46,6 +46,12 @@ public:
 	UFUNCTION()
 	void HideLoadingWidget();
 
+	UFUNCTION()
+	void ShowErrorPopup(const FText& Message);
+
+	UFUNCTION()
+	void HandleErrorPopupConfirmed();
+
 protected:
 	void PushWidget(UUserWidget* WidgetClass);
 	void PopWidget();
@@ -73,6 +79,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUserWidget> LoadingWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UConfirmPopupWidget> ErrorPopupClass;
+
 	UPROPERTY()
 	class UMainMenuWidget* MainMenuWidget;
 
@@ -93,6 +102,9 @@ protected:
 
 	UPROPERTY()
 	class UUserWidget* LoadingWidget;
+
+	UPROPERTY()
+	class UConfirmPopupWidget* ErrorPopup;
 
 	UPROPERTY()
 	TArray<UUserWidget*> WidgetStack;

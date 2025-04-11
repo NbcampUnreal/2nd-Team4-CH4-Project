@@ -13,6 +13,14 @@ public:
 	ALobbyGameMode();
 
 	virtual void BeginPlay() override;
+
+	virtual void PreLogin(
+		const FString& Options,
+		const FString& Address,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage
+	) override;
+
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	void NotifyPlayerReadyStatusChanged();

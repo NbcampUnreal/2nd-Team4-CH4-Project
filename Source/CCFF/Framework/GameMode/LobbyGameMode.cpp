@@ -44,6 +44,17 @@ void ALobbyGameMode::BeginPlay()
 	}
 }
 
+void ALobbyGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	if (GetNumPlayers() >= 4)
+	{
+		ErrorMessage = TEXT("[LobbyGameMode] PreLogin : The lobby is full. Please try again later.");
+		return;
+	}
+}
+
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);

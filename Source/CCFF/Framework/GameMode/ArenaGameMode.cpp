@@ -15,6 +15,16 @@ AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) : Su
 	CountdownTime = 5.0f;
 }
 
+void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	if (bHasGameStarted)
+	{
+		ErrorMessage = TEXT("Server is already in-game. Please try again later.");
+	}
+}
+
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -41,6 +51,7 @@ void AArenaGameMode::StartArenaRound()
 	if (IsValid(ArenaGameState))
 	{
 		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
+		bHasGameStarted = true;
 	}
 
 	// CheckCondition every second
