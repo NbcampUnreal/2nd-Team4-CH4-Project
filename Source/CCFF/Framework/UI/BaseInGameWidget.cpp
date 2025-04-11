@@ -1,4 +1,7 @@
 #include "Framework/UI/BaseInGameWidget.h"
+
+#include "Character/Base/ProfileWidget.h"
+#include "Character/Base/SideBarWidget.h"
 #include "Components/TextBlock.h"
 
 
@@ -12,5 +15,20 @@ void UBaseInGameWidget::UpdateTimerText_Implementation(const float NewTime)
 	{
 		TimerText->SetText(FText::FromString(FormattedTime));
 	}
+}
+
+void UBaseInGameWidget::UpdateHealthBar(const float InPercentage)
+{
+	ProfileWidget->UpdateHealthBar(InPercentage);
+}
+
+void UBaseInGameWidget::UpdateSuperMeterBar(const float InPercentage)
+{
+	SideBarWidget->UpdateSuperMeterBar(InPercentage);
+}
+
+void UBaseInGameWidget::UpdateBurstMeterBar(const float InPercentage)
+{
+	SideBarWidget->UpdateBurstMeterBar(InPercentage);
 }
 

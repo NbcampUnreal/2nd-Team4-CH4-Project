@@ -3,9 +3,11 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Items/DataTable/CustomItemData.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "CharacterCustomizationComponent.generated.h"
 
 class UDataTable;
+class AMainMenuPlayerState;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
@@ -23,7 +25,7 @@ public:
 	UFUNCTION(BlueprintCallable)    
 	void UnequipAllItems();
 	UFUNCTION(BlueprintCallable)
-	void SaveCurrentPreset(int32 PresetIndex);
+	void SavePreset(FPresetItemsindex PresetIndexes);
 
 	//UFUNCTION(BlueprintCallable)
 	//UStaticMeshComponent* GetEquippedItem(EItemSlot Slot) const;
@@ -41,8 +43,8 @@ protected:
     TMap<EItemSlot, UStaticMeshComponent*> EquippedItems;
 
 	UFUNCTION(Server, Reliable)
-	void Server_SaveCurrentPreset(FName CharacterID, int32 PresetIndex);
-	void Server_SaveCurrentPreset_Implementation(FName CharacterID, int32 PresetIndex);
+	void Server_SavePreset(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes);
+	void Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes);
 
-	FName GetCharacterType()const;
+	FName GetCharacterID()const;
 };

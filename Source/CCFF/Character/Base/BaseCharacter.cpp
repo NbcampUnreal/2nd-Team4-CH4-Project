@@ -90,7 +90,6 @@ void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
 	{
 		HPWidget->InitializeHPWidget(StatusComponent);
 		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnCurrentHPChange);
-		StatusComponent->OnMaxHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnMaxHPChange);
 	}
 }
 

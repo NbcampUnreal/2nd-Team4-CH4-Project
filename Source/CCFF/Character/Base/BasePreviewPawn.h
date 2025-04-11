@@ -26,7 +26,11 @@ public:
     UCharacterCustomizationComponent* CustomizationComponent;
 
     void InitializePreview(FName CharacterID, class AMainMenuPlayerState* PlayerState);
+    FORCEINLINE FName GetCharacterID() const { return CurretCharacterID; };
 
 protected:
 	virtual void BeginPlay() override;
+
+private:
+	FName CurretCharacterID = FName("Cactus"); // Default character ID
 };

@@ -2,6 +2,10 @@
 #include "Blueprint/UserWidget.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Framework/UI/TogglePauseWidget.h"
+#include "Framework/GameMode/TrainingGameMode.h"
+#include <Kismet/GameplayStatics.h>
+#include "Framework/HUD/TrainingModeHUD.h"
+#include "Framework/UI/TrainingWidget.h"
 
 ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
@@ -9,9 +13,23 @@ ACharacterController::ACharacterController()
      JumpAction(nullptr),
 	 AttackAction1(nullptr),
 	 AttackAction2(nullptr),
-	 AttackAction3(nullptr)
+	 AttackAction3(nullptr),
+	 PauseWidget(nullptr),
+	 bIsPause(false)
 {
-	bIsPause = false;
+}
+
+void ACharacterController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HUDWidgetClass)
+	{
+		if (UUserWidget* HUDWidget = CreateWidget<UUserWidget>(this,HUDWidgetClass))
+		{
+			HUDWidget->AddToViewport();
+		}
+	}
 }
 
 void ACharacterController::TogglePause()
@@ -53,3 +71,4 @@ void ACharacterController::SetupInputComponent()
 
 	InputComponent->BindAction(TEXT("TogglePause"), EInputEvent::IE_Pressed, this, &ACharacterController::TogglePause);
 }
+

@@ -2,6 +2,7 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Character/Base/BasePreviewPawn.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "Items/Component/CharacterCustomizationComponent.h"
 #include "Items/DataTable/CustomItemData.h"
 
@@ -156,11 +157,26 @@ void ULockerRoomWidget::OnRightShoulderButtonClicked()
 void ULockerRoomWidget::OnSaveButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("Save Button Clicked"));
-    UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
-    if (CustomizationComp)
-    {
-		CustomizationComp->SaveCurrentPreset(CurrentPresetIndex);
-    }
+
+	FPresetItemsindex ItemsIndex;
+
+	ItemsIndex.PresetIndex = CurrentPresetIndex;
+	ItemsIndex.HeadIndex = CurrentHeadIndex;
+	ItemsIndex.FaceIndex = CurrentFaceIndex;
+	ItemsIndex.ShoulderIndex = CurrentShoulderIndex;
+	
+	SaveCurrentPreset(ItemsIndex);
+}
+
+void ULockerRoomWidget::SaveCurrentPreset(FPresetItemsindex& Indexes)
+{
+	UE_LOG(LogTemp, Log, TEXT("Saving current preset..."));
+
+	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
+	if (CustomizationComp)
+	{
+		CustomizationComp->SavePreset(Indexes);
+	} 
 }
 
 void ULockerRoomWidget::OnClearButtonClicked()
