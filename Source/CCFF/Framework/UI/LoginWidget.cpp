@@ -4,6 +4,7 @@
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/Controller/TitlePlayerController.h"
 #include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/UI/CheckPopupWidget.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 ULoginWidget::ULoginWidget(const FObjectInitializer& ObjectInitializer)
@@ -20,12 +21,12 @@ void ULoginWidget::NativeConstruct()
 		NicknameText.Get()->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
 	}
 
-	if (IsValid(LoginButton))
+	if (IsValid(LoginButton) && !LoginButton->OnClicked.IsAlreadyBound(this, &ULoginWidget::OnLoginButtonClicked))
 	{
 		LoginButton.Get()->OnClicked.AddDynamic(this, &ULoginWidget::OnLoginButtonClicked);
 	}
 
-	if (IsValid(ExitButton))
+	if (IsValid(ExitButton) && !ExitButton.Get()->OnClicked.IsAlreadyBound(this, &ULoginWidget::OnExitButtonClicked))
 	{
 		ExitButton.Get()->OnClicked.AddDynamic(this, &ULoginWidget::OnExitButtonClicked);
 	}
@@ -72,8 +73,15 @@ void ULoginWidget::OnExitButtonClicked()
 		{
 			ExitGamePopup->SetMessage(FText::FromString(TEXT("진짜 나감?")));
 			ExitGamePopup->AddToViewport();
-			ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &ULoginWidget::HandleExitGameConfirmed);
-			ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &ULoginWidget::HandleExitGameCanceled);
+
+			if (!ExitGamePopup->OnConfirmPopupConfirmed.IsAlreadyBound(this, &ULoginWidget::HandleExitGameConfirmed))
+			{
+				ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &ULoginWidget::HandleExitGameConfirmed);
+			}
+			if (!ExitGamePopup->OnConfirmPopupCanceled.IsAlreadyBound(this, &ULoginWidget::HandleExitGameCanceled))
+			{
+				ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &ULoginWidget::HandleExitGameCanceled);
+			}
 		}
 	}
 }
@@ -106,7 +114,7 @@ void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMe
 	{
 		OnLoginButtonClicked();
 	}
-}
+}																																																																																																																																																																																																							
 
 bool ULoginWidget::IsNicknameValid(const FString& Nickname, FString& OutErrorMessage) const
 {
@@ -135,18 +143,16 @@ bool ULoginWidget::IsNicknameValid(const FString& Nickname, FString& OutErrorMes
 
 void ULoginWidget::ShowErrorPopup(const FString& Message)
 {
-	if (!ExitGamePopupClass)
+	if (!ErrorPopupClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[LoginWidget] ShowErrorPopup : ExitGamePopupClass is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("[LoginWidget] ShowErrorPopup : ErrorPopupClass is NULL!"));
 		return;
 	}
 
-	ExitGamePopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), ExitGamePopupClass);
-	if (ExitGamePopup)
+	ErrorPopup = CreateWidget<UCheckPopupWidget>(GetWorld(), ErrorPopupClass);
+	if (ErrorPopup)
 	{
-		ExitGamePopup->SetMessage(FText::FromString(Message));
-		ExitGamePopup->AddToViewport();
-		ExitGamePopup->OnConfirmPopupConfirmed.AddDynamic(this, &ULoginWidget::HandleExitGameCanceled); // 재입력 유도
-		ExitGamePopup->OnConfirmPopupCanceled.AddDynamic(this, &ULoginWidget::HandleExitGameCanceled);
+		ErrorPopup->SetMessage(FText::FromString(Message));
+		ErrorPopup->AddToViewport();
 	}
 }

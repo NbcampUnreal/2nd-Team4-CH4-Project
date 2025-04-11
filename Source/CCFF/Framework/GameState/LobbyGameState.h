@@ -12,6 +12,7 @@ class CCFF_API ALobbyGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:
+#pragma region GAMESTART
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	bool EvaluateStartCondition() const;
 
@@ -24,5 +25,20 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_bAllowStartGame, BlueprintReadOnly, Category = "Lobby")
 	bool bAllowStartGame = false;
+#pragma endregion
+
+public:
+#pragma region COUNTDOWN
+	UFUNCTION()
+	void OnRep_RemainingCountdownTime();
+
+	void StartCountdownTimer();
+	void TickCountdownTimer();
+
+	UPROPERTY(ReplicatedUsing = OnRep_RemainingCountdownTime)
+	int32 RemainingCountdownTime = -1;
+
+	FTimerHandle CountdownTickHandle;
+#pragma endregion
 
 };
