@@ -42,8 +42,6 @@ void UStatusComponent::SetMaxHP(float InMaxHP)
 	{
 		MaxHP = 0.1f;
 	}
-
-	OnMaxHPChanged.Broadcast(MaxHP);
 }
 
 void UStatusComponent::SetBurstMeter(float InBurstMeter)
@@ -59,12 +57,8 @@ void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass,CurrentHP);
-	DOREPLIFETIME(ThisClass,MaxHP);
-}
-
-void UStatusComponent::OnRep_MaxHP()
-{
-	OnMaxHPChanged.Broadcast(MaxHP);
+	DOREPLIFETIME(ThisClass,SuperMeter);
+	DOREPLIFETIME(ThisClass,BurstMeter);
 }
 
 void UStatusComponent::OnRep_CurrentHP()
@@ -74,8 +68,10 @@ void UStatusComponent::OnRep_CurrentHP()
 
 void UStatusComponent::OnRep_BurstMeter()
 {
+	OnBurstMeterChanged.Broadcast(BurstMeter);
 }
 
 void UStatusComponent::OnRep_SuperMeter()
 {
+	OnSuperMeterChanged.Broadcast(SuperMeter);
 }

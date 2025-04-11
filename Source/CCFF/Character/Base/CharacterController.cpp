@@ -9,9 +9,23 @@ ACharacterController::ACharacterController()
      JumpAction(nullptr),
 	 AttackAction1(nullptr),
 	 AttackAction2(nullptr),
-	 AttackAction3(nullptr)
+	 AttackAction3(nullptr),
+	 PauseWidget(nullptr),
+	 bIsPause(false)
 {
-	bIsPause = false;
+}
+
+void ACharacterController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HUDWidgetClass)
+	{
+		if (UUserWidget* HUDWidget = CreateWidget<UUserWidget>(this,HUDWidgetClass))
+		{
+			HUDWidget->AddToViewport();
+		}
+	}
 }
 
 void ACharacterController::TogglePause()

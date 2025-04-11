@@ -8,7 +8,8 @@
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurrentHPChangedDelegate, float /*InCurrentHP*/);
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnMaxHPChangedDelegate, float /*InMaxHP*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSuperMeterChangedDelegate, float /*InSuperMeter*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBurstMeterChangedDelegate, float /*InBurstMeter*/);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class CCFF_API UStatusComponent : public UActorComponent
@@ -44,8 +45,6 @@ public:
 	
 protected:
 	UFUNCTION()
-	void OnRep_MaxHP();
-	UFUNCTION()
 	void OnRep_CurrentHP();
 	UFUNCTION()
 	void OnRep_BurstMeter();
@@ -54,20 +53,21 @@ protected:
 public:
 	FOnCurrentHPChangedDelegate OnCurrentHPChanged;
 	FOnDeathDelegate OnDeath;
-	FOnMaxHPChangedDelegate OnMaxHPChanged;
+	FOnSuperMeterChangedDelegate OnSuperMeterChanged;
+	FOnBurstMeterChangedDelegate OnBurstMeterChanged;
 private:
+	UPROPERTY()
+	float MaxHP;
 	UPROPERTY(ReplicatedUsing=OnRep_CurrentHP)
 	float CurrentHP;
-	UPROPERTY(ReplicatedUsing=OnRep_MaxHP)
-	float MaxHP;
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	float MaxSuperMeter;
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	float MaxBurstMeter;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_BurstMeter)
 	float BurstMeter;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_SuperMeter)
 	float SuperMeter;
 
 };
