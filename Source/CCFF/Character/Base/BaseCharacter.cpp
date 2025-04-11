@@ -21,16 +21,17 @@
 #include "Components/BoxComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Character/DamageHelper.h"
+#include "Framework/UI/BaseInGameWidget.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
-	CurrentActivatedCollision(-1),
 	bCanAttack(true),
+	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
-	LastAttackStartTime(0.f)
+	CurrentActivatedCollision(-1)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -86,16 +87,34 @@ ABaseCharacter::ABaseCharacter():
 void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
 {
 	UUW_HPWidget* HPWidget=Cast<UUW_HPWidget>(InHPWidget);
-	if (IsValid(HPWidget)==true)
+	if (IsValid(HPWidget)==true&&!HasAuthority())
 	{
 		HPWidget->InitializeHPWidget(StatusComponent);
-		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnCurrentHPChange);
+		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnHPChange);
+	}
+}
+
+void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
+{
+	if (UBaseInGameWidget* MyHUD=Cast<UBaseInGameWidget>(HUDWidget))
+	{
+		MyHUD->InitializeHUDWidget(StatusComponent);
+		StatusComponent->OnCurrentHPChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateHealthBar);
+		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
+		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
+		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
 	}
 }
 
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//Rotate Camera properly
+	if (IsValid(CameraBoom))
+	{
+		const float CameraRotation=GetActorRotation().Yaw;
+		CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	}
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -109,10 +128,10 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
 	
-	FString NetModeString = UDamageHelper::GetRoleString(this);
-	FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
-	UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
-	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+	// FString NetModeString = UDamageHelper::GetRoleString(this);
+	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
+	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
+	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -131,9 +150,9 @@ void ABaseCharacter::Tick(float DeltaTime)
 void ABaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	FString NetModeString = UDamageHelper::GetRoleString(this);
-	FString CombinedString = FString::Printf(TEXT("BaseCharacter::PossessedBy() %s [%s]"), *UDamageHelper::GetNetModeString(this), *NetModeString);
-	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+	// FString NetModeString = UDamageHelper::GetRoleString(this);
+	// FString CombinedString = FString::Printf(TEXT("BaseCharacter::PossessedBy() %s [%s]"), *UDamageHelper::GetNetModeString(this), *NetModeString);
+	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
 float ABaseCharacter::TakeDamage_Implementation(
@@ -415,10 +434,6 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
-	if (NewHealth <= 0.0f)
-	{
-		OnDeath();
-	}
 	return ScaledDamage;
 }
 
@@ -757,7 +772,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 				for (int32 i=0;i<n-1;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
-					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
+					//UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
 					const FName RowName=FName(CharacterType+"_"+TypeName);
 					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
 					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);

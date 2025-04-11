@@ -4,6 +4,7 @@
 #include "Framework/UI/TogglePauseWidget.h"
 #include "Framework/GameMode/TrainingGameMode.h"
 #include <Kismet/GameplayStatics.h>
+#include "BaseCharacter.h"
 #include "Framework/HUD/TrainingModeHUD.h"
 #include "Framework/UI/TrainingWidget.h"
 
@@ -22,14 +23,6 @@ ACharacterController::ACharacterController()
 void ACharacterController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (HUDWidgetClass)
-	{
-		if (UUserWidget* HUDWidget = CreateWidget<UUserWidget>(this,HUDWidgetClass))
-		{
-			HUDWidget->AddToViewport();
-		}
-	}
 }
 
 void ACharacterController::TogglePause()
