@@ -56,7 +56,10 @@ protected:
 	UFUNCTION()
 	void OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod);
 
+	UFUNCTION()
 	void HandleExitGameConfirmed();
+
+	UFUNCTION()
 	void HandleExitGameCanceled();
 #pragma endregion
 
