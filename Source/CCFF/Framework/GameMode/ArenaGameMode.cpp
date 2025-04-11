@@ -137,7 +137,7 @@ void AArenaGameMode::MoveResultLevel()
 {
 	if (!HasAuthority()) return;
 
-	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/MainMenuMap"));
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
 }
 
 
