@@ -15,6 +15,12 @@ public:
 	AArenaGameMode(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
+	virtual void PreLogin(
+		const FString& Options,
+		const FString& Address,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage)
+	override;
 
 	void StartArenaRound();
 	virtual void EndRound() override;
@@ -32,6 +38,10 @@ public:
 	float CountdownTime;
 
 #pragma endregion
+
+	/* 게임 시작 이후 입장 제한 */
+	UPROPERTY()
+	bool bHasGameStarted = false;
 
 private:
 	UFUNCTION()

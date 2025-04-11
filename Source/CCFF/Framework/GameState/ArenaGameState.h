@@ -15,10 +15,10 @@ public:
 
 	virtual void InitializeGameState() override;
 
+	FORCEINLINE ERoundProgress GetRoundProgress() const { return ArenaRoundProgress; }
 	void SetRoundProgress(ERoundProgress NewProgress);
-	FORCEINLINE ERoundProgress GetRoundProgress() { return ArenaRoundProgress; }
 
-	FORCEINLINE float GetCountdownTime() { return CountdownTime; }
+	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
 	FORCEINLINE void SetCountdownTime(float Time) { CountdownTime = Time; }
 
 	FORCEINLINE float GetRemainingTime() const { return ArenaRemainingTime; }

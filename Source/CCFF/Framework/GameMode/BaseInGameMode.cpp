@@ -41,7 +41,6 @@ void ABaseInGameMode::StartRound()
 		BGameState->RoundProgress = ERoundProgress::InProgress;
 	}
 
-	// CheckCondition every second
 	GetWorldTimerManager().SetTimer(
 		GameTimerHandle,
 		this,
@@ -65,11 +64,5 @@ void ABaseInGameMode::EndRound()
 
 void ABaseInGameMode::CheckGameConditions()
 {
-	//if (ABaseInGameState* BGameState = GetGameState<ABaseInGameState>())
-	//{
-	//	if (BGameState->RemainingTime <= 0.0f)
-	//	{
-	//		EndRound();
-	//	}
-	//}
+
 }

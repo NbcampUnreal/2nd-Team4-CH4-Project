@@ -15,6 +15,16 @@ AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) : Su
 	CountdownTime = 5.0f;
 }
 
+void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	if (bHasGameStarted)
+	{
+		ErrorMessage = TEXT("Server is already in-game. Please try again later.");
+	}
+}
+
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -26,7 +36,6 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 	}
-		
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
 }
@@ -35,12 +44,11 @@ void AArenaGameMode::StartArenaRound()
 {
 	if (!HasAuthority()) { return; }
 
-	//Super::StartRound();
-
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
 		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
+		bHasGameStarted = true;
 	}
 
 	// CheckCondition every second
@@ -83,7 +91,6 @@ void AArenaGameMode::CheckGameConditions()
 
 	Super::CheckGameConditions();
 
-	// TODO :: 남은 플레이어 1명일 때 종료
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
 	{
@@ -139,6 +146,3 @@ void AArenaGameMode::MoveResultLevel()
 
 	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
 }
-
-
-
