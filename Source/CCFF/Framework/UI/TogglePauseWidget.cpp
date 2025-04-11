@@ -55,7 +55,6 @@ void UTogglePauseWidget::OnSettingButtonClicked()
 
 void UTogglePauseWidget::OnLobbyButtonClicked()  
 {
-	// TODO :: not yet..
 	if (!MoveLobbyPopup && MoveLobbyPopupClass)
 	{
 		MoveLobbyPopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), MoveLobbyPopupClass);
@@ -78,7 +77,6 @@ void UTogglePauseWidget::OnMoveLobbyCanceled()
 {
 	if (MoveLobbyPopup)
 	{
-		//MoveLobbyPopup->RemoveFromParent();
 		MoveLobbyPopup->SetVisibility(ESlateVisibility::Collapsed);
 		MoveLobbyPopup = nullptr;
 	}

@@ -39,7 +39,9 @@ public:
 	UInputAction* AttackAction3;
 
 	bool bIsPause;
-
+	
+protected:
+	virtual void BeginPlay() override;
 protected:
 #pragma region GamePause
 	UFUNCTION(BlueprintCallable, Category = "CCFF|GameMode")
@@ -53,7 +55,6 @@ protected:
 	UPROPERTY()
 	UUserWidget* PauseWidget;
 #pragma endregion
-
-
+	
 
 };

@@ -1,51 +1,47 @@
 #include "Framework/GameMode/TrainingGameMode.h"
 #include "Framework/GameState/TrainingGameState.h"
-#include "TimerManager.h"
+#include "Character/Base/BaseCharacter.h"
+#include "Framework/Controller/TrainingPlayerController.h"
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
-ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+
+ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-	RoundDuration = 60.0f;
-	MyClassName = "TrainingMode";
+    PlayerControllerClass = ATrainingPlayerController::StaticClass();
+    GameStateClass = ATrainingGameState::StaticClass();
 }
 
-void ATrainingGameMode::StartRound()
+void ATrainingGameMode::BeginPlay()
 {
-	Super::StartRound();
+    Super::BeginPlay();
 
-	ATrainingGameState* TGameState = Cast<ATrainingGameState>(GameState);
-	if (IsValid(TGameState))
-	{
-		TGameState->TotalDamage = 0.0f;
-		TGameState->MaxCombo = 0;
-		TGameState->DPS = 0.0f;
-	}
-
-	if (!TrainingHUD && HUDWidgetClass)
-	{
-		TrainingHUD = CreateWidget<UUserWidget>(GetWorld(), HUDWidgetClass);
-		if (TrainingHUD)
-		{
-			TrainingHUD->AddToViewport();
-		}
-	}
+    RegisterTrainingBotDamageEvents();
 }
 
-void ATrainingGameMode::EndRound()
+void ATrainingGameMode::RegisterTrainingBotDamageEvents()
 {
-	Super::EndRound();
+    TArray<AActor*> TrainingBots;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseCharacter::StaticClass(), TrainingBots);
 
-	ATrainingGameState* TGameState = Cast<ATrainingGameState>(GameState);
-	if (IsValid(TGameState))
-	{
-		TGameState->CalculateDPS(RoundDuration);
-	}
+    for (AActor* Bot : TrainingBots)
+    {
+        if (ABaseCharacter* TrainingBot = Cast<ABaseCharacter>(Bot))
+        {
+            TrainingBot->OnTakeAnyDamage.AddDynamic(this, &ATrainingGameMode::HandleBotDamage);
+        }
+    }
 }
 
-void ATrainingGameMode::CheckGameConditions()
+void ATrainingGameMode::HandleBotDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	Super::CheckGameConditions();
-
-	// Call EndRound() when condition is true
+    if (ATrainingPlayerController* TrainingPlayerController = Cast<ATrainingPlayerController>(InstigatedBy))
+    {
+        TrainingPlayerController->ClientAddLocalDamage(Damage);
+    }
 }
+
+
+

@@ -8,12 +8,15 @@
 #include "CharacterStats.h"
 #include "CharacterAnim.h"
 #include "CharacterEnum.h"
-#include "BattleModifiers.h"
 #include "DamageAble.h"
 #include "InputActionValue.h"
 #include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
+class UBoxComponent;
+class UUW_HPWidget;
+class UStatusComponent;
+class UHPWidgetComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UBattleComponent;
@@ -29,16 +32,28 @@ class CCFF_API ABaseCharacter : public ACharacter, public IDamageAble
 public:
 	ABaseCharacter();
 
+public:
+#pragma region Widget
+	void SetHPWidget(UUW_HPWidget* InHPWidget);
+	void SetHUDWidget(UUserWidget* HUDWidget);
+#pragma endregion
+	
+#pragma region GetFunction
+	FORCEINLINE FString GetCharacterType() const { return CharacterType; };
+#pragma endregion
+	
 #pragma region Override
-
+protected:
 	// === Character Override Functions ===
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	//Interface Override Functions
 	virtual float TakeDamage_Implementation(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser,FHitBoxData& HitData) override;
-
 #pragma endregion
 
 #pragma region AttackAnimation
@@ -59,31 +74,30 @@ public:
 	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
 	
-protected:
-
 #pragma region Timer
+protected:
 	// === Timers ===
 	UPROPERTY()
 	FTimerHandle HitstunTimerHandle;
 	UPROPERTY()
-	FTimerHandle HitLagTimerHandle;
+	FTimerHandle HitlagTimerHandle;
 	UPROPERTY()
-	FTimerHandle BlockStunTimerHandle;
-	UPROPERTY()
-	FVector StoredVelocity;
+	FTimerHandle BlockstunTimerHandle;
 #pragma endregion
-protected:
+
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
-	void PreLoadCharacterMovementStats();
+	void PreLoadCharacterBalanceStats();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadAttackCollisions();
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadCharacterAnim();
+	UFUNCTION(BlueprintCallable, Category = "DataLoad")
+	void PreLoadBattleModifiers();
 #pragma endregion
-	
+
 #pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -91,112 +105,77 @@ protected:
 	void StartJump(const FInputActionValue& Value);
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
-
 #pragma endregion
+
 #pragma region AttackFunctions
+	UFUNCTION(Server,Reliable,WithValidation)
+	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
+	UFUNCTION(Client,Unreliable)
+	void ClientRPCPlayAttackMontage(const int32 Num, ABaseCharacter* InTargetCharacter);
+	UFUNCTION()
+	void PlayAttackMontage(const int32& Num);
+	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
+	UFUNCTION()
 	void Attack3(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnRep_CanAttack();
 #pragma endregion
+	
+protected:
 #pragma region CombatEffect
-
-private:
 	// === Damage & Reaction ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeNormalDamage(float Damage, float MinimumDamage);
+	float TakeNormalDamage(float Damage, float MinimumDamage);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void TakeHitstun(int32 Hitstun);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void EndHitstun();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeHitLag(int32 Hitlag);
+	void TakeHitlag(int32 Hitlag);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void EndHitLag();
+	void EndHitlag();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeBlockStun(int32 BlockStun);
+	void TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void EndBlockStun();
+	void EndHitlagAndTakeKnocback();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
-	void TakeKnockback(FVector KnockbackAngle, float KnockbackForce, FVector2D DIInput);
+	void TakeBlockstun(int32 Blockstun);
+	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
+	void EndBlockstun();
+	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
+	void TakeKnockback(FVector KnockbackAngle, float KnockbackForce);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Effect")
 	void GuardCrush();
-
 #pragma endregion
 
 #pragma region CombatReaction
-
-private:
 	// === Hit Reaction ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnAttackHit() const;
+	void OnAttackHit(float Damage);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnAttackBlocked() const;
+	void OnAttackBlocked();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ProcessHitReaction(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+	void ProcessHitReaction(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveNormalHit(AActor* DamageCauser);
+	void ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveArmorHit(float Damage) const;
+	void ReceiveArmorHit(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void ReceiveBlock(AActor* DamageCauser) const;
+	void ReceiveBlock(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void ReceiveGrabbed();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void Clash(AActor* DamageCauser) const;
+	void Clash(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath() const;
 
 #pragma endregion
 
-	
-protected:
-	
-#pragma region AttackCollision
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
-	int32 CurrentActivatedCollision;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
-	TArray<UShapeComponent*> AttackCollisions;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
-	TArray<FHitBoxData> HitBoxList;
-#pragma endregion
-	
-#pragma region Character Status
-	//Character Type
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	FString CharacterType;
-	//Character State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	ECharacterState CurrentCharacterState;
-	//BattleModifier
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	FBattleModifiers CurrentBattleModifiers;
-	//Character Resistance State
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
-	EResistanceState CurrentResistanceState;
-	//Character Stats struct
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
-	FCharacterStats Stats;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
-	FCharacterMovementStats MovementStats;
-	//Attack and Hitted Animation Data
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
-	FCharacterAnim Anim;
-#pragma endregion
-protected:
-#pragma region Components
-	// === Components ===
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UBattleComponent* BattleComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UItemInteractionComponent* ItemInteractionComponent;
-#pragma endregion
-	
-private:
 
+private:
 #pragma region Meter
 	// === Meter Handling ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")
@@ -207,6 +186,80 @@ private:
 	void GainBurstMeter(float Amount);
 #pragma endregion
 	
+protected:
+#pragma region AttackCollisionData
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
+	int32 CurrentActivatedCollision;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Collision")
+	TArray<UBoxComponent*> AttackCollisions;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
+	TArray<FHitBoxData> HitBoxList;
+#pragma endregion
+	
+protected:
+#pragma region Components
+	// === Components ===
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UCameraComponent* FollowCamera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UBattleComponent* BattleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UItemInteractionComponent* ItemInteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UHPWidgetComponent> HPWidgetComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStatusComponent> StatusComponent;
+#pragma endregion
+
+protected:
+#pragma region Character Status
+	//Character Type
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	FString CharacterType;
+	//Character State
+	UPROPERTY(Replicated)
+	ECharacterState CurrentCharacterState;
+	//Character Resistance State
+	UPROPERTY(Replicated)
+	EResistanceState CurrentResistanceState;
+	//Character Stats struct
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	FCharacterStats Stats;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	FCharacterBalanceStats BalanceStats;
+	//Attack and Hitted Animation Data
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
+	FCharacterAnim Anim;
+#pragma endregion
+	
+#pragma region Cached variables
+	UPROPERTY()
+	FVector2D CurrentMoveInput;
+	UPROPERTY()
+	bool bIsCancelable = true;
+	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
+	uint8 bCanAttack : 1;
+	UPROPERTY()
+	FVector StoredVelocity;
+	UPROPERTY()
+	FVector StoredKnockbackAngle;
+	UPROPERTY()
+	float StoredKnockbackForce;
+	UPROPERTY()
+	float LastAttackStartTime;
+	UPROPERTY()
+	float ServerDelay;
+	UPROPERTY()
+	float PrevMontagePlayTime;
+#pragma endregion
+	
+	
 };
+
+
+
 
 

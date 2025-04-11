@@ -17,17 +17,15 @@ public:
 	void OnResetButtonClicked();
 
 	UFUNCTION()
-	void UpdateTimer();
+	void UpdateTimer(float CurrentTime);
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void UpdateTrainingStatsData(float TotalDamage, int32 MaxCombo, float DPS);
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Training Stats")
+	void UpdateTrainingStatsData(float TotalDamage, float DPS);
 
 protected:
 	virtual void NativeConstruct() override;
 
 #pragma region SetTimer
-	float CurrentTime = 0.0f;
-
 	FTimerHandle TimerHandle;
 
 	UPROPERTY(meta = (BindWidget))
@@ -43,9 +41,6 @@ protected:
 #pragma region DPS
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TotalDamageText;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MaxComboText;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DPSText;

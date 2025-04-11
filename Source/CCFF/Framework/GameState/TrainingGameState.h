@@ -9,28 +9,35 @@ UCLASS()
 class CCFF_API ATrainingGameState : public ABaseInGameState
 {
 	GENERATED_BODY()
-	
+
 public:
 	ATrainingGameState();
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void AddDamage(float DamageAmount);
+	void InitializeGameState() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void UpdateMaxCombo(int32 CurrentCombo);
+	FORCEINLINE ERoundProgress GetRoundProgress() const { return TrainingRoundProcess; }
+	FORCEINLINE void SetRoundProgress(ERoundProgress NewProgress) { TrainingRoundProcess = NewProgress; }
+	
+	FORCEINLINE float GetTotalDamage() const { return TotalDamage; }
+	FORCEINLINE void SetTotalDamage(float Damage) { TotalDamage = Damage; }
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void CalculateDPS(float TrainingTime);
+	FORCEINLINE float GetDPS() const { return DPS; }
+	FORCEINLINE void SetDPS(float InDPS) { DPS = InDPS; }
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
-	void UpdateTrainingStats(float TrainingTime);
+	FORCEINLINE float GetRemainingTime() const { return TrainingRemainingTime; }
+	FORCEINLINE void SetRemainingTime(float Time) { TrainingRemainingTime = Time; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
+#pragma region DPS
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Training Stats")
+	ERoundProgress TrainingRoundProcess;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Training Stats")
+	float TrainingRemainingTime;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Training Stats")
 	float TotalDamage;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
-	int32 MaxCombo;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Training Stats")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Training Stats")
 	float DPS;
+#pragma endregion
 };

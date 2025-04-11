@@ -11,5 +11,16 @@ class CCFF_API AMainMenuPlayerController : public APlayerController
 
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual void SetupInputComponent() override;
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void JoinServer(const FString& TargetIP);
+
+	UFUNCTION(BlueprintCallable)
+	void FindSessions();
+
+	UFUNCTION()
+	void HandleBack();
+
 };

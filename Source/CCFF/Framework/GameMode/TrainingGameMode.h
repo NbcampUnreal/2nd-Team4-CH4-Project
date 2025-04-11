@@ -11,15 +11,13 @@ class CCFF_API ATrainingGameMode : public ABaseInGameMode
 	GENERATED_BODY()
 
 public:
-	ATrainingGameMode(const FObjectInitializer& ObjectInitializer);
+    ATrainingGameMode(const FObjectInitializer& ObjectInitializer);
 
-	void StartRound() override;
-	void EndRound() override;
-	virtual void CheckGameConditions() override;
+    virtual void BeginPlay() override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|HUD")
-	TSubclassOf<class UUserWidget> HUDWidgetClass;
-	UPROPERTY()
-	UUserWidget* TrainingHUD;
+    UFUNCTION()
+    void HandleBotDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
+
+    void RegisterTrainingBotDamageEvents();
 };

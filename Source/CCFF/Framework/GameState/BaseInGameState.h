@@ -22,19 +22,8 @@ class CCFF_API ABaseInGameState : public AGameState
 public:
 	ABaseInGameState();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
+	virtual void InitializeGameState();
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState|HUD")
-	virtual void UpdateHUDData();
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState|HUD")
-	virtual void SetRemainingTime(float NewTime);
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState|HUD")
-	virtual void SetRoundProgress(ERoundProgress NewProgress);
-
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "CCFF|GameState|HUD")
-	float RemainingTime;
-
-	UPROPERTY(BlueprintReadOnly, Replicated, Category = "CCFF|GameState|HUD")
 	ERoundProgress RoundProgress;
-
 };

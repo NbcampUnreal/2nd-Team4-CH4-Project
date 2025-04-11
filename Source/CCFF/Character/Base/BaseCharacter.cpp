@@ -124,7 +124,6 @@ void ABaseCharacter::BeginPlay()
 	if (StatusComponent)
 	{
 		StatusComponent->OnDeathState.AddUObject(this,&ABaseCharacter::OnDeath);
-		StatusComponent->OnGuardCrush.AddUObject(this,&ABaseCharacter::GuardCrush);
 	}
 	//Initialize struct variables
 	PreLoadCharacterStats();
@@ -699,8 +698,12 @@ void ABaseCharacter::OnDeath() const
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
 {
-	float NewBlockMeter=StatusComponent->GetBlockMeter() + Amount;
-	StatusComponent->SetBlockMeter(NewBlockMeter);
+	Stats.BlockMeter = FMath::Clamp(Stats.BlockMeter + Amount, 0.0f, Stats.MaxBlockMeter);
+
+	if (Stats.BlockMeter <= 0.0f)
+	{
+		GuardCrush();
+	}
 }
 
 void ABaseCharacter::ModifySuperMeter(float Amount)

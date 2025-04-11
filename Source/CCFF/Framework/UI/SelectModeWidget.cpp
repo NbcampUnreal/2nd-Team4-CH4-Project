@@ -1,5 +1,6 @@
 #include "Framework/UI/SelectModeWidget.h"
 #include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/UI/ArenaModeWidget.h"
 #include "Framework/HUD/MainMenuHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
@@ -8,35 +9,35 @@ void USelectModeWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (AdventureButton)
+	if (AdventureButton && !AdventureButton->OnClicked.IsAlreadyBound(this, &USelectModeWidget::OnAdventureClicked))
 	{
-		AdventureButton->OnClicked.AddDynamic(this, &USelectModeWidget::OnAdventrueClicked);
+		AdventureButton->OnClicked.AddDynamic(this, &USelectModeWidget::OnAdventureClicked);
 	}
 	
-	if (ArenaButton)
+	if (ArenaButton && !ArenaButton->OnClicked.IsAlreadyBound(this, &USelectModeWidget::OnArenaClicked))
 	{
 		ArenaButton->OnClicked.AddDynamic(this, &USelectModeWidget::OnArenaClicked);
 	}
 
-	if (TrainingRoomButton)
+	if (TrainingRoomButton && !TrainingRoomButton->OnClicked.IsAlreadyBound(this, &USelectModeWidget::OnTrainingRoomClicked))
 	{
 		TrainingRoomButton->OnClicked.AddDynamic(this, &USelectModeWidget::OnTrainingRoomClicked);
 	}
 
-	if (BackButton)
+	if (BackButton && !BackButton->OnClicked.IsAlreadyBound(this, &USelectModeWidget::OnBackClicked))
 	{
 		BackButton->OnClicked.AddDynamic(this, &USelectModeWidget::OnBackClicked);
 	}
 }
 
-void USelectModeWidget::OnAdventrueClicked()
+void USelectModeWidget::OnAdventureClicked()
 {
 	// Todo: 
 }
 
 void USelectModeWidget::OnArenaClicked()
 {
-	// Todo: 
+	OnArenaModeRequested.Broadcast();
 }
 
 void USelectModeWidget::OnTrainingRoomClicked()
@@ -53,7 +54,7 @@ void USelectModeWidget::OnTrainingRoomClicked()
 
 void USelectModeWidget::HandleTrainingPopupConfirmed()
 {
-	UGameplayStatics::OpenLevel(this, FName("TestTrainingMap"));
+	UGameplayStatics::OpenLevel(this, FName("/Game/CCFF/Maps/TrainingMap"));
 }
 
 void USelectModeWidget::HandleTrainingPopupCanceled()

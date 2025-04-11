@@ -22,5 +22,11 @@ public:
 		AController* EventInstigator,
 		AActor* DamageCauser,
 		TSubclassOf<UDamageType> DamageTypeClass,
-		FHitBoxData& HitData);
+		FHitBoxData& HitData
+		);
+
+	//Debug Function
+	static void MyPrintString(const AActor* InWorldContextActor, const FString& InString, float InTimeToDisplay = 1.f, FColor InColor = FColor::Orange);
+	static FString GetNetModeString(const AActor* InWorldContextActor);
+	static FString GetRoleString(const AActor* InActor);
 };

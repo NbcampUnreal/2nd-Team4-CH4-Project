@@ -16,10 +16,10 @@ UDataLoaderSubSystem::UDataLoaderSubSystem()
 		StatDataTable=StatDataFinder.Object;
 	}
 	// Find Character Stats Data Table and Initialize Data Table Variable
-	static ConstructorHelpers::FObjectFinder<UDataTable> MovementStatDataFinder(TEXT("/Game/CCFF/DataTables/DT_MovementStat.DT_MovementStat"));
-	if (MovementStatDataFinder.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UDataTable> BalanceStatDataFinder(TEXT("/Game/CCFF/DataTables/DT_BalanceStats.DT_BalanceStats"));
+	if (BalanceStatDataFinder.Succeeded())
 	{
-		MovementStatsDataTable=MovementStatDataFinder.Object;
+		BalanceStatsDataTable=BalanceStatDataFinder.Object;
 	}
 
 	// Find Character Stats Data Table and Initialize Data Table Variable
@@ -60,38 +60,38 @@ FCharacterStats UDataLoaderSubSystem::InitializeStat(const FName RowName) const
 {
 	if (RowName.IsValid()&&StatDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
 		if (FCharacterStats* TempStats=StatDataTable->FindRow<FCharacterStats>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
 	return FCharacterStats();
 }
 
-FCharacterMovementStats UDataLoaderSubSystem::InitializeMovementStat(const FName RowName) const
+FCharacterBalanceStats UDataLoaderSubSystem::InitializeBalanceStat(const FName RowName) const
 {
-	if (RowName.IsValid()&&MovementStatsDataTable)
+	if (RowName.IsValid()&&BalanceStatsDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
-		if (FCharacterMovementStats* TempStats=MovementStatsDataTable->FindRow<FCharacterMovementStats>(RowName,TEXT("")))
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		if (FCharacterBalanceStats* TempStats=BalanceStatsDataTable->FindRow<FCharacterBalanceStats>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
-	return FCharacterMovementStats();
+	return FCharacterBalanceStats();
 }
 
 FBattleModifiers UDataLoaderSubSystem::InitializeBattleModifiers(const FName RowName) const
 {
 	if (RowName.IsValid()&&BattleModifiersDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
 		if (FBattleModifiers* TempStats=BattleModifiersDataTable->FindRow<FBattleModifiers>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
@@ -102,10 +102,10 @@ FAttackCollisionData UDataLoaderSubSystem::InitializeAttackCollisionData(const F
 {
 	if (RowName.IsValid()&&AttackCollisionDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
 		if (FAttackCollisionData* TempStats=AttackCollisionDataTable->FindRow<FAttackCollisionData>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
@@ -116,10 +116,10 @@ FHitBoxData UDataLoaderSubSystem::InitializeHitBoxData(const FName RowName) cons
 {
 	if (RowName.IsValid()&&HitBoxDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
 		if (FHitBoxData* TempStats=HitBoxDataTable->FindRow<FHitBoxData>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}
@@ -130,10 +130,10 @@ FCharacterAnim UDataLoaderSubSystem::InitializeCharacterAnim(const FName RowName
 {
 	if (RowName.IsValid()&&CharacterAnimDataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("RowName: %s"), *RowName.ToString());
 		if (FCharacterAnim* TempStats=CharacterAnimDataTable->FindRow<FCharacterAnim>(RowName,TEXT("")))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
+			//UE_LOG(LogTemp, Warning, TEXT("Load Success!"));
 			return *TempStats;
 		}
 	}

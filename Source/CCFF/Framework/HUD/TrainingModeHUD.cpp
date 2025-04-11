@@ -5,7 +5,15 @@ void ATrainingModeHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TrainingWidget = CreateAndAddWidget<UTrainingWidget>(TrainingWidgetClass, 0, ESlateVisibility::Visible);
+    APlayerController* MyPlayerController = GetOwningPlayerController();
+    if (MyPlayerController && MyPlayerController->IsLocalController() && TrainingWidgetClass)
+    {
+        TrainingWidget = CreateWidget<UTrainingWidget>(MyPlayerController, TrainingWidgetClass);
+        if (IsValid(TrainingWidget))
+        {
+            TrainingWidget->AddToViewport();
+        }
+    }
 }
 
 void ATrainingModeHUD::ShowTrainingWidget()

@@ -16,33 +16,71 @@ protected:
 
 public:
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ShowMainMenuWidget();
-
-	UFUNCTION(BlueprintCallable)
+	
+	UFUNCTION()
 	void ShowSelectModeWidget();
+	
+	UFUNCTION()
+	void ShowArenaWidget();
+	
+	UFUNCTION()
+	void ShowLockerRoomWidget();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
+	void ShowShopWidget();
+
+	UFUNCTION()
 	void ShowSettingsWidget();
-
-	UFUNCTION(BlueprintCallable)
+	
+	UFUNCTION()
 	void HideSettingsWidget();
 
-protected:
+	UFUNCTION()
+	void ReturnToPreviousWidget();
 
-	template<typename TWidget>
-	TWidget* SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder = 0);
+	UFUNCTION()
+	void ShowLoadingWidget();
+
+	UFUNCTION()
+	void HideLoadingWidget();
+
+	UFUNCTION()
+	void ShowErrorPopup(const FText& Message);
+
+	UFUNCTION()
+	void HandleErrorPopupConfirmed();
+
+protected:
+	void PushWidget(UUserWidget* WidgetClass);
+	void PopWidget();
+
+protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = UI)
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class USelectModeWidget> SelectModeWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = UI)
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UArenaModeWidget> ArenaModeWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class ULockerRoomWidget> LockerRoomWidgetClass;
+
+	// UPROPERTY(EditDefaultsOnly, Category = "UI")
+	// TSubclassOf<class UUserWidget> ShopWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class USettingsWidget> SettingsWidgetClass;
 
-private:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> LoadingWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UConfirmPopupWidget> ErrorPopupClass;
 
 	UPROPERTY()
 	class UMainMenuWidget* MainMenuWidget;
@@ -51,31 +89,24 @@ private:
 	class USelectModeWidget* SelectModeWidget;
 
 	UPROPERTY()
+	class UArenaModeWidget* ArenaModeWidget;
+
+	UPROPERTY()
+	class ULockerRoomWidget* LockerRoomWidget;
+
+	// UPROPERTY()
+	// class UUserWidget* ShopWidget;
+
+	UPROPERTY()
 	class USettingsWidget* SettingsWidget;
 
 	UPROPERTY()
-	UUserWidget* LastActiveWidget;
+	class UUserWidget* LoadingWidget;
+
+	UPROPERTY()
+	class UConfirmPopupWidget* ErrorPopup;
+
+	UPROPERTY()
+	TArray<UUserWidget*> WidgetStack;
 
 };
-
-template<typename TWidget>
-inline TWidget* AMainMenuHUD::SwitchWidget(TWidget* TargetWidget, TSubclassOf<TWidget> WidgetClass, int32 ZOrder)
-{
-	if (LastActiveWidget)
-	{
-		LastActiveWidget->RemoveFromParent();
-		LastActiveWidget = nullptr;
-	}
-
-	if (WidgetClass)
-	{
-		TargetWidget = CreateWidget<TWidget>(GetWorld(), WidgetClass);
-		if (TargetWidget)
-		{
-			TargetWidget->AddToViewport(ZOrder);
-			LastActiveWidget = TargetWidget;
-		}
-	}
-
-	return TargetWidget;
-}
