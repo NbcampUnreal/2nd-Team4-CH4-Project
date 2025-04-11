@@ -44,9 +44,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TotalDamageText;
 
-	/*UPROPERTY(meta = (BindWidget))
-	UTextBlock* MaxComboText;*/
-
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DPSText;
 
