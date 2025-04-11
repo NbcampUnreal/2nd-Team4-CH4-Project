@@ -25,13 +25,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
 	virtual void InitializeGameState();
 
-	//UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
-	//virtual float GetRemainingTime() const { return RemainingTime; }
-
-	//UFUNCTION(BlueprintCallable, Category = "CCFF|GameState")
-	//virtual void SetRemainingTime(float InTime) { RemainingTime = InTime; }
-
-	//float RemainingTime;
-
 	ERoundProgress RoundProgress;
 };

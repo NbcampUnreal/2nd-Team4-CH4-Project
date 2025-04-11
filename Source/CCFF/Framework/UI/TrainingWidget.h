@@ -19,15 +19,13 @@ public:
 	UFUNCTION()
 	void UpdateTimer(float CurrentTime);
 
-	UFUNCTION(BlueprintCallable, Category = "Training Stats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Training Stats")
 	void UpdateTrainingStatsData(float TotalDamage, float DPS);
 
 protected:
 	virtual void NativeConstruct() override;
 
 #pragma region SetTimer
-	//float CurrentTime = 0.0f;
-
 	FTimerHandle TimerHandle;
 
 	UPROPERTY(meta = (BindWidget))

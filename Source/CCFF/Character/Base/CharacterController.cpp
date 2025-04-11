@@ -23,6 +23,13 @@ ACharacterController::ACharacterController()
 void ACharacterController::BeginPlay()
 {
 	Super::BeginPlay();
+
+
+	bShowMouseCursor = true;
+
+	FInputModeGameAndUI InputModeData;
+	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputModeData);
 }
 
 void ACharacterController::TogglePause()

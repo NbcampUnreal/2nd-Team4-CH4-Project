@@ -108,26 +108,25 @@ void AArenaGameState::OnRep_FinishCountdown()
 
 void AArenaGameState::OnRep_ArenaRemainingTime()
 {
-	UE_LOG(LogTemp, Log, TEXT("OnRep_RemainingTime() called. New RemainingTime: %.2f"), ArenaRemainingTime);
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
 	{
 		if (APlayerController* MyPlayerController = It->Get())
 		{
-			if (ABaseInGameHUD* BaseHUD = Cast<ABaseInGameHUD>(MyPlayerController->GetHUD()))
+			if (ABaseInGameHUD* BaseInGameHUD = Cast<ABaseInGameHUD>(MyPlayerController->GetHUD()))
 			{
-				if (UBaseInGameWidget* BaseWidget = BaseHUD->GetBaseInGameWidget())
+				if (UBaseInGameWidget* BaseInGameWidget = BaseInGameHUD->GetBaseInGameWidget())
 				{
-					BaseWidget->UpdateTimerText(ArenaRemainingTime);
+					BaseInGameWidget->UpdateTimerText(ArenaRemainingTime);
 				}
 			}
 
-			if (AArenaModeHUD* ArenaHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
+			if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(MyPlayerController->GetHUD()))
 			{
-				if (UCountdownWidget* CountdownWidget = ArenaHUD->GetCountdownWidget())
+				if (UCountdownWidget* CountdownWidget = ArenaModeHUD->GetCountdownWidget())
 				{
 					if (ArenaRemainingTime <= 0.0f)
 					{
-						ArenaHUD->ShowCountdownWidget();
+						ArenaModeHUD->ShowCountdownWidget();
 						CountdownWidget->SetCountdownText(TEXT("FINISH"));
 					}
 				}

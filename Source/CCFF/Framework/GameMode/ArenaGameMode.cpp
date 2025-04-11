@@ -36,7 +36,6 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 	}
-		
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
 }
@@ -44,8 +43,6 @@ void AArenaGameMode::BeginPlay()
 void AArenaGameMode::StartArenaRound()
 {
 	if (!HasAuthority()) { return; }
-
-	//Super::StartRound();
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
@@ -94,7 +91,6 @@ void AArenaGameMode::CheckGameConditions()
 
 	Super::CheckGameConditions();
 
-	// TODO :: 남은 플레이어 1명일 때 종료
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
 	{
@@ -150,6 +146,3 @@ void AArenaGameMode::MoveResultLevel()
 
 	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
 }
-
-
-
