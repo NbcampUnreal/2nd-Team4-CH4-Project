@@ -9,6 +9,7 @@
 
 ALobbyGameMode::ALobbyGameMode()
 {
+	PlayerControllerClass = ALobbyPlayerController::StaticClass();
 	DefaultPawnClass = nullptr;
 
 	if (AvailableMapPaths.Num() == 0)
