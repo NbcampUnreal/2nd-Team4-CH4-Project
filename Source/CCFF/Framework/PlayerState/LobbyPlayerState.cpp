@@ -64,3 +64,4 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ALobbyPlayerState, PlayerNickname);
 	DOREPLIFETIME(ALobbyPlayerState, bIsReady);
 }
+

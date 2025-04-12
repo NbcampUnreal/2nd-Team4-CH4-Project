@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "LobbyPlayerController.generated.h"
 
 UCLASS()
@@ -52,4 +53,12 @@ protected:
 	UPROPERTY()
 	UCountdownWidget* CountdownWidgetInstance;
 
+	UFUNCTION(Server, Reliable)
+	void Server_SetPresetsToPlayerState(const TArray<FCharacterCustomizationPreset>& ClientPresets);
+	void Server_SetPresetsToPlayerState_Implementation(const TArray<FCharacterCustomizationPreset>& ClientPresets);
+
+private:
+	void SetCustomizationPresets();
+
+	virtual void OnRep_PlayerState() override;
 };
