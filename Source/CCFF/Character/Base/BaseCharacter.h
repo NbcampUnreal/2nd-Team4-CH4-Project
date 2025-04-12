@@ -105,6 +105,13 @@ protected:
 	void StartJump(const FInputActionValue& Value);
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
+	UFUNCTION()
+	void StartSprint(const FInputActionValue& Value);
+	UFUNCTION()
+	void StopSprint(const FInputActionValue& Value);
+	UFUNCTION(Server,Reliable)
+	void ServerRPCSetMaxWalkSpeed(const float Value);
+	
 #pragma endregion
 
 #pragma region AttackFunctions
@@ -254,10 +261,17 @@ protected:
 	float ServerDelay;
 	UPROPERTY()
 	float PrevMontagePlayTime;
+
+	FVector2D LastMoveInputDirection;
+	float LastMoveInputTime;
+	float DoubleTapThreshold;
+	uint8 bIsDoubleTab;
 #pragma endregion
 	
 	
 };
+
+
 
 
 

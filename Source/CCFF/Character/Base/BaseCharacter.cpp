@@ -31,7 +31,10 @@ ABaseCharacter::ABaseCharacter():
 	CurrentActivatedCollision(-1),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
-	ServerDelay(0.f)
+	ServerDelay(0.f),
+	LastMoveInputTime(0.f),
+	DoubleTapThreshold(0.3f),
+	bIsDoubleTab(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -47,7 +50,7 @@ ABaseCharacter::ABaseCharacter():
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->JumpZVelocity = 300.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
@@ -390,29 +393,57 @@ void ABaseCharacter::PlayAttackMontage(const int32& Num)
 	}
 }
 
+void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
+{
+	GetCharacterMovement()->MaxWalkSpeed=Value;
+}
+
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
-	CurrentMoveInput = MovementVector;
-
+	
+	//Detect Double Tap(Sprint)
+	//Get input direction vector
+	FVector2D CurrentInputDirection=MovementVector.GetSafeNormal();
+	// Compare direction (95% match)
+	if (FVector2D::DotProduct(LastMoveInputDirection, CurrentInputDirection)>0.95f&&bIsDoubleTab)
+	{
+		ServerRPCSetMaxWalkSpeed(BalanceStats.MaxRunSpeed);
+	}
+	float CurrentTime=GetWorld()->GetTimeSeconds();	
+	LastMoveInputTime=CurrentTime;
+	LastMoveInputDirection = CurrentInputDirection;
+	
+	//Move Logic
 	if (Controller != nullptr && CurrentCharacterState == ECharacterState::Normal)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		FVector MoveDirection = ForwardDirection * MovementVector.Y + RightDirection * MovementVector.X;
 		// 이동 처리
 		AddMovementInput(MoveDirection);
-		
 	}
+}
+void ABaseCharacter::StartSprint(const FInputActionValue& Value)
+{
+	float CurrentTime=GetWorld()->GetTimeSeconds();
+	if (CurrentTime-LastMoveInputTime<=DoubleTapThreshold)
+	{
+		bIsDoubleTab=true;
+	}
+}
+
+void ABaseCharacter::StopSprint(const FInputActionValue& Value)
+{
+	ServerRPCSetMaxWalkSpeed(BalanceStats.MaxWalkSpeed);
+	bIsDoubleTab=false;
 }
 
 void ABaseCharacter::StartJump(const FInputActionValue& Value)
@@ -812,6 +843,8 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		{
 			// Moving
 			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
+			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Started, this, &ABaseCharacter::StartSprint);
+			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Completed, this, &ABaseCharacter::StopSprint);
 		
 			// Jumping
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
