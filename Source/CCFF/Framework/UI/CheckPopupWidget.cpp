@@ -22,5 +22,6 @@ void UCheckPopupWidget::NativeConstruct()
 
 void UCheckPopupWidget::OnConfirm()
 {
+	OnCheckPopupConfirmed.Broadcast();
 	RemoveFromParent();
 }

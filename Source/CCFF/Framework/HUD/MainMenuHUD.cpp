@@ -5,7 +5,9 @@
 #include "Framework/UI/LockerRoomWidget.h"
 #include "Framework/UI/SettingsWidget.h"
 #include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/UI/CharacterSelectWidget.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Framework/Controller/MainMenuPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
 void AMainMenuHUD::BeginPlay()
@@ -107,6 +109,26 @@ void AMainMenuHUD::ShowLockerRoomWidget()
 		}
 
 		PushWidget(LockerRoomWidget);
+	}
+
+	APlayerController* PlayerController = GetOwningPlayerController();
+
+	if (!CharacterSelectWidget && CharacterSelectWidgetClass)
+	{
+		CharacterSelectWidget = CreateWidget<UCharacterSelectWidget>(PlayerController, CharacterSelectWidgetClass);
+
+		if (CharacterSelectWidget)
+		{
+			if (AMainMenuPlayerController* MainMenuPlayerController = Cast<AMainMenuPlayerController>(PlayerController))
+			{
+				CharacterSelectWidget->OnCharacterSelected.BindUObject(
+					MainMenuPlayerController,
+					&AMainMenuPlayerController::HandleCharacterSelectedFromUI
+				);
+			}
+
+			CharacterSelectWidget->AddToViewport();
+		}
 	}
 }
 

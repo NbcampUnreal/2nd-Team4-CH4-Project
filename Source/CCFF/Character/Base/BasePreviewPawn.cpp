@@ -2,6 +2,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Items/Component/CharacterCustomizationComponent.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/PlayerState/MainMenuPlayerState.h"
 
 ABasePreviewPawn::ABasePreviewPawn()
@@ -22,7 +23,15 @@ void ABasePreviewPawn::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ABasePreviewPawn::InitializePreview(FName CharacterID, AMainMenuPlayerState* InPlayerState)
+void ABasePreviewPawn::InitializePreview(FName CharacterID)
 {
+	CurrentCharacterID = CharacterID;
 
+	if (CustomizationComponent)
+	{
+		if (USkeletalMesh* Mesh = CustomizationComponent->GetBaseMeshByCharacterID(CharacterID))
+		{
+			PreviewMesh->SetSkeletalMesh(Mesh);
+		}
+	}
 }

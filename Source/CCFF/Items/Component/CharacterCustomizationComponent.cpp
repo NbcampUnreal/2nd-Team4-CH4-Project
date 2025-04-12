@@ -160,3 +160,14 @@ void UCharacterCustomizationComponent::EquipPreset(FCustomizationPreset Preset)
 		EquipItemByID(ItemIDInt, Item.EquipSlot);
 	}
 }
+
+USkeletalMesh* UCharacterCustomizationComponent::GetBaseMeshByCharacterID(FName CharacterID) const
+{
+    if (USkeletalMesh* const* FoundMesh = CharacterMeshMap.Find(CharacterID))
+    {
+        return *FoundMesh;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[CustomizationComponent] No mesh found for CharacterID: %s"), *CharacterID.ToString());
+    return nullptr;
+}

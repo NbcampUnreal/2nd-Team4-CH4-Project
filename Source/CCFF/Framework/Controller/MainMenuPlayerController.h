@@ -23,4 +23,17 @@ public:
 	UFUNCTION()
 	void HandleBack();
 
+#pragma region CHARACTER_SELECT
+public:
+	UFUNCTION()
+	void HandleCharacterSelectedFromUI(FName CharacterID);
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UCharacterSelectWidget> CharacterSelectWidgetClass;
+
+	UPROPERTY()
+	class UCharacterSelectWidget* CharacterSelectWidgetInstance;
+#pragma endregion
+
 };

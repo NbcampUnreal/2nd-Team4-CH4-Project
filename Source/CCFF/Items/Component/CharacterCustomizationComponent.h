@@ -10,7 +10,7 @@ class UDataTable;
 class AMainMenuPlayerState;
 class UCustomizationManager;
 
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -33,6 +33,10 @@ public:
 	//UFUNCTION(BlueprintCallable)
 	//TMap<EItemSlot, UStaticMeshComponent*> GetEquippedItems() const { return EquippedItems; }
 
+	// Character base mesh accessor
+	UFUNCTION(BlueprintCallable)
+	USkeletalMesh* GetBaseMeshByCharacterID(FName CharacterID) const;
+
 protected:
     virtual void BeginPlay() override;
 
@@ -50,4 +54,8 @@ private:
 	UCustomizationManager* CustomizationManager;
 
 	void EquipPreset(FCustomizationPreset Preset);
+
+	// Character ID ¡æ SkeletalMesh map
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	TMap<FName, USkeletalMesh*> CharacterMeshMap;
 };
