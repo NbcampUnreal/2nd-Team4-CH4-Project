@@ -4,6 +4,8 @@
 #include "Framework/UI/SelectModeWidget.h"
 #include "Framework/UI/LockerRoomWidget.h"
 #include "Framework/UI/SettingsWidget.h"
+#include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
 void AMainMenuHUD::BeginPlay()
@@ -154,5 +156,29 @@ void AMainMenuHUD::HideLoadingWidget()
 	{
 		LoadingWidget->RemoveFromParent();
 		LoadingWidget = nullptr;
+	}
+}
+
+void AMainMenuHUD::ShowErrorPopup(const FText& Message)
+{
+	if (!ErrorPopup && ErrorPopupClass)
+	{
+		ErrorPopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), ErrorPopupClass);
+	}
+
+	if (ErrorPopup)
+	{
+		ErrorPopup->SetMessage(Message);
+		ErrorPopup->AddToViewport(200);
+		ErrorPopup->OnConfirmPopupConfirmed.AddDynamic(this, &AMainMenuHUD::HandleErrorPopupConfirmed);
+	}
+}
+
+void AMainMenuHUD::HandleErrorPopupConfirmed()
+{
+	if (ErrorPopup)
+	{
+		ErrorPopup->RemoveFromParent();
+		ErrorPopup = nullptr;
 	}
 }

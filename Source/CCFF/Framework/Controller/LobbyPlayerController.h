@@ -26,6 +26,15 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientTeardownCountdown();
 
+#pragma region FORBID_SOLO_PLAYING
+	UFUNCTION(Exec)
+	void SetAllowSoloStart(int32 Allow);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAllowSoloStart(int32 Allow);
+
+#pragma endregion
+
 protected:
 	void ShowLobbyUI();
 	

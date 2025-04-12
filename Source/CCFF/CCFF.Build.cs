@@ -6,7 +6,11 @@ public class CCFF : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Niagara", "Slate", "SlateCore", "OnlineSubsystem", "OnlineSubsystemUtils" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
+			"UMG", "Niagara", "Slate", "SlateCore",
+			"OnlineSubsystem", "OnlineSubsystemUtils",
+			"NetCore"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

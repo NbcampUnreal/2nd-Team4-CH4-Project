@@ -12,12 +12,14 @@ UStatusComponent::UStatusComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	//Initialize Status
-	MaxHP=100;
+	MaxHP=10000;
 	CurrentHP=MaxHP;
 	SuperMeter=0;
-	MaxSuperMeter=100;
+	MaxSuperMeter=10000;
 	BurstMeter=0;
-	MaxBurstMeter=100;
+	MaxBurstMeter=10000;
+	MaxBlockMeter=10000;
+	BlockMeter=10000;
 	//Set Replicate
 	SetIsReplicatedByDefault(true);
 }
@@ -28,28 +30,41 @@ void UStatusComponent::SetCurrentHP(float InCurrentHP)
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
 	{
 		CurrentHP = 0.f;
-		OnDeath.Broadcast();
+		OnDeathState.Broadcast();
 	}
-	OnCurrentHPChanged.Broadcast(CurrentHP);
-}
-
-
-
-void UStatusComponent::SetMaxHP(float InMaxHP)
-{
-	MaxHP = InMaxHP;
-	if (MaxHP < KINDA_SMALL_NUMBER)
-	{
-		MaxHP = 0.1f;
-	}
+	float Percentage = FMath::Clamp(CurrentHP / MaxHP,0.f,1.f);
+	OnCurrentHPChanged.Broadcast(Percentage);
 }
 
 void UStatusComponent::SetBurstMeter(float InBurstMeter)
 {
+	BurstMeter = InBurstMeter;
+	if (BurstMeter <= KINDA_SMALL_NUMBER)
+	{
+		BurstMeter = 0.f;
+	}
+	float Percentage = FMath::Clamp(BurstMeter / MaxBurstMeter,0.f,1.f);
+	OnBurstMeterChanged.Broadcast(Percentage);
 }
 
 void UStatusComponent::SetSuperMeter(float InSuperMeter)
 {
+	SuperMeter = InSuperMeter;
+	if (SuperMeter <= KINDA_SMALL_NUMBER)
+	{
+		SuperMeter = 0.f;
+	}
+	float Percentage = FMath::Clamp(SuperMeter / MaxSuperMeter,0.f,1.f);
+	OnSuperMeterChanged.Broadcast(Percentage);
+}
+
+void UStatusComponent::SetBlockMeter(const float InBlockMeter)
+{
+	BlockMeter=InBlockMeter;
+	if (BlockMeter <= 0.0f)
+	{
+		OnGuardCrush.Broadcast();
+	}
 }
 
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -57,21 +72,27 @@ void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass,CurrentHP);
-	DOREPLIFETIME(ThisClass,SuperMeter);
-	DOREPLIFETIME(ThisClass,BurstMeter);
+	DOREPLIFETIME_CONDITION(ThisClass,SuperMeter,COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass,BurstMeter,COND_OwnerOnly);
 }
 
 void UStatusComponent::OnRep_CurrentHP()
 {
-	OnCurrentHPChanged.Broadcast(CurrentHP);
+	float Percentage = FMath::Clamp(CurrentHP / MaxHP,0.f,1.f);
+	//UE_LOG(LogTemp,Log,TEXT("OnRep_CurrentHP: %0.1f"),Percentage);
+	OnCurrentHPChanged.Broadcast(Percentage);
 }
 
 void UStatusComponent::OnRep_BurstMeter()
 {
-	OnBurstMeterChanged.Broadcast(BurstMeter);
+	float Percentage = FMath::Clamp(BurstMeter / MaxBurstMeter,0.f,1.f);
+	//UE_LOG(LogTemp,Log,TEXT("OnRep_BurstMeter: %0.1f"),Percentage);
+	OnBurstMeterChanged.Broadcast(Percentage);
 }
 
 void UStatusComponent::OnRep_SuperMeter()
 {
-	OnSuperMeterChanged.Broadcast(SuperMeter);
+	float Percentage = FMath::Clamp(SuperMeter / MaxSuperMeter,0.f,1.f);
+	//UE_LOG(LogTemp,Log,TEXT("OnRep_SuperMeter: %0.1f"),Percentage);
+	OnSuperMeterChanged.Broadcast(Percentage);
 }

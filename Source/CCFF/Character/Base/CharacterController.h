@@ -55,10 +55,6 @@ protected:
 	UPROPERTY()
 	UUserWidget* PauseWidget;
 #pragma endregion
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CCFF|UI")
-	TSubclassOf<UUserWidget> HUDWidgetClass;
-
-
+	
 
 };

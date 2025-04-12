@@ -11,6 +11,13 @@ void ALobbyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	bShowMouseCursor = true;
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+
 	if (IsLocalController())
 	{
 		HandleLocalSetup();
@@ -36,6 +43,25 @@ void ALobbyPlayerController::SetLobbyCameraView()
 	if (FoundCameras.Num() > 0)
 	{
 		SetViewTargetWithBlend(FoundCameras[0], 0.5f);
+	}
+}
+
+void ALobbyPlayerController::SetAllowSoloStart(int32 Allow)
+{
+	ServerSetAllowSoloStart(Allow);
+}
+
+void ALobbyPlayerController::ServerSetAllowSoloStart_Implementation(int32 Allow)
+{
+	if (ALobbyGameMode* GM = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+	{
+		GM->bAllowSoloStart = (Allow > 0);
+		UE_LOG(LogTemp, Warning, TEXT("[Server] SetAllowSoloStart = %s"), Allow > 0 ? TEXT("true") : TEXT("false"));
+
+		if (ALobbyGameState* GS = GetWorld()->GetGameState<ALobbyGameState>())
+		{
+			GS->UpdateAllowStartGame();
+		}
 	}
 }
 
@@ -89,7 +115,15 @@ void ALobbyPlayerController::UpdateCountdownWidget_Implementation(int32 NewTime)
 
 	if (CountdownWidgetInstance)
 	{
-		CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
+		if (NewTime >= 0)
+		{
+			CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
+		}
+		else
+		{
+			CountdownWidgetInstance->RemoveFromParent();
+			CountdownWidgetInstance = nullptr;
+		}
 	}
 }
 
