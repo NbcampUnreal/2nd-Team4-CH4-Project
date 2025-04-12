@@ -53,7 +53,12 @@ void ATrainingPlayerController::UpdateLocalTraining()
 
 void ATrainingPlayerController::ClientAddLocalDamage_Implementation(float Damage)
 {
-    AddLocalDamage(Damage);
+    ATrainingGameState* TrainingGameState = Cast<ATrainingGameState>(GetWorld()->GetGameState());
+    if (IsValid(TrainingGameState))
+    {
+        if (TrainingGameState->GetRoundProgress() == ERoundProgress::InProgress)
+            AddLocalDamage(Damage);
+    }
 }
 
 void ATrainingPlayerController::AddLocalDamage(float DamageAmount)
@@ -68,16 +73,24 @@ void ATrainingPlayerController::AddLocalDamage(float DamageAmount)
                 TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
             }
         }
-    }     
+    }
 }
 
 void ATrainingPlayerController::EndLocalTraining()
 {
     GetWorld()->GetTimerManager().ClearTimer(LocalTrainingTimerHandle);
-    if (ATrainingModeHUD* TrainingModeHUD = Cast<ATrainingModeHUD>(GetHUD()))
-        if (UTrainingWidget* TrainingWidget = TrainingModeHUD->GetTrainingWidget())
+
+    ATrainingGameState* TrainingGameState = Cast<ATrainingGameState>(GetWorld()->GetGameState());
+    if (IsValid(TrainingGameState))
+    {
+        if (ATrainingModeHUD* TrainingModeHUD = Cast<ATrainingModeHUD>(GetHUD()))
         {
-            TrainingWidget->UpdateTimer(0.f);
-            TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
+            if (UTrainingWidget* TrainingWidget = TrainingModeHUD->GetTrainingWidget())
+            {
+                TrainingWidget->UpdateTimer(0.f);
+                TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
+                TrainingGameState->SetRoundProgress(ERoundProgress::Ended);
+            }
         }
+    }
 }
