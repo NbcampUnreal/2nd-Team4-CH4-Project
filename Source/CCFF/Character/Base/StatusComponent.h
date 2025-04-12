@@ -64,13 +64,13 @@ private:
 	float MaxSuperMeter;
 	UPROPERTY()
 	float MaxBurstMeter;
+	UPROPERTY()
+	float MaxBlockMeter;
 	UPROPERTY(ReplicatedUsing=OnRep_BurstMeter)
 	float BurstMeter;
 	UPROPERTY(ReplicatedUsing=OnRep_SuperMeter)
 	float SuperMeter;
 	UPROPERTY(Replicated)
 	float BlockMeter;
-	UPROPERTY()
-	float MaxBlockMeter;
 
 };

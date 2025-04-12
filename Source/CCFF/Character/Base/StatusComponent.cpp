@@ -74,6 +74,7 @@ void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(ThisClass,CurrentHP);
 	DOREPLIFETIME_CONDITION(ThisClass,SuperMeter,COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass,BurstMeter,COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass,BlockMeter,COND_OwnerOnly);
 }
 
 void UStatusComponent::OnRep_CurrentHP()
