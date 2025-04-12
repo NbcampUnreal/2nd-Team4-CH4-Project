@@ -15,8 +15,25 @@ void UCustomizationManager::Initialize(FSubsystemCollectionBase& Collection)
 	FaceCustomItemDataTable = LoadObject<UDataTable>(nullptr, *FaceItemDataTablePath);
 	static const FString ShoulderItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_ShoulderCustomItemData.DT_ShoulderCustomItemData");
 	ShoulderCustomItemDataTable = LoadObject<UDataTable>(nullptr, *ShoulderItemDataTablePath);
+
+	CountTotalItemNums();
 }
 
+void UCustomizationManager::CountTotalItemNums()
+{
+	if (HeadCustomItemDataTable)
+	{
+		TotalHeadItemNums = HeadCustomItemDataTable->GetRowNames().Num();
+	}
+	if (FaceCustomItemDataTable)
+	{
+		TotalFaceItemNums = FaceCustomItemDataTable->GetRowNames().Num();
+	}
+	if (ShoulderCustomItemDataTable)
+	{
+		TotalShoulderItemNums = ShoulderCustomItemDataTable->GetRowNames().Num();
+	}
+}
 
 // Saving a preset in StandAlone LockerRoom
 void UCustomizationManager::SavePreset(FPresetItemsIndex PresetIndexes)
@@ -304,4 +321,33 @@ FName UCustomizationManager::GetItemName(int32 ItemID, EItemSlot Slot) const
 		ItemName = "Not Found";
 	}
 	return FName(*ItemName);
+}
+
+TSoftObjectPtr<UStaticMesh> UCustomizationManager::GetItemMesh(int32 ItemID, EItemSlot Slot) const
+{
+	UDataTable* CustomItemDataTable = nullptr;
+	switch (Slot)
+	{
+	case EItemSlot::Head:
+		CustomItemDataTable = HeadCustomItemDataTable;
+		break;
+	case EItemSlot::Face:
+		CustomItemDataTable = FaceCustomItemDataTable;
+		break;
+	case EItemSlot::Shoulder:
+		CustomItemDataTable = ShoulderCustomItemDataTable;
+		break;
+	default:
+		return TSoftObjectPtr<UStaticMesh>(nullptr);
+	}
+	static const FString ContextString(TEXT("Item Lookup"));
+	FCustomItemData* FoundItem = CustomItemDataTable->FindRow<FCustomItemData>(FName(*FString::FromInt(ItemID)), ContextString);
+	if (FoundItem)
+	{
+		return FoundItem->ItemMesh;
+	}
+	else
+	{
+		return TSoftObjectPtr<UStaticMesh>(nullptr);
+	}
 }

@@ -131,8 +131,6 @@ void UCharacterCustomizationComponent::UnequipAllItems()
 }
 
 
-
-
 void UCharacterCustomizationComponent::Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsIndex PresetIndexes)
 {
     UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset RPC Called"));

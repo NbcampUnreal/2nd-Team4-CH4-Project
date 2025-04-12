@@ -67,6 +67,10 @@ protected:
 private:
 	UCustomizationManager* CustomizationManager;
 	
+	int32 TotalHeadNums = 0;
+	int32 TotalFaceNums = 0;
+	int32 TotalShoulderNums = 0;
+
 	int32 CurrentPresetIndex = 0;
 	int32 CurrentHeadIndex = 0;
 	int32 CurrentFaceIndex = 0;
@@ -92,6 +96,8 @@ private:
 	void OnSaveButtonClicked();
 	UFUNCTION()
 	void OnClearButtonClicked();
+
+	void CountTotalItemNums();
 
 	void UpdatePresetNumberText();
 	void UpdateHeadNameText();

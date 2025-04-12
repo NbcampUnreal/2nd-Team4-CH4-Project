@@ -16,15 +16,22 @@ public:
 	FORCEINLINE UDataTable* GetHeadCustomItemDataTable() const { return HeadCustomItemDataTable; }
 	FORCEINLINE UDataTable* GetFaceCustomItemDataTable() const { return FaceCustomItemDataTable; }
 	FORCEINLINE UDataTable* GetShoulderCustomItemDataTable() const { return ShoulderCustomItemDataTable; }
+
+	FORCEINLINE int32 GetTotalHeadItems() const { return TotalHeadItemNums; }
+	FORCEINLINE int32 GetTotalFaceItems() const { return TotalFaceItemNums; }
+	FORCEINLINE int32 GetTotalShoulderItems() const { return TotalShoulderItemNums; }
+
 	FORCEINLINE FPresetItemsIndex GetAppliedPresetIndexes() const { return AppliedPresetIndexes; }
 
 	FName GetItemName(int32 ItemID, EItemSlot Slot) const;
 	FName GetCharacterID() const;
-	FPresetItemsIndex GetPresetItemsIndex(FName CharacterID, int32 PresetIndex) const;
-	void SavePreset(FPresetItemsIndex PresetIndexes);
+	TSoftObjectPtr<UStaticMesh> GetItemMesh(int32 ItemID, EItemSlot Slot) const;
 
+	FPresetItemsIndex GetPresetItemsIndex(FName CharacterID, int32 PresetIndex) const;
+	
+	void SavePreset(FPresetItemsIndex PresetIndexes);
 	void LoadPreset(FName CharacterID, int32 PresetIndex);
-	void LoadAllPresets();
+	/*void LoadAllPresets();*/
 
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -34,7 +41,13 @@ private:
 	UDataTable* FaceCustomItemDataTable;
 	UDataTable* ShoulderCustomItemDataTable;
 
-	FPresetItemsIndex AppliedPresetIndexes;
+	int32 TotalHeadItemNums = 0;
+	int32 TotalFaceItemNums = 0;
+	int32 TotalShoulderItemNums = 0;
 
+	FPresetItemsIndex AppliedPresetIndexes;
+	
 	TArray <FCharacterCustomizationPreset> CharacterCustomizationPresets;
+
+	void CountTotalItemNums();
 };

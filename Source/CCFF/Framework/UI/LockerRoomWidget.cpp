@@ -95,6 +95,8 @@ void ULockerRoomWidget::InitializeCustomizationManager()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to initialize CustomizationManager."));
 	}
+
+	CountTotalItemNums();
 }
 
 void ULockerRoomWidget::RequestReturnToMainMenu()
@@ -114,15 +116,6 @@ void ULockerRoomWidget::OnLeftPresetButtonClicked()
 	LoadPreset(CurrentPresetIndex);
 }
 
-void ULockerRoomWidget::LoadPreset(int32 PresetIndex)
-{
-	if (CustomizationManager)
-	{
-		CustomizationManager->LoadPreset(PreviewPawn->GetCharacterID(), PresetIndex);
-		UpdateIndexText();
-	}
-}
-
 void ULockerRoomWidget::OnRightPresetButtonClicked()
 {
     UE_LOG(LogTemp, Log, TEXT("Right Preset Button Clicked"));
@@ -133,7 +126,7 @@ void ULockerRoomWidget::OnRightPresetButtonClicked()
 
 void ULockerRoomWidget::OnLeftHeadButtonClicked()
 {
-	CurrentHeadIndex = FMath::Clamp(CurrentHeadIndex - 1, 0, 3);
+	CurrentHeadIndex = FMath::Clamp(CurrentHeadIndex - 1, 0, TotalHeadNums - 1);
 
     UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
     if (CustomizationComp)
@@ -146,7 +139,7 @@ void ULockerRoomWidget::OnLeftHeadButtonClicked()
 
 void ULockerRoomWidget::OnRightHeadButtonClicked()
 {
-    CurrentHeadIndex = FMath::Clamp(CurrentHeadIndex + 1, 0, 3);
+	CurrentHeadIndex = FMath::Clamp(CurrentHeadIndex + 1, 0, TotalHeadNums - 1);
 
     UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
     if (CustomizationComp)
@@ -159,7 +152,7 @@ void ULockerRoomWidget::OnRightHeadButtonClicked()
 
 void ULockerRoomWidget::OnLeftFaceButtonClicked()
 {
-	CurrentFaceIndex = FMath::Clamp(CurrentFaceIndex - 1, 0, 3);
+	CurrentFaceIndex = FMath::Clamp(CurrentFaceIndex - 1, 0, TotalFaceNums - 1);
 	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
 	if (CustomizationComp)
 	{
@@ -171,7 +164,7 @@ void ULockerRoomWidget::OnLeftFaceButtonClicked()
 
 void ULockerRoomWidget::OnRightFaceButtonClicked()
 {
-	CurrentFaceIndex = FMath::Clamp(CurrentFaceIndex + 1, 0, 3);
+	CurrentFaceIndex = FMath::Clamp(CurrentFaceIndex + 1, 0, TotalFaceNums - 1);
 	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
 	if (CustomizationComp)
 	{
@@ -183,7 +176,7 @@ void ULockerRoomWidget::OnRightFaceButtonClicked()
 
 void ULockerRoomWidget::OnLeftShoulderButtonClicked()
 {
-	CurrentShoulderIndex = FMath::Clamp(CurrentShoulderIndex - 1, 0, 2);
+	CurrentShoulderIndex = FMath::Clamp(CurrentShoulderIndex - 1, 0, TotalShoulderNums - 1);
 	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
 	if (CustomizationComp)
 	{
@@ -195,7 +188,7 @@ void ULockerRoomWidget::OnLeftShoulderButtonClicked()
 
 void ULockerRoomWidget::OnRightShoulderButtonClicked()
 {
-	CurrentShoulderIndex = FMath::Clamp(CurrentShoulderIndex + 1, 0, 2);
+	CurrentShoulderIndex = FMath::Clamp(CurrentShoulderIndex + 1, 0, TotalShoulderNums - 1);
 	UCharacterCustomizationComponent* CustomizationComp = PreviewPawn->FindComponentByClass<UCharacterCustomizationComponent>();
 	if (CustomizationComp)
 	{
@@ -284,4 +277,20 @@ void ULockerRoomWidget::UpdateIndexText()
 	UpdateHeadNameText();
 	UpdateFaceNameText();
 	UpdateShoulderNameText();
+}
+
+void ULockerRoomWidget::LoadPreset(int32 PresetIndex)
+{
+	if (CustomizationManager)
+	{
+		CustomizationManager->LoadPreset(PreviewPawn->GetCharacterID(), PresetIndex);
+		UpdateIndexText();
+	}
+}
+
+void ULockerRoomWidget::CountTotalItemNums()
+{
+	TotalHeadNums = CustomizationManager->GetTotalHeadItems();
+	TotalFaceNums = CustomizationManager->GetTotalFaceItems();
+	TotalShoulderNums = CustomizationManager->GetTotalShoulderItems();
 }
