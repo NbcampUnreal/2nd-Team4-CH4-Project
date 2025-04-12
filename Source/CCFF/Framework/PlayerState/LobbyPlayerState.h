@@ -27,7 +27,6 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerNickname();
 
-
 protected:
 	UPROPERTY(Replicated = OnRep_ReadyState)
 	bool bIsReady = false;
@@ -37,6 +36,23 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+#pragma region CHARACTER_SELECT
+public:
+	void SetCharacterID(FName InID);
+
+	UFUNCTION()
+	FName GetCharacterID() const { return CharacterID; }
+
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterID)
+	FName CharacterID;
+
+	UFUNCTION()
+	void OnRep_CharacterID();
+
+#pragma endregion
+
 private:
 	TArray <FCharacterCustomizationPreset> ClientCharacterCustomizationPresets;
+
 };
