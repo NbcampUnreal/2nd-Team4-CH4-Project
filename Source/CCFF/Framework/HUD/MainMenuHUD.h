@@ -70,6 +70,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class ULockerRoomWidget> LockerRoomWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UCharacterSelectWidget> CharacterSelectWidgetClass;
+
 	// UPROPERTY(EditDefaultsOnly, Category = "UI")
 	// TSubclassOf<class UUserWidget> ShopWidgetClass;
 
@@ -93,6 +96,9 @@ protected:
 
 	UPROPERTY()
 	class ULockerRoomWidget* LockerRoomWidget;
+
+	UPROPERTY()
+	class UCharacterSelectWidget* CharacterSelectWidget;
 
 	// UPROPERTY()
 	// class UUserWidget* ShopWidget;

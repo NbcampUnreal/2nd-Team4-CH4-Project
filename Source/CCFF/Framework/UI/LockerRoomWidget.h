@@ -10,6 +10,8 @@ DECLARE_DELEGATE(FOnBackToMainMenuRequested);
 
 class UButton;
 class UTextBlock;
+class UCustomizationManager;
+class ABasePreviewPawn;
 
 UCLASS()
 class CCFF_API ULockerRoomWidget : public UBaseUserWidget
@@ -60,9 +62,20 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ShoulderNameText;
 
-	APawn* PreviewPawn;
+	ABasePreviewPawn* PreviewPawn;
 
 private:
+	UCustomizationManager* CustomizationManager;
+	
+	int32 TotalHeadNums = 0;
+	int32 TotalFaceNums = 0;
+	int32 TotalShoulderNums = 0;
+
+	int32 CurrentPresetIndex = 0;
+	int32 CurrentHeadIndex = 0;
+	int32 CurrentFaceIndex = 0;
+	int32 CurrentShoulderIndex = 0;
+
 	UFUNCTION()
 	void OnLeftPresetButtonClicked();
 	UFUNCTION()
@@ -84,12 +97,17 @@ private:
 	UFUNCTION()
 	void OnClearButtonClicked();
 
-	void SaveCurrentPreset(FPresetItemsindex& ItemIndexes);
+	void CountTotalItemNums();
+
+	void UpdatePresetNumberText();
+	void UpdateHeadNameText();
+	void UpdateFaceNameText();
+	void UpdateShoulderNameText();
+	void UpdateIndexText();
+
+	void LoadPreset(int32 PresetIndex);
 
 	void InitializePreviewPawn();
+	void InitializeCustomizationManager();
 
-	int32 CurrentPresetIndex = 0;
-	int32 CurrentHeadIndex = 0;
-	int32 CurrentFaceIndex = 0;
-	int32 CurrentShoulderIndex = 0;
 };

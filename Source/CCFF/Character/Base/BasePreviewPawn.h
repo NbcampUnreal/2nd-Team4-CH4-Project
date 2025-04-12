@@ -25,12 +25,14 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     UCharacterCustomizationComponent* CustomizationComponent;
 
-    void InitializePreview(FName CharacterID, class AMainMenuPlayerState* PlayerState);
-    FORCEINLINE FName GetCharacterID() const { return CurretCharacterID; };
+    void InitializePreview(FName CharacterID);
+    void InitializePreview(FName CharacterID, UObject* PresetSource);
+    FORCEINLINE FName GetCharacterID() const { return CurrentCharacterID; };
 
 protected:
 	virtual void BeginPlay() override;
 
-private:
-	FName CurretCharacterID = FName("Cactus"); // Default character ID
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	FName CurrentCharacterID = NAME_None; // Default character ID
+
 };

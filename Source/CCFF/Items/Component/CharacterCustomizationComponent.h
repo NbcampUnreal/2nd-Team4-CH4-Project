@@ -8,8 +8,9 @@
 
 class UDataTable;
 class AMainMenuPlayerState;
+class UCustomizationManager;
 
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CCFF_API UCharacterCustomizationComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -24,27 +25,37 @@ public:
     void UnequipItem(EItemSlot Slot);
 	UFUNCTION(BlueprintCallable)    
 	void UnequipAllItems();
-	UFUNCTION(BlueprintCallable)
-	void SavePreset(FPresetItemsindex PresetIndexes);
+
+	FPresetItemsIndex GetCurrentCustomItemsIndex() const;
 
 	//UFUNCTION(BlueprintCallable)
 	//UStaticMeshComponent* GetEquippedItem(EItemSlot Slot) const;
 	//UFUNCTION(BlueprintCallable)
 	//TMap<EItemSlot, UStaticMeshComponent*> GetEquippedItems() const { return EquippedItems; }
 
+	// Character base mesh accessor
+	UFUNCTION(BlueprintCallable)
+	USkeletalMesh* GetBaseMeshByCharacterID(FName CharacterID) const;
+
 protected:
     virtual void BeginPlay() override;
 
-    UDataTable* HeadCustomItemDataTable;
-	UDataTable* FaceCustomItemDataTable;
-	UDataTable* ShoulderCustomItemDataTable;
+
 
     UPROPERTY()
     TMap<EItemSlot, UStaticMeshComponent*> EquippedItems;
-
-	UFUNCTION(Server, Reliable)
-	void Server_SavePreset(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes);
-	void Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes);
-
 	FName GetCharacterID()const;
+
+private:
+	UDataTable* HeadCustomItemDataTable;
+	UDataTable* FaceCustomItemDataTable;
+	UDataTable* ShoulderCustomItemDataTable;
+	void InitializeCustomizationSystem();
+	UCustomizationManager* CustomizationManager;
+
+	void EquipPreset(FCustomizationPreset Preset);
+
+	// Character ID ¡æ SkeletalMesh map
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	TMap<FName, USkeletalMesh*> CharacterMeshMap;
 };

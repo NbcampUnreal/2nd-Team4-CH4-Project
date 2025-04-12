@@ -3,8 +3,11 @@
 #include "Framework/GameMode/LobbyGameMode.h"
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Items/Manager/CustomizationManager.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/UI/CountdownWidget.h"
+#include "Framework/UI/CharacterSelectWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void ALobbyPlayerController::BeginPlay()
@@ -26,6 +29,20 @@ void ALobbyPlayerController::BeginPlay()
 		if (GameInstance)
 		{
 			ServerSetNickname(GameInstance->GetNickname());
+		}
+	}
+
+	if (CharacterSelectWidgetClass && !CharacterSelectWidgetInstance)
+	{
+		CharacterSelectWidgetInstance = CreateWidget<UCharacterSelectWidget>(this, CharacterSelectWidgetClass);
+		if (CharacterSelectWidgetInstance)
+		{
+			CharacterSelectWidgetInstance->OnCharacterSelected.BindUObject(
+				this,
+				&ALobbyPlayerController::HandleCharacterSelectedFromUI
+			);
+
+			CharacterSelectWidgetInstance->AddToViewport();
 		}
 	}
 }
@@ -134,4 +151,99 @@ void ALobbyPlayerController::ClientTeardownCountdown_Implementation()
 		CountdownWidgetInstance->RemoveFromParent();
 		CountdownWidgetInstance = nullptr;
 	}
+}
+
+void ALobbyPlayerController::HandleCharacterSelectedFromUI(FName CharacterID)
+{
+	ServerSetCharacterID(CharacterID);
+}
+
+void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName CharacterID)
+{
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(LobbyPlayerState))
+	{
+		LobbyPlayerState->SetCharacterID(CharacterID);
+	}
+}
+
+void ALobbyPlayerController::SetCustomizationPresets()
+{
+	if (IsLocalController())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("This is a local controller."));
+
+		ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+		if (IsValid(LobbyPlayerState))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerState is valid."));
+
+			UCustomizationManager* CustomizationManager = GetGameInstance()->GetSubsystem<UCustomizationManager>();
+			if (IsValid(CustomizationManager))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("CustomizationManager is valid. Retrieving presets."));
+
+				TArray<FCharacterCustomizationPreset> Presets = CustomizationManager->GetCharacterCustomizationPresets();
+				UE_LOG(LogTemp, Warning, TEXT("Sending %d presets to server."), Presets.Num());
+
+				Server_SetPresetsToPlayerState(Presets);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("CustomizationManager is NOT valid."));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("LobbyPlayerState is NOT valid."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("This is NOT a local controller."));
+	}
+
+}
+
+void ALobbyPlayerController::Server_SetPresetsToPlayerState_Implementation(const TArray<FCharacterCustomizationPreset>& ClientPresets)
+{
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(LobbyPlayerState) == true)
+	{
+		LobbyPlayerState->SetCharacterCustomizationPresets(ClientPresets);
+
+		// Just For Logging Delete Later
+		UE_LOG(LogTemp, Log, TEXT("===== All Character Presets ====="));
+
+		const UEnum* EnumPtr = StaticEnum<EItemSlot>();
+		for (const FCharacterCustomizationPreset& CharPreset : ClientPresets)
+		{
+			UE_LOG(LogTemp, Log, TEXT("¢º Character ID: %s"), *CharPreset.CharacterID.ToString());
+
+			for (const FCustomizationPreset& Preset : CharPreset.Presets)
+			{
+				UE_LOG(LogTemp, Log, TEXT("  - Preset Index: %d"), Preset.PresetIndex);
+
+				for (const FEquippedItemData& Item : Preset.EquippedItems)
+				{
+					FString SlotName = EnumPtr
+						? EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(Item.EquipSlot)).ToString()
+						: TEXT("Unknown");
+
+					UE_LOG(LogTemp, Log, TEXT("    - Slot: %s, ItemID: %s"), *SlotName, *Item.ItemID.ToString());
+				}
+			}
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("=================================="));
+	}
+}
+
+void ALobbyPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerState called. PlayerState is now valid."));
+
+	SetCustomizationPresets();
 }
