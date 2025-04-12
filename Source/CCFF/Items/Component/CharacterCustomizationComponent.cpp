@@ -130,29 +130,6 @@ void UCharacterCustomizationComponent::UnequipAllItems()
 	EquippedItems.Empty();
 }
 
-
-void UCharacterCustomizationComponent::Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsIndex PresetIndexes)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset RPC Called"));
-
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: Invalid PlayerController."));
-        return;
-    }
-
-    AMainMenuPlayerState* PS = Cast<AMainMenuPlayerState>(PC->PlayerState);
-
-    if (!PS)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: PlayerState is NULL or wrong type. Actual PlayerState: %s"),
-            *GetNameSafe(PC->PlayerState));
-        return;
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset succeeded: Found PlayerState %s"), *PS->GetName());
-}
-
 FName UCharacterCustomizationComponent::GetCharacterID() const
 {
     APawn* OwnerPawn = Cast<APawn>(GetOwner());
@@ -174,15 +151,12 @@ FName UCharacterCustomizationComponent::GetCharacterID() const
     return TEXT("Unknown");
 }
 
-void UCharacterCustomizationComponent::EquipPreset(int32 PresetIndex)
+void UCharacterCustomizationComponent::EquipPreset(FCustomizationPreset Preset)
 {
-	if (PresetIndex < 0 || PresetIndex > 2)
+	for (const FEquippedItemData& Item : Preset.EquippedItems)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Preset index out of range."));
-		return;
+		FName ItemID = Item.ItemID;
+		int32 ItemIDInt = FCString::Atoi(*ItemID.ToString());
+		EquipItemByID(ItemIDInt, Item.EquipSlot);
 	}
-	FPresetItemsIndex PresetItemsIndex = CustomizationManager->GetPresetItemsIndex(GetCharacterID(), PresetIndex);
-	EquipItemByID(PresetItemsIndex.HeadIndex, EItemSlot::Head);
-	EquipItemByID(PresetItemsIndex.FaceIndex, EItemSlot::Face);
-	EquipItemByID(PresetItemsIndex.ShoulderIndex, EItemSlot::Shoulder);
 }

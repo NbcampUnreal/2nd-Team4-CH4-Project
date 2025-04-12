@@ -40,11 +40,6 @@ protected:
 
     UPROPERTY()
     TMap<EItemSlot, UStaticMeshComponent*> EquippedItems;
-
-	UFUNCTION(Server, Reliable)
-	void Server_SavePreset(APlayerController* PC, FName CharacterID, FPresetItemsIndex PresetIndexes);
-	void Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsIndex PresetIndexes);
-
 	FName GetCharacterID()const;
 
 private:
@@ -54,5 +49,5 @@ private:
 	void InitializeCustomizationSystem();
 	UCustomizationManager* CustomizationManager;
 
-	void EquipPreset(int32 PresetIndex);
+	void EquipPreset(FCustomizationPreset Preset);
 };
