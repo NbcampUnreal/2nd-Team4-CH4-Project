@@ -53,6 +53,7 @@ ABaseCharacter::ABaseCharacter():
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
+	JumpMaxCount=2;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -410,6 +411,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 		FVector MoveDirection = ForwardDirection * MovementVector.Y + RightDirection * MovementVector.X;
 		// 이동 처리
 		AddMovementInput(MoveDirection);
+		
 	}
 }
 
