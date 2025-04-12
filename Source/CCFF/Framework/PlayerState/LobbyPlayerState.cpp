@@ -28,6 +28,12 @@ void ALobbyPlayerState::SetPlayerNickname(const FString& InNickname)
 	}
 }
 
+void ALobbyPlayerState::SetCharacterID(FName InID)
+{
+	CharacterID = InID;
+	OnRep_CharacterID();
+}
+
 void ALobbyPlayerState::OnRep_ReadyState()
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
@@ -57,11 +63,26 @@ void ALobbyPlayerState::OnRep_PlayerNickname()
 		}
 	}
 }
+
+void ALobbyPlayerState::OnRep_CharacterID()
+{
+	APawn* Pawn = GetPawn();
+	if (IsValid(Pawn))
+	{
+		ABasePreviewPawn* PreviewPawn = Cast<ABasePreviewPawn>(Pawn);
+		if (IsValid(PreviewPawn))
+		{
+			PreviewPawn->InitializePreview(CharacterID);
+		}
+	}
+}
+
 void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ALobbyPlayerState, PlayerNickname);
 	DOREPLIFETIME(ALobbyPlayerState, bIsReady);
-}
+	DOREPLIFETIME(ALobbyPlayerState, CharacterID);
 
+}

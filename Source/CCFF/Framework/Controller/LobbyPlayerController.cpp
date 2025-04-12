@@ -7,6 +7,7 @@
 #include "Items/Structure/CustomizationPreset.h"
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/UI/CountdownWidget.h"
+#include "Framework/UI/CharacterSelectWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void ALobbyPlayerController::BeginPlay()
@@ -28,6 +29,20 @@ void ALobbyPlayerController::BeginPlay()
 		if (GameInstance)
 		{
 			ServerSetNickname(GameInstance->GetNickname());
+		}
+	}
+
+	if (CharacterSelectWidgetClass && !CharacterSelectWidgetInstance)
+	{
+		CharacterSelectWidgetInstance = CreateWidget<UCharacterSelectWidget>(this, CharacterSelectWidgetClass);
+		if (CharacterSelectWidgetInstance)
+		{
+			CharacterSelectWidgetInstance->OnCharacterSelected.BindUObject(
+				this,
+				&ALobbyPlayerController::HandleCharacterSelectedFromUI
+			);
+
+			CharacterSelectWidgetInstance->AddToViewport();
 		}
 	}
 }
@@ -135,6 +150,20 @@ void ALobbyPlayerController::ClientTeardownCountdown_Implementation()
 	{
 		CountdownWidgetInstance->RemoveFromParent();
 		CountdownWidgetInstance = nullptr;
+	}
+}
+
+void ALobbyPlayerController::HandleCharacterSelectedFromUI(FName CharacterID)
+{
+	ServerSetCharacterID(CharacterID);
+}
+
+void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName CharacterID)
+{
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(LobbyPlayerState))
+	{
+		LobbyPlayerState->SetCharacterID(CharacterID);
 	}
 }
 

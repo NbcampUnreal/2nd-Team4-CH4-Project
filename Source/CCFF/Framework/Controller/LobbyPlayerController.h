@@ -27,6 +27,16 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientTeardownCountdown();
 
+#pragma region CHARACTER_SELECT
+	UFUNCTION()
+	void HandleCharacterSelectedFromUI(FName CharacterID);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetCharacterID(FName CharacterID);
+
+#pragma endregion
+
+
 #pragma region FORBID_SOLO_PLAYING
 	UFUNCTION(Exec)
 	void SetAllowSoloStart(int32 Allow);
@@ -52,6 +62,12 @@ protected:
 
 	UPROPERTY()
 	UCountdownWidget* CountdownWidgetInstance;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCharacterSelectWidget> CharacterSelectWidgetClass;
+
+	UPROPERTY()
+	UCharacterSelectWidget* CharacterSelectWidgetInstance;
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetPresetsToPlayerState(const TArray<FCharacterCustomizationPreset>& ClientPresets);
