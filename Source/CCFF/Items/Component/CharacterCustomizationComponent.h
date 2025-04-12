@@ -53,4 +53,6 @@ private:
 	UDataTable* ShoulderCustomItemDataTable;
 	void InitializeCustomizationSystem();
 	UCustomizationManager* CustomizationManager;
+
+	void EquipPreset(int32 PresetIndex);
 };

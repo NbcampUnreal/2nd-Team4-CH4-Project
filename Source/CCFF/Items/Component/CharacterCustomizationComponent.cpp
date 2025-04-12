@@ -173,3 +173,16 @@ FName UCharacterCustomizationComponent::GetCharacterID() const
 
     return TEXT("Unknown");
 }
+
+void UCharacterCustomizationComponent::EquipPreset(int32 PresetIndex)
+{
+	if (PresetIndex < 0 || PresetIndex > 2)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Preset index out of range."));
+		return;
+	}
+	FPresetItemsIndex PresetItemsIndex = CustomizationManager->GetPresetItemsIndex(GetCharacterID(), PresetIndex);
+	EquipItemByID(PresetItemsIndex.HeadIndex, EItemSlot::Head);
+	EquipItemByID(PresetItemsIndex.FaceIndex, EItemSlot::Face);
+	EquipItemByID(PresetItemsIndex.ShoulderIndex, EItemSlot::Shoulder);
+}
