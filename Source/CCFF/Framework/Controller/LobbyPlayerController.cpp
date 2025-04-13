@@ -57,8 +57,6 @@ void ALobbyPlayerController::OnPossess(APawn* InPawn)
 
 	if (!IsLocalController()) return;
 
-	SetupEnhancedInput();
-
 	if (CharacterIDList.IsEmpty())
 	{
 		CacheCharacterIDList();
