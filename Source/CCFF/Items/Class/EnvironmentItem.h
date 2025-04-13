@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Character/Base/DamageAble.h"
 #include "EnvironmentItem.generated.h"
 
 UCLASS()
@@ -10,15 +11,19 @@ class CCFF_API AEnvironmentItem : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AEnvironmentItem();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Component")
+	USceneComponent* Scene;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Component")
+	UStaticMeshComponent* StaticMesh;
+	UPROPERTY(EditAnywhere, Category = "Item|Component|Effects")
+	USoundBase* OnHitSound;
 
+private:
+	UPROPERTY(EditAnywhere, Category = "Item|Component|Effects")
+	float MaxDurability;
 };
