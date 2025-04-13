@@ -5,56 +5,69 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DataTable.h"
 #include "Engine/SkeletalMesh.h"
-#include "Framework/PlayerState/MainMenuPlayerState.h"
 #include "GameFramework/Character.h"
 #include "Items/DataTable/CustomItemData.h"
 #include "Items/Manager/CustomizationManager.h"
 #include "Items/Structure/CustomizationPreset.h"
+#include "Subsystems/WorldSubsystem.h"
 
 UCharacterCustomizationComponent::UCharacterCustomizationComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+    SetIsReplicatedByDefault(true);
 }
 
 void UCharacterCustomizationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-    InitializeCustomizationSystem();
-}
-
-void UCharacterCustomizationComponent::InitializeCustomizationSystem()
-{
-    CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
-    HeadCustomItemDataTable = CustomizationManager->GetHeadCustomItemDataTable();
-    FaceCustomItemDataTable = CustomizationManager->GetFaceCustomItemDataTable();
-    ShoulderCustomItemDataTable = CustomizationManager->GetShoulderCustomItemDataTable();
-    if (!HeadCustomItemDataTable || !FaceCustomItemDataTable || !ShoulderCustomItemDataTable)
+    if (GetOwner()->HasAuthority())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to load DataTables."));
-        return;
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCustomizationComponent BeginPlay on server"));
     }
+	else
+	{   
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCustomizationComponent BeginPlay on client"));
+	}
+
+    UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
+	if (CustomizationManager)
+	{
+		CustomizationManager->InitiailizeDataTable();
+	}
 }
 
 void UCharacterCustomizationComponent::EquipItemByID(int32 ItemID, EItemSlot Slot)
 {
 	UDataTable* CustomItemDataTable = nullptr;
- 
+
+	UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
+    if (!CustomizationManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CustomizationManager is null."));
+        return;
+    }
     switch (Slot)
     {
     case EItemSlot::Head:
-        CustomItemDataTable = HeadCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetHeadCustomItemDataTable();
         break;
     case EItemSlot::Face:
-        CustomItemDataTable = FaceCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetFaceCustomItemDataTable();
         break;
     case EItemSlot::Shoulder:
-        CustomItemDataTable = ShoulderCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetShoulderCustomItemDataTable();
         break;
     default:
         UE_LOG(LogTemp, Warning, TEXT("Invalid item slot specified."));
         return;
     }
+
+	if (!CustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CustomItemDataTable is null."));
+		return;
+	}
 
     static const FString ContextString(TEXT("Item Lookup"));
     FCustomItemData* FoundItem = CustomItemDataTable->FindRow<FCustomItemData>(FName(*FString::FromInt(ItemID)), ContextString);
@@ -99,6 +112,7 @@ void UCharacterCustomizationComponent::EquipItem(FCustomItemData ItemData)
     UStaticMeshComponent* NewItemComponent = NewObject<UStaticMeshComponent>(OwnerPawn);
     if (NewItemComponent)
     {
+        NewItemComponent->SetIsReplicated(true);
         UStaticMesh* ItemMesh = ItemData.ItemMesh.LoadSynchronous();
         NewItemComponent->SetStaticMesh(ItemMesh);
         NewItemComponent->RegisterComponent();
@@ -170,4 +184,27 @@ USkeletalMesh* UCharacterCustomizationComponent::GetBaseMeshByCharacterID(FName 
 
     UE_LOG(LogTemp, Warning, TEXT("[CustomizationComponent] No mesh found for CharacterID: %s"), *CharacterID.ToString());
     return nullptr;
+}
+
+FPresetItemsIndex UCharacterCustomizationComponent::GetCurrentCustomItemsIndex() const
+{
+	FPresetItemsIndex PresetItemsIndex;
+	for (const auto& Item : EquippedItems)
+	{
+		switch (Item.Key)
+		{
+		case EItemSlot::Head:
+			PresetItemsIndex.HeadIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		case EItemSlot::Face:
+			PresetItemsIndex.FaceIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		case EItemSlot::Shoulder:
+			PresetItemsIndex.ShoulderIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		default:
+			break;
+		}
+	}
+	return PresetItemsIndex;
 }

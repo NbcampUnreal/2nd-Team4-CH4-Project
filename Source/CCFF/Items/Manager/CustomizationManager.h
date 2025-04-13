@@ -35,13 +35,18 @@ public:
 	void LoadPreset(FName CharacterID, int32 PresetIndex);
 	/*void LoadAllPresets();*/
 
+	void InitiailizeDataTable();
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
+
 private:
-	UDataTable* HeadCustomItemDataTable;
-	UDataTable* FaceCustomItemDataTable;
-	UDataTable* ShoulderCustomItemDataTable;
+	UPROPERTY()
+	UDataTable* HeadCustomItemDataTable = nullptr;
+	UPROPERTY()
+	UDataTable * FaceCustomItemDataTable = nullptr;
+	UPROPERTY()
+	UDataTable* ShoulderCustomItemDataTable = nullptr;
 
 	int32 TotalHeadItemNums = 0;
 	int32 TotalFaceItemNums = 0;

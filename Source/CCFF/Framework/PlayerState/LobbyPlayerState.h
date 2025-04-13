@@ -16,10 +16,8 @@ public:
 
 	void SetReady(bool bNewReady);
 	FORCEINLINE bool IsReady() const { return bIsReady; };
-
-	void SetPlayerNickname(const FString& InNickname);
 	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
-	FORCEINLINE void SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets) { ClientCharacterCustomizationPresets = Presets; };
+	void SetPlayerNickname(const FString& InNickname);
 
 	UFUNCTION()
 	void OnRep_ReadyState();
@@ -52,7 +50,17 @@ protected:
 
 #pragma endregion
 
-private:
-	TArray <FCharacterCustomizationPreset> ClientCharacterCustomizationPresets;
+#pragma region CHARACTER_CUSTOMIZATION
+public:
 
+	void SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets);
+	FCustomizationPreset GetCustomizationPreset(FName RequestedCharacterID, int32 RequestedPresetIndex);
+
+private:
+	UPROPERTY(Replicated)
+	TArray<FCharacterCustomizationPreset> ClientCharacterCustomizationPresets;
+	FCharacterCustomizationPreset CurrentCharacterCustomizationPresets;
+	FCustomizationPreset CurrentCustomizationPreset;
+
+#pragma endregion
 };

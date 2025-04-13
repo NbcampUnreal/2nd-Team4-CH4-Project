@@ -9,12 +9,51 @@
 
 void UCustomizationManager::Initialize(FSubsystemCollectionBase& Collection)
 {
+	InitiailizeDataTable();
+}
+
+void UCustomizationManager::InitiailizeDataTable()
+{
+	if (HeadCustomItemDataTable && FaceCustomItemDataTable && ShoulderCustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Data tables are already initialized."));
+		return;
+	}
+
 	static const FString HeadItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_HeadCustomItemData.DT_HeadCustomItemData");
 	HeadCustomItemDataTable = LoadObject<UDataTable>(nullptr, *HeadItemDataTablePath);
 	static const FString FaceItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_FaceCustomItemData.DT_FaceCustomItemData");
 	FaceCustomItemDataTable = LoadObject<UDataTable>(nullptr, *FaceItemDataTablePath);
 	static const FString ShoulderItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_ShoulderCustomItemData.DT_ShoulderCustomItemData");
 	ShoulderCustomItemDataTable = LoadObject<UDataTable>(nullptr, *ShoulderItemDataTablePath);
+
+	if (HeadCustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HeadCustomItemDataTable loaded with %d rows"), HeadCustomItemDataTable->GetRowMap().Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load HeadCustomItemDataTable."));
+	}
+
+	if (FaceCustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FaceCustomItemDataTable loaded with %d rows"), FaceCustomItemDataTable->GetRowMap().Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load FaceCustomItemDataTable."));
+	}
+
+	if (ShoulderCustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShoulderCustomItemDataTable loaded with %d rows"), ShoulderCustomItemDataTable->GetRowMap().Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load ShoulderCustomItemDataTable."));
+	}
+
 
 	CountTotalItemNums();
 }

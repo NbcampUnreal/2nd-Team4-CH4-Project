@@ -91,12 +91,27 @@ protected:
 	UPROPERTY()
 	UCharacterSelectWidget* CharacterSelectWidgetInstance;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	
+
+#pragma region CHARACTER_CUSTOMIZATION
+
+protected:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPresetsToPlayerState(const TArray<FCharacterCustomizationPreset>& ClientPresets);
 	void Server_SetPresetsToPlayerState_Implementation(const TArray<FCharacterCustomizationPreset>& ClientPresets);
 
 private:
-	void SetCustomizationPresets();
+	UFUNCTION(Server, Reliable)
+	void Server_SwitchPresetIndex(int32 IndexDirection);
+	void Server_SwitchPresetIndex_Implementation(int32 IndexDirection);
 
+	UPROPERTY(Replicated)
+	int32 CurrentPresetIndex = 0;
+	
 	virtual void OnRep_PlayerState() override;
+	void SetCustomizationPresets();
+	void RequestEquipPreset(FCustomizationPreset Preset);
+#pragma endregion
 };

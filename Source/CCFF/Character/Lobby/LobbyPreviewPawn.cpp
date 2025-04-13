@@ -4,9 +4,11 @@
 #include "Framework/UI/Lobby/PreviewNameTagWidget.h"
 #include "Framework/UI/Lobby/PreviewReadyStatusWidget.h"
 
+
 ALobbyPreviewPawn::ALobbyPreviewPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	SetReplicates(true);
 
 	NameTagWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameTagWidget"));
 	NameTagWidget->SetupAttachment(RootComponent);

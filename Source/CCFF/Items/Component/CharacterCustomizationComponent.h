@@ -2,11 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Items/DataTable/CustomItemData.h"
 #include "Items/Structure/CustomizationPreset.h"
 #include "CharacterCustomizationComponent.generated.h"
 
-class UDataTable;
 class AMainMenuPlayerState;
 class UCustomizationManager;
 
@@ -27,11 +25,7 @@ public:
 	void UnequipAllItems();
 
 	FPresetItemsIndex GetCurrentCustomItemsIndex() const;
-
-	//UFUNCTION(BlueprintCallable)
-	//UStaticMeshComponent* GetEquippedItem(EItemSlot Slot) const;
-	//UFUNCTION(BlueprintCallable)
-	//TMap<EItemSlot, UStaticMeshComponent*> GetEquippedItems() const { return EquippedItems; }
+	void EquipPreset(FCustomizationPreset Preset);
 
 	// Character base mesh accessor
 	UFUNCTION(BlueprintCallable)
@@ -47,13 +41,6 @@ protected:
 	FName GetCharacterID()const;
 
 private:
-	UDataTable* HeadCustomItemDataTable;
-	UDataTable* FaceCustomItemDataTable;
-	UDataTable* ShoulderCustomItemDataTable;
-	void InitializeCustomizationSystem();
-	UCustomizationManager* CustomizationManager;
-
-	void EquipPreset(FCustomizationPreset Preset);
 
 	// Character ID ¡æ SkeletalMesh map
 	UPROPERTY(EditDefaultsOnly, Category = "Character")

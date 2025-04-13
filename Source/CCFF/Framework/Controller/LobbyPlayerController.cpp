@@ -5,12 +5,15 @@
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Items/Manager/CustomizationManager.h"
 #include "Items/Structure/CustomizationPreset.h"
+#include "Items/Component/CharacterCustomizationComponent.h"
+#include "Character/Lobby/LobbyPreviewPawn.h"
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/UI/CountdownWidget.h"
 #include "Framework/UI/CharacterSelectWidget.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
@@ -234,16 +237,22 @@ void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Valu
 void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
 {
 	float Direction = Value.Get<float>();
+	UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Received input value: %f"), Direction);
 
 	if (Direction > 0.1f)
 	{
-		// ↑ 위쪽 → 프리셋 업
+		int32 IndexDirection = 1;
+		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
+		Server_SwitchPresetIndex(IndexDirection);
 	}
 	else if (Direction < -0.1f)
 	{
-		// ↓ 아래쪽 → 프리셋 다운
+		int32 IndexDirection = -1;
+		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
+		Server_SwitchPresetIndex(IndexDirection);
 	}
 }
+
 
 void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName CharacterID)
 {
@@ -254,8 +263,19 @@ void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName Character
 	}
 }
 
+void ALobbyPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerState called. PlayerState is now valid."));
+
+	// Set Client's Customization Presets to Server PlayerState
+	SetCustomizationPresets();
+}
+
 void ALobbyPlayerController::SetCustomizationPresets()
 {
+	// Get Client's Customization Presets
 	if (IsLocalController())
 	{
 		ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
@@ -265,9 +285,17 @@ void ALobbyPlayerController::SetCustomizationPresets()
 			if (IsValid(CustomizationManager))
 			{
 				TArray<FCharacterCustomizationPreset> Presets = CustomizationManager->GetCharacterCustomizationPresets();
+				
+				// Send Client's Customization Presets to Server
 				Server_SetPresetsToPlayerState(Presets);
 			}
 		}
+	}
+
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetCustomizationPresets called on server. Now Returning."));
+		return;
 	}
 }
 
@@ -277,39 +305,68 @@ void ALobbyPlayerController::Server_SetPresetsToPlayerState_Implementation(const
 	if (IsValid(LobbyPlayerState) == true)
 	{
 		LobbyPlayerState->SetCharacterCustomizationPresets(ClientPresets);
-
-		// Just For Logging Delete Later
-		UE_LOG(LogTemp, Log, TEXT("===== All Character Presets ====="));
-
-		const UEnum* EnumPtr = StaticEnum<EItemSlot>();
-		for (const FCharacterCustomizationPreset& CharPreset : ClientPresets)
-		{
-			UE_LOG(LogTemp, Log, TEXT("▶ Character ID: %s"), *CharPreset.CharacterID.ToString());
-
-			for (const FCustomizationPreset& Preset : CharPreset.Presets)
-			{
-				UE_LOG(LogTemp, Log, TEXT("  - Preset Index: %d"), Preset.PresetIndex);
-
-				for (const FEquippedItemData& Item : Preset.EquippedItems)
-				{
-					FString SlotName = EnumPtr
-						? EnumPtr->GetDisplayNameTextByValue(static_cast<int64>(Item.EquipSlot)).ToString()
-						: TEXT("Unknown");
-
-					UE_LOG(LogTemp, Log, TEXT("    - Slot: %s, ItemID: %s"), *SlotName, *Item.ItemID.ToString());
-				}
-			}
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("=================================="));
 	}
 }
 
-void ALobbyPlayerController::OnRep_PlayerState()
+void ALobbyPlayerController::Server_SwitchPresetIndex_Implementation(int32 IndexDirection)
 {
-	Super::OnRep_PlayerState();
+	if (IsLocalController()){return;}
 
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerState called. PlayerState is now valid."));
+	int32 OldIndex = CurrentPresetIndex;
+	CurrentPresetIndex = (CurrentPresetIndex + IndexDirection + 3) % 3;
 
-	SetCustomizationPresets();
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(LobbyPlayerState))
+	{
+		FCustomizationPreset IndexedPreset = LobbyPlayerState->GetCustomizationPreset(LobbyPlayerState->GetCharacterID(), CurrentPresetIndex);
+
+		UE_LOG(LogTemp, Log, TEXT("[Server] Calling RequestEquipPreset with PresetIndex = % d"), CurrentPresetIndex);
+		RequestEquipPreset(IndexedPreset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Server] LobbyPlayerState is invalid."));
+	}
+}
+
+
+void ALobbyPlayerController::RequestEquipPreset(FCustomizationPreset Preset)
+{
+	UE_LOG(LogTemp, Log, TEXT("[Server] RequestEquipPreset called. PresetIndex = %d, EquippedItemsCount = %d"),
+		Preset.PresetIndex,
+		Preset.EquippedItems.Num());
+
+	APawn* ServerPawn = GetPawn();
+	if (!ServerPawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Server] GetPawn() returned nullptr."));
+		return;
+	}
+
+	ABasePreviewPawn* ServerPreviewPawn = Cast<ABasePreviewPawn>(ServerPawn);
+	if (!ServerPreviewPawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Server] Cast to ABasePreviewPawn failed."));
+		return;
+	}
+
+	UCharacterCustomizationComponent* CustomizationComponent = Cast<UCharacterCustomizationComponent>(
+		ServerPreviewPawn->GetComponentByClass(UCharacterCustomizationComponent::StaticClass()));
+
+	if (CustomizationComponent)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Server] CustomizationComponent found. Equipping preset..."));
+		CustomizationComponent->EquipPreset(Preset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Server] CustomizationComponent not found on PreviewPawn."));
+	}
+}
+
+
+void ALobbyPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ALobbyPlayerController, CurrentPresetIndex);
 }
