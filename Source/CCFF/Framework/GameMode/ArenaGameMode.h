@@ -39,14 +39,16 @@ public:
 
 #pragma endregion
 
-	/* 게임 시작 이후 입장 제한 */
 	UPROPERTY()
 	bool bHasGameStarted = false;
 
-private:
-	UFUNCTION()
-	void MoveResultLevel();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ranking")
+	float DamageWeight;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ranking")
+	float TimeWeight;
+
+private:
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle LevelTransitionTimerHandle;

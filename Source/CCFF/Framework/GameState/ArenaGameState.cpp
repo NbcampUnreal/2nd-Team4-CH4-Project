@@ -39,6 +39,7 @@ void AArenaGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AArenaGameState, CountdownTime);
 	DOREPLIFETIME(AArenaGameState, bIsFinishCountdown);
 	DOREPLIFETIME(AArenaGameState, ArenaRemainingTime);
+	DOREPLIFETIME(AArenaGameState, RankingInfos);
 }
 
 void AArenaGameState::OnRep_ArenaRoundProgress()
@@ -128,6 +129,13 @@ void AArenaGameState::OnRep_ArenaRemainingTime()
 					{
 						ArenaModeHUD->ShowCountdownWidget();
 						CountdownWidget->SetCountdownText(TEXT("FINISH"));
+
+						FTimerHandle ResultTimerHandle;
+
+						GetWorld()->GetTimerManager().SetTimer(ResultTimerHandle, [ArenaModeHUD]()
+							{
+								ArenaModeHUD->ShowArenaResultWidget();
+							}, 3.0f, false);
 					}
 				}
 			}

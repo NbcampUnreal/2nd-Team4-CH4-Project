@@ -38,10 +38,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AttackAction3;
 
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
+	void ServerReturnToLobby();
+
 	bool bIsPause;
-	
+
 protected:
 	virtual void BeginPlay() override;
+
 protected:
 #pragma region GamePause
 	UFUNCTION(BlueprintCallable, Category = "CCFF|GameMode")
@@ -55,6 +59,5 @@ protected:
 	UPROPERTY()
 	UUserWidget* PauseWidget;
 #pragma endregion
-	
 
 };

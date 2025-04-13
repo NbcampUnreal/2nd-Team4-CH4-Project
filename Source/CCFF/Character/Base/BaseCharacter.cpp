@@ -24,6 +24,8 @@
 #include "Framework/UI/BaseInGameWidget.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
+#include "Framework/GameState/ArenaGameState.h"
 
 
 // Sets default values
@@ -253,6 +255,15 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	UDamageType::StaticClass(),// 기본 데미지 타입)
 	HitBoxList[CurrentActivatedCollision]
 	);
+
+	// Notice :: 다혜 테스트 추가
+	if (AController* PC = GetController())
+	{
+		if (AArenaPlayerState* ArenaPS = PC->GetPlayerState<AArenaPlayerState>())
+		{
+			ArenaPS->AddDamage(DamageAmount); // 누적!
+		}
+	}
 }
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -728,6 +739,14 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 void ABaseCharacter::OnDeath() const
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+
+	AArenaPlayerState* ArenaPS = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGS = Cast<AArenaGameState>(GetWorld()->GetGameState());
+	if (ArenaPS && ArenaGS)
+	{
+		float SurvivalTime = GetWorld()->GetTimeSeconds() - ArenaGS->GetRoundStartTime();
+		ArenaPS->SetSurvivalTime(SurvivalTime);
+	}
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
