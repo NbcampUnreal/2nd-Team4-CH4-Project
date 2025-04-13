@@ -15,16 +15,16 @@ class CCFF_API UArenaResultWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION(BlueprintCallable, Category = "Result")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Result")
 	void SetRankingInfos(const TArray<FArenaRankInfo>& RankingInfos);
 
-	UFUNCTION(BlueprintCallable, Category = "Result")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Result")
 	void OnOkButtonClicked();
 
 protected:
 	virtual void NativeConstruct() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Result")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CCFF|Result")
 	TSubclassOf<URankRowWidget> RowWidgetClass;
 
 	UPROPERTY(meta = (BindWidget))

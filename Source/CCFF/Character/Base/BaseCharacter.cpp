@@ -740,12 +740,12 @@ void ABaseCharacter::OnDeath() const
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
 
-	AArenaPlayerState* ArenaPS = GetPlayerState<AArenaPlayerState>();
-	AArenaGameState* ArenaGS = Cast<AArenaGameState>(GetWorld()->GetGameState());
-	if (ArenaPS && ArenaGS)
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
+	if (ArenaPlayerState && ArenaGameState)
 	{
-		float SurvivalTime = GetWorld()->GetTimeSeconds() - ArenaGS->GetRoundStartTime();
-		ArenaPS->SetSurvivalTime(SurvivalTime);
+		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
 	}
 }
 

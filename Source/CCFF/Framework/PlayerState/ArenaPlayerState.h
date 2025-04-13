@@ -13,24 +13,24 @@ class CCFF_API AArenaPlayerState : public APlayerState
 public:
 	AArenaPlayerState();
 
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE float GetTotalDamage() const { return TotalDamage; }
 	FORCEINLINE void SetTotalDamage(float Damage) { TotalDamage = Damage; }
 
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE float GetSurvivalTime() const { return SurvivalTime; }
 	FORCEINLINE void SetSurvivalTime(float Time) { SurvivalTime = Time; }
 
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddDamage(float Amount) { TotalDamage += Amount; }
 
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddSurvivalTime(float DeltaTime) { SurvivalTime += DeltaTime; }
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|Player Statistics")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	float TotalDamage;
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|Player Statistics")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	float SurvivalTime;
 };

@@ -11,10 +11,10 @@ class CCFF_API URankRowWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION(BlueprintCallable, Category = "Ranking")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
 	void SetHeaderRow();
 
-	UFUNCTION(BlueprintCallable, Category = "Ranking")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
 	void SetRankInfo(int32 InRank, const FString& InPlayerName, float InTotalDamage, float InSurvivalTime);
 
 protected:

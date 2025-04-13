@@ -55,9 +55,9 @@ void UArenaResultWidget::OnOkButtonClicked()
 {
 	if (APlayerController* PC = GetOwningPlayer())
 	{
-		if (ACharacterController* MPC = Cast<ACharacterController>(PC))
+		if (ACharacterController* MyPlayerController = Cast<ACharacterController>(PC))
 		{
-			MPC->ServerReturnToLobby();
+			MyPlayerController->ServerReturnToLobby();
 		}
 	}
 }

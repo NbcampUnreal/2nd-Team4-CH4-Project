@@ -34,7 +34,7 @@ public:
 	void UpdatePlayerRating();
 	void UpdateCountdown();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Arena")
+	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
 
 #pragma endregion
@@ -42,10 +42,10 @@ public:
 	UPROPERTY()
 	bool bHasGameStarted = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ranking")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float DamageWeight;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ranking")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float TimeWeight;
 
 private:

@@ -6,6 +6,7 @@
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/CountdownWidget.h"
 #include "Algo/Sort.h"
+#include "GameFramework/Pawn.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
@@ -74,8 +75,19 @@ void AArenaGameMode::EndRound()
 	{
 		ArenaGameState->SetRemainingTime(RoundTime);
 		ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
-		UpdatePlayerRating();
+		
+		float Initial = ArenaGameState->GetRoundStartTime();
+
+		for (APlayerState* BasePlayerState : GameState->PlayerArray)
+		{
+			AArenaPlayerState* ArenaPlayerState = Cast<AArenaPlayerState>(BasePlayerState);
+			if (ArenaPlayerState && ArenaPlayerState->GetSurvivalTime() <= 0.0f)
+			{
+				ArenaPlayerState->SetSurvivalTime(Initial);
+			}
+		}
 	}
+	UpdatePlayerRating();
 } 
 
 void AArenaGameMode::CheckGameConditions()
@@ -88,10 +100,31 @@ void AArenaGameMode::CheckGameConditions()
 		if (ArenaGameState->GetRemainingTime() <= 0.0f)
 		{
 			EndRound();
+			return;
 		}
 	}
 	// TODO :: 남은 플레이어 수 1명 이상인지 확인
-	//AArenaPlayerState* ArenaPlayerState = Cast <AArenaPlayerState>(PlayerState);
+	//int32 AliveCount = 0;
+	//for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	//{
+	//	if (APlayerController* PC = It->Get())
+	//	{
+	//		if (APawn* Pawn = PC->GetPawn())
+	//		{
+	//			// Pawn이 아직 살아있다면 카운트
+	//			if (IsValid(Pawn))
+	//			{
+	//				AliveCount++;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//if (AliveCount == 0)
+	//{
+	//	EndRound();
+	//	return;
+	//}
 }
 
 void AArenaGameMode::UpdateArenaStats()
@@ -111,8 +144,6 @@ void AArenaGameMode::UpdatePlayerRating()
 	{
 		for (APlayerState* PS : GameState->PlayerArray)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState found: %s"), *PS->GetPlayerName());
-
 			AArenaPlayerState* ArenaPS = Cast<AArenaPlayerState>(PS);
 			if (IsValid(ArenaPS))
 			{
@@ -137,11 +168,6 @@ void AArenaGameMode::UpdatePlayerRating()
 		RankInfo.TotalDamage = RankingPlayers[Index]->GetTotalDamage();
 		RankInfo.SurvivalTime = RankingPlayers[Index]->GetSurvivalTime();
 		RankingInfos.Add(RankInfo);
-		UE_LOG(LogTemp, Log, TEXT("%d. %s - TotalDamage: %.2f, SurvivalTime: %.2f"),
-			Index + 1,
-			*RankingPlayers[Index]->GetPlayerName(),
-			RankingPlayers[Index]->GetTotalDamage(),
-			RankingPlayers[Index]->GetSurvivalTime());
 	}
 
 	if (AArenaGameState* ArenaGS = Cast<AArenaGameState>(GameState))
