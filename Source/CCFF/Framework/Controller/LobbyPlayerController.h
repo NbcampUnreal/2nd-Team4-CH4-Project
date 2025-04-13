@@ -12,6 +12,7 @@ class CCFF_API ALobbyPlayerController : public APlayerController
 	
 public:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetNickname(const FString& InNickname);
@@ -31,8 +32,29 @@ public:
 	UFUNCTION()
 	void HandleCharacterSelectedFromUI(FName CharacterID);
 
+	UFUNCTION()
+	void HandleHorizontalInput(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void HandleVerticalInput(const FInputActionValue& Value);
+
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterID(FName CharacterID);
+
+	void SetupEnhancedInput();
+	void CacheCharacterIDList();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	class UInputMappingContext* CharacterSelectInputContext;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	class UInputAction* IA_NavigateHorizontal;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	class UInputAction* IA_NavigateVertical;
+
+	int32 CurrentCharacterIndex = 0;
+	TArray<FName> CharacterIDList;
 
 #pragma endregion
 

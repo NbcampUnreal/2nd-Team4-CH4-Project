@@ -16,6 +16,8 @@ public:
 
 	FOnCharacterSelected OnCharacterSelected;
 
+	FORCEINLINE TArray<FName> GetCharacterIDList() const { return CharacterIDList; }
+
 protected:
 	// Per-button handlers
 	UFUNCTION() void HandleCharacterClick_0();

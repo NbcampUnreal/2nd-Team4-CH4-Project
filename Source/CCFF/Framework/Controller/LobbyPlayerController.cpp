@@ -8,11 +8,15 @@
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/UI/CountdownWidget.h"
 #include "Framework/UI/CharacterSelectWidget.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!IsLocalController()) return;
 
 	bShowMouseCursor = true;
 
@@ -21,15 +25,12 @@ void ALobbyPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 
-	if (IsLocalController())
+	HandleLocalSetup();
+
+	UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (GameInstance)
 	{
-		HandleLocalSetup();
-		
-		UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
-		if (GameInstance)
-		{
-			ServerSetNickname(GameInstance->GetNickname());
-		}
+		ServerSetNickname(GameInstance->GetNickname());
 	}
 
 	if (CharacterSelectWidgetClass && !CharacterSelectWidgetInstance)
@@ -43,7 +44,54 @@ void ALobbyPlayerController::BeginPlay()
 			);
 
 			CharacterSelectWidgetInstance->AddToViewport();
+			CacheCharacterIDList();
 		}
+	}
+
+	SetupEnhancedInput();
+}
+
+void ALobbyPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (!IsLocalController()) return;
+
+	if (CharacterIDList.IsEmpty())
+	{
+		CacheCharacterIDList();
+	}
+}
+
+void ALobbyPlayerController::SetupEnhancedInput()
+{
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		if (CharacterSelectInputContext)
+		{
+			Subsystem->AddMappingContext(CharacterSelectInputContext, 0);
+		}
+	}
+
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		if (IA_NavigateHorizontal)
+		{
+			EnhancedInput->BindAction(IA_NavigateHorizontal, ETriggerEvent::Triggered, this, &ALobbyPlayerController::HandleHorizontalInput);
+		}
+
+		if (IA_NavigateVertical)
+		{
+			EnhancedInput->BindAction(IA_NavigateVertical, ETriggerEvent::Triggered, this, &ALobbyPlayerController::HandleVerticalInput);
+		}
+	}
+}
+
+void ALobbyPlayerController::CacheCharacterIDList()
+{
+	if (CharacterSelectWidgetInstance && CharacterIDList.IsEmpty())
+	{
+		CharacterIDList = CharacterSelectWidgetInstance->GetCharacterIDList();
 	}
 }
 
@@ -156,6 +204,45 @@ void ALobbyPlayerController::ClientTeardownCountdown_Implementation()
 void ALobbyPlayerController::HandleCharacterSelectedFromUI(FName CharacterID)
 {
 	ServerSetCharacterID(CharacterID);
+
+	int32 Index = CharacterIDList.IndexOfByKey(CharacterID);
+	if (Index != INDEX_NONE)
+	{
+		CurrentCharacterIndex = Index;
+	}
+}
+
+void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Value)
+{
+	float Direction = Value.Get<float>();
+
+	if (CharacterIDList.Num() == 0) return;
+
+	if (Direction > 0.1f)
+	{
+		CurrentCharacterIndex = (CurrentCharacterIndex + 1) % CharacterIDList.Num();
+	}
+	else if (Direction < -0.1f)
+	{
+		CurrentCharacterIndex = (CurrentCharacterIndex - 1 + CharacterIDList.Num()) % CharacterIDList.Num();
+	}
+
+	const FName SelectedID = CharacterIDList[CurrentCharacterIndex];
+	ServerSetCharacterID(SelectedID);
+}
+
+void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
+{
+	float Direction = Value.Get<float>();
+
+	if (Direction > 0.1f)
+	{
+		// ↑ 위쪽 → 프리셋 업
+	}
+	else if (Direction < -0.1f)
+	{
+		// ↓ 아래쪽 → 프리셋 다운
+	}
 }
 
 void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName CharacterID)
@@ -171,38 +258,17 @@ void ALobbyPlayerController::SetCustomizationPresets()
 {
 	if (IsLocalController())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("This is a local controller."));
-
 		ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
 		if (IsValid(LobbyPlayerState))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerState is valid."));
-
 			UCustomizationManager* CustomizationManager = GetGameInstance()->GetSubsystem<UCustomizationManager>();
 			if (IsValid(CustomizationManager))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("CustomizationManager is valid. Retrieving presets."));
-
 				TArray<FCharacterCustomizationPreset> Presets = CustomizationManager->GetCharacterCustomizationPresets();
-				UE_LOG(LogTemp, Warning, TEXT("Sending %d presets to server."), Presets.Num());
-
 				Server_SetPresetsToPlayerState(Presets);
 			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("CustomizationManager is NOT valid."));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("LobbyPlayerState is NOT valid."));
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("This is NOT a local controller."));
-	}
-
 }
 
 void ALobbyPlayerController::Server_SetPresetsToPlayerState_Implementation(const TArray<FCharacterCustomizationPreset>& ClientPresets)
