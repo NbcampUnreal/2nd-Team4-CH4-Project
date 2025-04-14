@@ -31,17 +31,12 @@
 // Sets default values
 ABaseCharacter::ABaseCharacter():
 	CurrentActivatedCollision(-1),
-	bIsCancelable(true),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
 	LastMoveInputTime(0.f),
 	DoubleTapThreshold(0.3f),
-	bIsDoubleTab(false),
-	bAttack1Pressed(false),
-	bAttack2Pressed(false),
-	bAttack3Pressed(false),
-	ComboInputThreshold(0.1f)
+	bIsDoubleTab(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -193,7 +188,6 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	DOREPLIFETIME(ThisClass,CurrentCharacterState);
 	DOREPLIFETIME(ThisClass,CurrentResistanceState);
 	DOREPLIFETIME(ThisClass,bCanAttack);
-	DOREPLIFETIME(ThisClass,bIsCancelable);
 }
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
@@ -275,7 +269,6 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	bIsCancelable = true;
 	CurrentCharacterState = ECharacterState::Normal;
 }
 
@@ -297,7 +290,6 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 	if (KINDA_SMALL_NUMBER<MontagePlayTime-ServerDelay)
 	{
 		bCanAttack=false;
-		bIsCancelable = Num<=2;
 		OnRep_CanAttack();
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(Handle,FTimerDelegate::CreateLambda([&]()
@@ -357,23 +349,8 @@ void ABaseCharacter::OnRep_CanAttack()
 	}
 }
 
-void ABaseCharacter::ResetInputFlags()
-{
-	bAttack1Pressed=false;
-	bAttack2Pressed=false;
-	bAttack3Pressed=false;
-}
-
-void ABaseCharacter::SpecialAttackByIndex(const int32 Index)
-{
-	//ResetInputFlags();
-	ExecuteAttackByIndex(Index);
-}
-
-
 void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 {
-	UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d, bIsCancelable: %d, Index: %d"),bCanAttack,bIsCancelable,Index);
 	if (bCanAttack&&GetCharacterMovement()->IsFalling()==false)
 	{
 		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
@@ -391,35 +368,14 @@ void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 
 void ABaseCharacter::Attack1(const FInputActionValue& Value)
 {
-	//bAttack1Pressed=true;
-	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
-	if (bAttack2Pressed) //Special Attack Triggered
-	{
-		SpecialAttackByIndex(3);
-	}
-	else
-	{
-		ExecuteAttackByIndex(0);
-	}
+	ExecuteAttackByIndex(0);
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	//bAttack2Pressed=true;
-	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
-	if (bAttack1Pressed) //Special Attack Triggered
-	{
-		SpecialAttackByIndex(3);
-	}
-	else
-	{
-		ExecuteAttackByIndex(1);
-	}
+	ExecuteAttackByIndex(1);
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
 {
-	//bAttack3Pressed=true;
-	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
-	
 	ExecuteAttackByIndex(2);
 }
 

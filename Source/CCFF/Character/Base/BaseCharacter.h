@@ -132,10 +132,6 @@ protected:
 	UFUNCTION()
 	void OnRep_CanAttack();
 	UFUNCTION()
-	void ResetInputFlags();
-	UFUNCTION()
-	void SpecialAttackByIndex(const int32 Index);
-	UFUNCTION()
 	void ExecuteAttackByIndex(const int32 Index);
 #pragma endregion
 	
@@ -253,8 +249,6 @@ protected:
 #pragma region Cached variables
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
-	UPROPERTY(Replicated)
-	uint8 bIsCancelable : 1;
 	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
 	uint8 bCanAttack : 1;
 	UPROPERTY()
@@ -274,12 +268,7 @@ protected:
 	float LastMoveInputTime;
 	float DoubleTapThreshold;
 	uint8 bIsDoubleTab;
-
-	uint8 bAttack1Pressed : 1;
-	uint8 bAttack2Pressed : 1;
-	uint8 bAttack3Pressed : 1;
-	float ComboInputThreshold;
-	FTimerHandle ComboResetHandle;
+	
 #pragma endregion
 	
 	
