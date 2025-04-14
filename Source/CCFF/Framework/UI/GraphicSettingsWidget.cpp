@@ -88,27 +88,6 @@ void UGraphicSettingsWidget::OnResolutionChanged(FString SelectedItem, ESelectIn
 	ApplyPreviewSettings();
 }
 
-void UGraphicSettingsWidget::ApplySettings_Implementation()
-{
-	CachedResolution = SelectedResolution;
-	CachedWindowMode = SelectedWindowMode;
-}
-
-void UGraphicSettingsWidget::ResetSettings_Implementation()
-{
-	SelectedResolution = DefaultResolution;
-	SelectedWindowMode = DefaultWindowMode;
-
-	if (ResolutionComboBox)
-	{
-		ResolutionComboBox->SetSelectedOption(TEXT("1280x720"));
-	}
-	if (WindowModeComboBox)
-	{
-		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
-	}
-}
-
 void UGraphicSettingsWidget::ApplyPreviewSettings()
 {
 	if (SelectedWindowMode == EWindowMode::WindowedFullscreen)
@@ -126,19 +105,45 @@ void UGraphicSettingsWidget::ApplyPreviewSettings()
 	}
 }
 
+void UGraphicSettingsWidget::ApplySettings_Implementation()
+{
+	CacheCurrentSettings();
+}
+
+void UGraphicSettingsWidget::ResetSettings_Implementation()
+{
+	SelectedResolution = DefaultResolution;
+	SelectedWindowMode = DefaultWindowMode;
+
+	if (ResolutionComboBox)
+	{
+		ResolutionComboBox->SetSelectedOption(TEXT("1280x720"));
+	}
+	if (WindowModeComboBox)
+	{
+		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+	}
+
+	ApplyPreviewSettings();
+}
+
+void UGraphicSettingsWidget::CancelSettings_Implementation()
+{
+	RestoreCachedSettings();
+	UpdateComboBoxSelections();
+	ApplyPreviewSettings();
+}
+
+void UGraphicSettingsWidget::CacheCurrentSettings()
+{
+	CachedResolution = SelectedResolution;
+	CachedWindowMode = SelectedWindowMode;
+}
+
 void UGraphicSettingsWidget::RestoreCachedSettings()
 {
 	SelectedResolution = CachedResolution;
 	SelectedWindowMode = CachedWindowMode;
-
-	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
-	{
-		Settings->SetScreenResolution(CachedResolution);
-		Settings->SetFullscreenMode(CachedWindowMode);
-		Settings->ApplySettings(false);
-	}
-
-	UpdateComboBoxSelections();
 }
 
 void UGraphicSettingsWidget::UpdateComboBoxSelections()

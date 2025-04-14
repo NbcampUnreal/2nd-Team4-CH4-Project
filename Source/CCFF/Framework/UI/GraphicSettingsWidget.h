@@ -15,9 +15,7 @@ public:
 
 	virtual void ApplySettings_Implementation() override;
 	virtual void ResetSettings_Implementation() override;
-
-	void ApplyPreviewSettings();
-	void RestoreCachedSettings();
+	virtual void CancelSettings_Implementation() override;
 
 	UFUNCTION()
 	void OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
@@ -48,5 +46,9 @@ private:
 	void InitializeWindowModeOptions();
 	void InitializeResolutionOptions();
 	void UpdateComboBoxSelections();
+
+	void ApplyPreviewSettings();
+	void CacheCurrentSettings();
+	void RestoreCachedSettings();
 
 };
