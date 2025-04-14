@@ -1,7 +1,7 @@
 ﻿#include "Framework/UI/ArenaResultWidget.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "Framework/UI/RankRowWidget.h"
-#include "Character/Base/CharacterController.h"
+#include "Framework/Controller/CharacterController.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/Button.h"

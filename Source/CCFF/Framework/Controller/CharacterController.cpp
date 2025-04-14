@@ -4,7 +4,7 @@
 #include "Framework/UI/TogglePauseWidget.h"
 #include "Framework/GameMode/TrainingGameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "BaseCharacter.h"
+#include "Character/Base/BaseCharacter.h"
 #include "Framework/HUD/TrainingModeHUD.h"
 #include "Framework/UI/TrainingWidget.h"
 #include "Framework/GameMode/ArenaGameMode.h"

@@ -2,7 +2,7 @@
 
 
 #include "DamageHelper.h"
-#include "Base/DamageAble.h"
+#include "Character/Utilities/DamageAble.h"
 #include "Engine/DamageEvents.h"
 
 float UDamageHelper::ApplyDamage(

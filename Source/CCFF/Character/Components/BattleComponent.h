@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Character/Base/BattleModifiers.h"
+#include "Character/DataStruct/BattleModifiers.h"
 #include "BattleComponent.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))

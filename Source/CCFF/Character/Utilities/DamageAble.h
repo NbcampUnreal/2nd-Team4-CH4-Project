@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AttackCollisionData.h"
 #include "UObject/Interface.h"
 #include "DamageAble.generated.h"
 

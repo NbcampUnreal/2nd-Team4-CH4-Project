@@ -3,14 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterEnum.h"
+#include "InputActionValue.h"
+#include "Character/DataStruct/CharacterAnim.h"
+#include "Character/DataStruct/CharacterStats.h"
+#include "Character/Utilities/DamageAble.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
-#include "CharacterStats.h"
-#include "CharacterAnim.h"
-#include "CharacterEnum.h"
-#include "DamageAble.h"
-#include "InputActionValue.h"
-#include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
 class UBoxComponent;
