@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Camera/CameraActor.h"
 
 
 ACharacterController::ACharacterController()
@@ -114,4 +115,13 @@ void ACharacterController::ServerSetNickname_Implementation(const FString& InNic
 bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
 {
 	return true;
+}
+
+void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
+{
+	if (!SpectatorCam) return;
+
+	UnPossess();
+	SetViewTargetWithBlend(SpectatorCam, 0.f);
+	//ChangeState(NAME_Spectating);
 }
