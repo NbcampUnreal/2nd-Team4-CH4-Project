@@ -44,6 +44,9 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
+	UFUNCTION(Client, Reliable)
+	void ClientSpectateCamera(ACameraActor* SpectatorCam);
+
 	bool bIsPause;
 
 protected:
