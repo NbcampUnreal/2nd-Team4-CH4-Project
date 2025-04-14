@@ -22,6 +22,8 @@ public:
 	virtual void NativeConstruct() override;
 
 	UFUNCTION(BlueprintCallable)
+	void HandleCharacterChanged();
+	UFUNCTION(BlueprintCallable)
 	void RequestReturnToMainMenu();
 	
 	FOnBackToMainMenuRequested OnBackToMainMenuRequested;
@@ -109,5 +111,5 @@ private:
 
 	void InitializePreviewPawn();
 	void InitializeCustomizationManager();
-
+	void BindToCharacterChangedEvent();
 };

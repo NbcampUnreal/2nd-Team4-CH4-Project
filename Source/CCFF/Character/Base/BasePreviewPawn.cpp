@@ -32,6 +32,12 @@ void ABasePreviewPawn::InitializePreview(FName CharacterID)
 		if (USkeletalMesh* Mesh = CustomizationComponent->GetBaseMeshByCharacterID(CharacterID))
 		{
 			PreviewMesh->SetSkeletalMesh(Mesh);
+			OnCharacterChanged.ExecuteIfBound();
+
+			if (!IsLocallyControlled())
+			{
+				CustomizationComponent->UnequipAllItems();
+			}
 		}
 	}
 }
