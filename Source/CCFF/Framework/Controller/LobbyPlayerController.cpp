@@ -232,6 +232,7 @@ void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Valu
 
 	const FName SelectedID = CharacterIDList[CurrentCharacterIndex];
 	ServerSetCharacterID(SelectedID);
+
 }
 
 void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
@@ -261,6 +262,8 @@ void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName Character
 	{
 		LobbyPlayerState->SetCharacterID(CharacterID);
 	}
+
+	CurrentPresetIndex = -1;
 }
 
 void ALobbyPlayerController::OnRep_PlayerState()

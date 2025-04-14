@@ -45,4 +45,5 @@ private:
 	// Character ID ¡æ SkeletalMesh map
 	UPROPERTY(EditDefaultsOnly, Category = "Character")
 	TMap<FName, USkeletalMesh*> CharacterMeshMap;
+
 };
