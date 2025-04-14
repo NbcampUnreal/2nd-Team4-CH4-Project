@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "UW_HPWidget.generated.h"
 
+class UProgressBar;
 class UStatusComponent;
 class UTextBlock;
 /**
@@ -28,16 +29,12 @@ public:
 	FORCEINLINE void SetOwningActor(AActor* InOwningActor) { OwningActor = InOwningActor; }
 
 	UFUNCTION()
-	void OnMaxHPChange(float InMaxHP);
+	void OnHPChange(const float InPercentage);
 
-	UFUNCTION()
-	void OnCurrentHPChange(float InCurrentHP);
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UTextBlock> CurrentHPText;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UTextBlock> MaxHPText;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UProgressBar> HPBar;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<AActor> OwningActor;
 };

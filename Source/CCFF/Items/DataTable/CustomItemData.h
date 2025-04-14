@@ -32,4 +32,13 @@ struct FCustomItemData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FName SocketName;
+
+    FCustomItemData()
+        : ItemID(0)
+        , ItemName(NAME_None)
+        , Slot(EItemSlot::None)
+        , ItemMesh(nullptr)
+        , SocketName(NAME_None)
+    {
+    }
 };

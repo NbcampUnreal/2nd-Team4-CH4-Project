@@ -15,10 +15,15 @@ class CCFF_API UCCFFGameInstance : public UGameInstance
 
 public:
 	virtual void Init() override;
+	virtual void Shutdown() override;
+
 	void SaveData();
 	void LoadData();
 
 	void StartFindSessions(APlayerController* OwnerPlayerController);
+
+	UFUNCTION()
+	void HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
 
 	FORCEINLINE FString GetNickname() const { return PlayerMeta.Nickname; }
 	void SetNickname(const FString& NewNickname);

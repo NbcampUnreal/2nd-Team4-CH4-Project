@@ -13,12 +13,26 @@ public:
 	ALobbyGameMode();
 
 	virtual void BeginPlay() override;
+
+	virtual void PreLogin(
+		const FString& Options,
+		const FString& Address,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage
+	) override;
+
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	void NotifyPlayerReadyStatusChanged();
 
 	void StartGameWithDelay();
 	void StartGame();
+
+#pragma region FORBID_SOLO_PLAYING
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Test")
+	bool bAllowSoloStart = false;
+
+#pragma endregion
 
 	UPROPERTY()
 	TArray<AActor*> PlayerSpawnSlots;

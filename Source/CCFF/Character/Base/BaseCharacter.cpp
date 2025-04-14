@@ -21,16 +21,24 @@
 #include "Components/BoxComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Character/DamageHelper.h"
+#include "Framework/UI/BaseInGameWidget.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
+#include "Framework/GameState/ArenaGameState.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Camera/CameraActor.h"  
 
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
 	CurrentActivatedCollision(-1),
 	bCanAttack(true),
+	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
-	LastAttackStartTime(0.f)
+	LastMoveInputTime(0.f),
+	DoubleTapThreshold(0.3f),
+	bIsDoubleTab(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -46,12 +54,13 @@ ABaseCharacter::ABaseCharacter():
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->JumpZVelocity = 300.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
+	JumpMaxCount=2;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -86,21 +95,44 @@ ABaseCharacter::ABaseCharacter():
 void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)
 {
 	UUW_HPWidget* HPWidget=Cast<UUW_HPWidget>(InHPWidget);
-	if (IsValid(HPWidget)==true)
+	if (IsValid(HPWidget)==true&&!HasAuthority())
 	{
 		HPWidget->InitializeHPWidget(StatusComponent);
-		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnCurrentHPChange);
+		StatusComponent->OnCurrentHPChanged.AddUObject(HPWidget,&UUW_HPWidget::OnHPChange);
+	}
+}
+
+void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
+{
+	if (UBaseInGameWidget* MyHUD=Cast<UBaseInGameWidget>(HUDWidget))
+	{
+		MyHUD->InitializeHUDWidget(StatusComponent);
+		StatusComponent->OnCurrentHPChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateHealthBar);
+		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
+		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
+		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
 	}
 }
 
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//Rotate Camera properly
+	if (IsValid(CameraBoom))
+	{
+		const float CameraRotation=GetActorRotation().Yaw;
+		CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	}
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this,&ABaseCharacter::AttackNotify);
 		AnimInstance->OnMontageEnded.AddDynamic(this,&ABaseCharacter::OnAttackEnded);
+	}
+	if (StatusComponent)
+	{
+		StatusComponent->OnDeathState.AddUObject(this,&ABaseCharacter::OnDeath);
+		StatusComponent->OnGuardCrush.AddUObject(this,&ABaseCharacter::GuardCrush);
 	}
 	//Initialize struct variables
 	PreLoadCharacterStats();
@@ -108,11 +140,12 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterAnim();
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
-	
-	FString NetModeString = UDamageHelper::GetRoleString(this);
-	FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
-	UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
-	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+	//Set MaxWalkSpeed
+	GetCharacterMovement()->MaxWalkSpeed = BalanceStats.MaxWalkSpeed;
+	// FString NetModeString = UDamageHelper::GetRoleString(this);
+	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
+	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
+	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -131,9 +164,9 @@ void ABaseCharacter::Tick(float DeltaTime)
 void ABaseCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	FString NetModeString = UDamageHelper::GetRoleString(this);
-	FString CombinedString = FString::Printf(TEXT("BaseCharacter::PossessedBy() %s [%s]"), *UDamageHelper::GetNetModeString(this), *NetModeString);
-	UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+	// FString NetModeString = UDamageHelper::GetRoleString(this);
+	// FString CombinedString = FString::Printf(TEXT("BaseCharacter::PossessedBy() %s [%s]"), *UDamageHelper::GetNetModeString(this), *NetModeString);
+	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 }
 
 float ABaseCharacter::TakeDamage_Implementation(
@@ -225,11 +258,19 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	UDamageType::StaticClass(),// 기본 데미지 타입)
 	HitBoxList[CurrentActivatedCollision]
 	);
+
+	// Notice :: 다혜 테스트 추가
+	if (AController* PC = GetController())
+	{
+		if (AArenaPlayerState* ArenaPS = PC->GetPlayerState<AArenaPlayerState>())
+		{
+			ArenaPS->AddDamage(DamageAmount); // 누적!
+		}
+	}
 }
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	bIsCancelable = true;
 	CurrentCharacterState = ECharacterState::Normal;
 }
 
@@ -277,17 +318,18 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 
 bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num, float InStartAttackTime)
 {
+	return true;
 	// First Attack input
-	if (LastAttackStartTime==0.f)
-	{
-		return true;
-	}
-	const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
-	if (!bIsValid)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
-	}
-	return bIsValid;
+	// if (LastAttackStartTime==0.f)
+	// {
+	// 	return true;
+	// }
+	// const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
+	// if (!bIsValid)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
+	// }
+	// return bIsValid;
 }
 void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, ABaseCharacter* InTargetCharacter)
 {
@@ -309,48 +351,40 @@ void ABaseCharacter::OnRep_CanAttack()
 	}
 }
 
-void ABaseCharacter::Attack1(const FInputActionValue& Value)
+void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	if (bCanAttack&&GetCharacterMovement()->IsFalling()==false)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
-		ServerRPCAttack(0,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
+		ServerRPCAttack(Index,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
 		// Play Montage in Owning Client
 		if (HasAuthority()==false&&IsLocallyControlled()==true)
 		{
+			//bIsCancelable = Index<=2;
 			bCanAttack=false;
 			OnRep_CanAttack();
-			PlayAttackMontage(0);
+			PlayAttackMontage(Index);
 		}
 	}
+}
+
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(0);
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
-	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack2 Called !!"));
-		ServerRPCAttack(1,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(1);
-		}
-	}
+	ExecuteAttackByIndex(1);
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
-    {
-		UE_LOG(LogTemp,Warning,TEXT("Attack3 Called !!"));
-		ServerRPCAttack(2,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(2);
-		}
-    }
+	ExecuteAttackByIndex(2);
+}
+
+
+void ABaseCharacter::Attack4(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(3);
 }
 
 void ABaseCharacter::PlayAttackMontage(const int32& Num)
@@ -365,21 +399,36 @@ void ABaseCharacter::PlayAttackMontage(const int32& Num)
 	}
 }
 
+void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
+{
+	GetCharacterMovement()->MaxWalkSpeed=Value;
+}
+
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
-	CurrentMoveInput = MovementVector;
-
+	
+	//Detect Double Tap(Sprint)
+	//Get input direction vector
+	FVector2D CurrentInputDirection=MovementVector.GetSafeNormal();
+	// Compare direction (95% match)
+	if (FVector2D::DotProduct(LastMoveInputDirection, CurrentInputDirection)>0.95f&&bIsDoubleTab)
+	{
+		ServerRPCSetMaxWalkSpeed(BalanceStats.MaxRunSpeed);
+	}
+	float CurrentTime=GetWorld()->GetTimeSeconds();	
+	LastMoveInputTime=CurrentTime;
+	LastMoveInputDirection = CurrentInputDirection;
+	
+	//Move Logic
 	if (Controller != nullptr && CurrentCharacterState == ECharacterState::Normal)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -387,6 +436,20 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 		// 이동 처리
 		AddMovementInput(MoveDirection);
 	}
+}
+void ABaseCharacter::StartSprint(const FInputActionValue& Value)
+{
+	float CurrentTime=GetWorld()->GetTimeSeconds();
+	if (CurrentTime-LastMoveInputTime<=DoubleTapThreshold)
+	{
+		bIsDoubleTab=true;
+	}
+}
+
+void ABaseCharacter::StopSprint(const FInputActionValue& Value)
+{
+	ServerRPCSetMaxWalkSpeed(BalanceStats.MaxWalkSpeed);
+	bIsDoubleTab=false;
 }
 
 void ABaseCharacter::StartJump(const FInputActionValue& Value)
@@ -415,10 +478,6 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
-	if (NewHealth <= 0.0f)
-	{
-		OnDeath();
-	}
 	return ScaledDamage;
 }
 
@@ -675,27 +734,48 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 void ABaseCharacter::OnDeath() const
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
+	if (ArenaPlayerState && ArenaGameState)
+	{
+		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+	}
+
+	if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		ACameraActor* SpectatorCamera = ArenaGameMode->GetSpectatorCamera();
+		if (SpectatorCamera)
+		{
+			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera exist"));
+			if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+			{
+				CC->ClientSpectateCamera(SpectatorCamera);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera is not found"));
+		}
+	}
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
 {
-	Stats.BlockMeter = FMath::Clamp(Stats.BlockMeter + Amount, 0.0f, Stats.MaxBlockMeter);
-
-	if (Stats.BlockMeter <= 0.0f)
-	{
-		GuardCrush();
-	}
+	float NewBlockMeter=StatusComponent->GetBlockMeter() + Amount;
+	StatusComponent->SetBlockMeter(NewBlockMeter);
 }
 
 void ABaseCharacter::ModifySuperMeter(float Amount)
 {
-	float NewSuperMeter = FMath::Clamp(StatusComponent->GetSuperMeter() + Amount, 0.0f, StatusComponent->GetMaxSuperMeter());
+	float NewSuperMeter = StatusComponent->GetSuperMeter()+Amount;
 	StatusComponent->SetSuperMeter(NewSuperMeter);
 }
 
 void ABaseCharacter::GainBurstMeter(float Amount)
 {
-	float NewBurstMeter = FMath::Clamp(StatusComponent->GetBurstMeter() + Amount, 0.0f, StatusComponent->GetMaxBurstMeter());
+	float NewBurstMeter = StatusComponent->GetBurstMeter()+Amount;
 	StatusComponent->SetBurstMeter(NewBurstMeter);
 }
 
@@ -757,7 +837,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 				for (int32 i=0;i<n-1;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
-					UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
+					//UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
 					const FName RowName=FName(CharacterType+"_"+TypeName);
 					FAttackCollisionData Data=Loader->InitializeAttackCollisionData(RowName);
 					FHitBoxData HitBoxData=Loader->InitializeHitBoxData(RowName);
@@ -794,6 +874,8 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		{
 			// Moving
 			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
+			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Started, this, &ABaseCharacter::StartSprint);
+			EnhancedInputComponent->BindAction(MyController->MoveAction, ETriggerEvent::Completed, this, &ABaseCharacter::StopSprint);
 		
 			// Jumping
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
@@ -803,6 +885,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
 			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
 			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
+			EnhancedInputComponent->BindAction(MyController->AttackAction4,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack4);
 		}
 	}
 	else

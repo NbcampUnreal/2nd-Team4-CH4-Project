@@ -4,7 +4,7 @@
 #include "UW_HPWidget.h"
 #include "Character/Base/BaseCharacter.h"
 #include "StatusComponent.h"
-#include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 
 UUW_HPWidget::UUW_HPWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -22,18 +22,11 @@ void UUW_HPWidget::NativeConstruct()
 
 void UUW_HPWidget::InitializeHPWidget(UStatusComponent* InStatusComponent)
 {
-	OnMaxHPChange(InStatusComponent->GetMaxHP());
-	OnCurrentHPChange(InStatusComponent->GetCurrentHP());
+	const float Percentage=FMath::Clamp(InStatusComponent->GetCurrentHP()/InStatusComponent->GetMaxHP(), 0, InStatusComponent->GetMaxHP());
+	OnHPChange(Percentage);
 }
 
-void UUW_HPWidget::OnMaxHPChange(float InMaxHP)
+void UUW_HPWidget::OnHPChange(const float InPercentage)
 {
-	int32 RoundedMaxHP=FMath::RoundToInt(InMaxHP);
-	MaxHPText->SetText(FText::AsNumber(RoundedMaxHP));
-}
-
-void UUW_HPWidget::OnCurrentHPChange(float InCurrentHP)
-{
-	int32 RoundedCurrentHP=FMath::RoundToInt(InCurrentHP);
-	CurrentHPText->SetText(FText::AsNumber(RoundedCurrentHP));
+	HPBar->SetPercent(InPercentage);
 }

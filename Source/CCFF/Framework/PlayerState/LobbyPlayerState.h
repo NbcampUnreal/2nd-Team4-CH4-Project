@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Items/Structure/CustomizationPreset.h"
 #include "LobbyPlayerState.generated.h"
+
 
 UCLASS()
 class CCFF_API ALobbyPlayerState : public APlayerState
@@ -14,9 +16,8 @@ public:
 
 	void SetReady(bool bNewReady);
 	FORCEINLINE bool IsReady() const { return bIsReady; };
-
-	void SetPlayerNickname(const FString& InNickname);
 	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
+	void SetPlayerNickname(const FString& InNickname);
 
 	UFUNCTION()
 	void OnRep_ReadyState();
@@ -33,4 +34,33 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+#pragma region CHARACTER_SELECT
+public:
+	void SetCharacterID(FName InID);
+
+	UFUNCTION()
+	FName GetCharacterID() const { return CharacterID; }
+
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterID)
+	FName CharacterID;
+
+	UFUNCTION()
+	void OnRep_CharacterID();
+
+#pragma endregion
+
+#pragma region CHARACTER_CUSTOMIZATION
+public:
+
+	void SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets);
+	FCustomizationPreset GetCustomizationPreset(FName RequestedCharacterID, int32 RequestedPresetIndex);
+
+private:
+	UPROPERTY(Replicated)
+	TArray<FCharacterCustomizationPreset> ClientCharacterCustomizationPresets;
+	FCharacterCustomizationPreset CurrentCharacterCustomizationPresets;
+	FCustomizationPreset CurrentCustomizationPreset;
+
+#pragma endregion
 };

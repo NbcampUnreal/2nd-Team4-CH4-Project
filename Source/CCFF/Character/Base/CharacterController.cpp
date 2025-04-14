@@ -3,9 +3,16 @@
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Framework/UI/TogglePauseWidget.h"
 #include "Framework/GameMode/TrainingGameMode.h"
-#include <Kismet/GameplayStatics.h>
+#include "Kismet/GameplayStatics.h"
+#include "BaseCharacter.h"
 #include "Framework/HUD/TrainingModeHUD.h"
 #include "Framework/UI/TrainingWidget.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Engine/World.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Camera/CameraActor.h"
+
 
 ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
@@ -14,6 +21,7 @@ ACharacterController::ACharacterController()
 	 AttackAction1(nullptr),
 	 AttackAction2(nullptr),
 	 AttackAction3(nullptr),
+	 AttackAction4(nullptr),
 	 PauseWidget(nullptr),
 	 bIsPause(false)
 {
@@ -23,13 +31,21 @@ void ACharacterController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HUDWidgetClass)
+	if (IsLocalController())
 	{
-		if (UUserWidget* HUDWidget = CreateWidget<UUserWidget>(this,HUDWidgetClass))
+		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
-			HUDWidget->AddToViewport();
+			const FString Nick = GI->GetNickname();
+			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *Nick);
+			ServerSetNickname(Nick);
 		}
 	}
+
+	bShowMouseCursor = true;
+
+	FInputModeGameAndUI InputModeData;
+	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputModeData);
 }
 
 void ACharacterController::TogglePause()
@@ -72,3 +88,41 @@ void ACharacterController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("TogglePause"), EInputEvent::IE_Pressed, this, &ACharacterController::TogglePause);
 }
 
+void ACharacterController::ServerReturnToLobby_Implementation()
+{
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
+}
+
+bool ACharacterController::ServerReturnToLobby_Validate()
+{
+	return true;
+}
+
+void ACharacterController::ServerSetNickname_Implementation(const FString& InNickname)
+{
+	if (AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>())
+	{
+		PS->SetPlayerNickname(InNickname);
+		PS->SetPlayerName(InNickname);
+
+		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ServerSetNickname: PlayerState invalid"));
+	}
+}
+
+bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
+{
+	return true;
+}
+
+void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
+{
+	if (!SpectatorCam) return;
+
+	UnPossess();
+	SetViewTargetWithBlend(SpectatorCam, 0.f);
+	//ChangeState(NAME_Spectating);
+}

@@ -4,6 +4,10 @@
 #include "Framework/UI/SelectModeWidget.h"
 #include "Framework/UI/LockerRoomWidget.h"
 #include "Framework/UI/SettingsWidget.h"
+#include "Framework/UI/ConfirmPopupWidget.h"
+#include "Framework/UI/CharacterSelectWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Framework/Controller/MainMenuPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
 void AMainMenuHUD::BeginPlay()
@@ -106,6 +110,32 @@ void AMainMenuHUD::ShowLockerRoomWidget()
 
 		PushWidget(LockerRoomWidget);
 	}
+
+	APlayerController* PlayerController = GetOwningPlayerController();
+
+	if (CharacterSelectWidgetClass)
+	{
+		if (CharacterSelectWidget)
+		{
+			CharacterSelectWidget->RemoveFromParent();
+			CharacterSelectWidget = nullptr;
+		}
+
+		CharacterSelectWidget = CreateWidget<UCharacterSelectWidget>(PlayerController, CharacterSelectWidgetClass);
+
+		if (CharacterSelectWidget)
+		{
+			if (AMainMenuPlayerController* MainMenuPlayerController = Cast<AMainMenuPlayerController>(PlayerController))
+			{
+				CharacterSelectWidget->OnCharacterSelected.BindUObject(
+					MainMenuPlayerController,
+					&AMainMenuPlayerController::HandleCharacterSelectedFromUI
+				);
+			}
+
+			CharacterSelectWidget->AddToViewport();
+		}
+	}
 }
 
 void AMainMenuHUD::ShowShopWidget()
@@ -154,5 +184,29 @@ void AMainMenuHUD::HideLoadingWidget()
 	{
 		LoadingWidget->RemoveFromParent();
 		LoadingWidget = nullptr;
+	}
+}
+
+void AMainMenuHUD::ShowErrorPopup(const FText& Message)
+{
+	if (!ErrorPopup && ErrorPopupClass)
+	{
+		ErrorPopup = CreateWidget<UConfirmPopupWidget>(GetWorld(), ErrorPopupClass);
+	}
+
+	if (ErrorPopup)
+	{
+		ErrorPopup->SetMessage(Message);
+		ErrorPopup->AddToViewport(200);
+		ErrorPopup->OnConfirmPopupConfirmed.AddDynamic(this, &AMainMenuHUD::HandleErrorPopupConfirmed);
+	}
+}
+
+void AMainMenuHUD::HandleErrorPopupConfirmed()
+{
+	if (ErrorPopup)
+	{
+		ErrorPopup->RemoveFromParent();
+		ErrorPopup = nullptr;
 	}
 }

@@ -15,10 +15,18 @@ public:
 	AArenaGameMode(const FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
+	virtual void PreLogin(
+		const FString& Options,
+		const FString& Address,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage)
+	override;
 
 	void StartArenaRound();
 	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
+
+	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
 
 #pragma region Arena
 	// TODO :: 업적 시스템(어시스트, 등등)
@@ -28,15 +36,25 @@ public:
 	void UpdatePlayerRating();
 	void UpdateCountdown();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Arena")
+	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
 
 #pragma endregion
 
-private:
-	UFUNCTION()
-	void MoveResultLevel();
+	UPROPERTY()
+	bool bHasGameStarted = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
+	float DamageWeight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
+	float TimeWeight;
+
+	UPROPERTY()
+	ACameraActor* SpectatorCamera = nullptr;
+
+
+private:
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle LevelTransitionTimerHandle;

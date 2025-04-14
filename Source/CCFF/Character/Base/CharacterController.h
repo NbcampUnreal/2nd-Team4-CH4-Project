@@ -37,14 +37,26 @@ public:
 	UInputAction* AttackAction2;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AttackAction3;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AttackAction4;
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
+	void ServerReturnToLobby();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
+	void ServerSetNickname(const FString& InNickname);
+
+	UFUNCTION(Client, Reliable)
+	void ClientSpectateCamera(ACameraActor* SpectatorCam);
 
 	bool bIsPause;
-	
+
 protected:
 	virtual void BeginPlay() override;
+
 protected:
 #pragma region GamePause
-	UFUNCTION(BlueprintCallable, Category = "CCFF|GameMode")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	void TogglePause();
 
 	virtual void SetupInputComponent() override;
@@ -55,10 +67,5 @@ protected:
 	UPROPERTY()
 	UUserWidget* PauseWidget;
 #pragma endregion
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CCFF|UI")
-	TSubclassOf<UUserWidget> HUDWidgetClass;
-
-
 
 };

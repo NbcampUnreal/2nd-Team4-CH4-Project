@@ -2,6 +2,7 @@
 #include "Framework/UI/AudioSettingsWidget.h"
 #include "Framework/UI/GraphicSettingsWidget.h"
 #include "Framework/UI/ControlSettingsWidget.h"
+#include "Framework/UI/Settings/ApplySettingsInterface.h"
 #include "Framework/HUD/MainMenuHUD.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Components/Button.h"
@@ -97,12 +98,18 @@ void USettingsWidget::OnControlTabClicked()
 
 void USettingsWidget::OnApplyClicked()
 {
-	// Todo:
+	if (CurrentSettingsWidget && CurrentSettingsWidget->Implements<UApplySettingsInterface>())
+	{
+		IApplySettingsInterface::Execute_ApplySettings(CurrentSettingsWidget);
+	}
 }
 
 void USettingsWidget::OnResetClicked()
 {
-	// Todo:
+	if (CurrentSettingsWidget && CurrentSettingsWidget->Implements<UApplySettingsInterface>())
+	{
+		IApplySettingsInterface::Execute_ResetSettings(CurrentSettingsWidget);
+	}
 }
 
 void USettingsWidget::OnCancelClicked()
@@ -110,13 +117,6 @@ void USettingsWidget::OnCancelClicked()
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
-		/*AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
-		if (HUD)
-		{
-			HUD->HideSettingsWidget();
-		}*/
-
-		// Notice :: Dahye
 		AHUD* CurrentHUD = PlayerController->GetHUD();
 		if (CurrentHUD)
 		{

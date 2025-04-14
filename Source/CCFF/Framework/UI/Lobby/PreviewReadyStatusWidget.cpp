@@ -3,8 +3,6 @@
 
 void UPreviewReadyStatusWidget::SetReadyState(bool bIsReady)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[UPreviewReadyStatusWidget] SetReadyState : ReadyState changed: %s"), bIsReady ? TEXT("Ready") : TEXT("Not Ready"));
-
 	if (IsValid(ReadyStatusText))
 	{
 		const FText StatusText = bIsReady
@@ -12,7 +10,6 @@ void UPreviewReadyStatusWidget::SetReadyState(bool bIsReady)
 			: FText::FromString(TEXT("Not Ready"));
 
 		ReadyStatusText->SetText(StatusText);
-		UE_LOG(LogTemp, Warning, TEXT("[UPreviewReadyStatusWidget] Text set successfully"));
 	}
 	else
 	{

@@ -1,5 +1,4 @@
 #include "Framework/UI/TrainingWidget.h"
-#include "Framework/GameMode/TrainingGameMode.h"
 #include "Framework/GameState/TrainingGameState.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Components/Button.h"
@@ -32,55 +31,56 @@ void UTrainingWidget::OnStartButtonClicked()
 	float EnterTime = FCString::Atof(*TimeInputBox->GetText().ToString());
 	EnterTime = FMath::Max(0.f, EnterTime);
 
-	if (ATrainingPlayerController* PC = Cast<ATrainingPlayerController>(GetOwningPlayer()))
+	if (ATrainingPlayerController* TrainingPlayerController = Cast<ATrainingPlayerController>(GetOwningPlayer()))
 	{
-		PC->StartLocalTraining(EnterTime);
+		TrainingPlayerController->StartLocalTraining(EnterTime);
 	}
 }
 
 void UTrainingWidget::OnResetButtonClicked()
 {
-	if (ATrainingPlayerController* PC = Cast<ATrainingPlayerController>(GetOwningPlayer()))
+	if (ATrainingPlayerController* TrainingPlayerController = Cast<ATrainingPlayerController>(GetOwningPlayer()))
 	{
-		PC->EndLocalTraining();
+		TrainingPlayerController->EndLocalTraining();
 	}
+
 	UpdateTimer(0.f);
 	UpdateTrainingStatsData(0.f, 0.f);
 }
 
 void UTrainingWidget::UpdateTimer(float CurrentTime)
 {
-	ATrainingGameState* TGameState = Cast<ATrainingGameState>(UGameplayStatics::GetGameState(GetWorld()));
-	if (!TGameState) return;
+	ATrainingGameState* TrainingGameState = Cast<ATrainingGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!IsValid(TrainingGameState)) return;
 
-	if (TGameState->GetRoundProgress() != ERoundProgress::InProgress)
+	if (TrainingGameState->GetRoundProgress() != ERoundProgress::InProgress)
 	{
 		CurrentTime = 0.0f;
 	}
 
-	if (APlayerController* PC = GetOwningPlayer())
+	if (APlayerController* MyPlayerController = GetOwningPlayer())
 	{
-		if (ABaseInGameHUD* HUD = Cast<ABaseInGameHUD>(PC->GetHUD()))
+		if (ABaseInGameHUD* BaseInGameHUD = Cast<ABaseInGameHUD>(MyPlayerController->GetHUD()))
 		{
-			if (UBaseInGameWidget* BaseWidget = HUD->GetBaseInGameWidget())
+			if (UBaseInGameWidget* BaseInGameWidget = BaseInGameHUD->GetBaseInGameWidget())
 			{
-				BaseWidget->UpdateTimerText(CurrentTime);
+				BaseInGameWidget->UpdateTimerText(CurrentTime);
 				return;
 			}
 		}
 	}
 }
 
-void UTrainingWidget::UpdateTrainingStatsData(float TotalDamage, float DPS)
-{
-	if (TotalDamageText)
-	{
-		TotalDamageText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), TotalDamage)));
-	}
+void UTrainingWidget::UpdateTrainingStatsData(float TotalDamage, float DPS)  
+{  
+   if (TotalDamageText)  
+   {  
+       TotalDamageText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), TotalDamage)));  
+   }  
 
-	if (DPSText)
-	{
-		DPSText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), DPS)));
-	}
+   if (DPSText)  
+   {  
+       DPSText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), DPS)));  
+   }  
 }
 

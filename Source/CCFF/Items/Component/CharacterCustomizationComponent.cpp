@@ -1,51 +1,73 @@
 #include "Items/Component/CharacterCustomizationComponent.h"
-#include "GameFramework/Character.h"
-#include "Engine/SkeletalMesh.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Character/Base/BaseCharacter.h"
 #include "Character/Base/BasePreviewPawn.h"
-#include "Items/DataTable/CustomItemData.h"
-#include "Items/Structure/CustomizationPreset.h"
-#include "Framework/PlayerState/MainMenuPlayerState.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/DataTable.h"
+#include "Engine/SkeletalMesh.h"
+#include "GameFramework/Character.h"
+#include "Items/DataTable/CustomItemData.h"
+#include "Items/Manager/CustomizationManager.h"
+#include "Items/Structure/CustomizationPreset.h"
+#include "Subsystems/WorldSubsystem.h"
 
 UCharacterCustomizationComponent::UCharacterCustomizationComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+    SetIsReplicatedByDefault(true);
 }
 
 void UCharacterCustomizationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	static const FString HeadItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_HeadCustomItemData.DT_HeadCustomItemData");
-	HeadCustomItemDataTable = LoadObject<UDataTable>(nullptr, *HeadItemDataTablePath);
-	static const FString FaceItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_FaceCustomItemData.DT_FaceCustomItemData");
-	FaceCustomItemDataTable = LoadObject<UDataTable>(nullptr, *FaceItemDataTablePath);
-	static const FString ShoulderItemDataTablePath = TEXT("/Game/CCFF/DataTables/DT_ShoulderCustomItemData.DT_ShoulderCustomItemData");
-	ShoulderCustomItemDataTable = LoadObject<UDataTable>(nullptr, *ShoulderItemDataTablePath);
+    if (GetOwner()->HasAuthority())
+    {
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCustomizationComponent BeginPlay on server"));
+    }
+	else
+	{   
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCustomizationComponent BeginPlay on client"));
+	}
+
+    UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
+	if (CustomizationManager)
+	{
+		CustomizationManager->InitiailizeDataTable();
+	}
 }
 
 void UCharacterCustomizationComponent::EquipItemByID(int32 ItemID, EItemSlot Slot)
 {
 	UDataTable* CustomItemDataTable = nullptr;
- 
+
+	UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
+    if (!CustomizationManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CustomizationManager is null."));
+        return;
+    }
     switch (Slot)
     {
     case EItemSlot::Head:
-        CustomItemDataTable = HeadCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetHeadCustomItemDataTable();
         break;
     case EItemSlot::Face:
-        CustomItemDataTable = FaceCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetFaceCustomItemDataTable();
         break;
     case EItemSlot::Shoulder:
-        CustomItemDataTable = ShoulderCustomItemDataTable;
+		CustomItemDataTable = CustomizationManager->GetShoulderCustomItemDataTable();
         break;
     default:
         UE_LOG(LogTemp, Warning, TEXT("Invalid item slot specified."));
         return;
     }
+
+	if (!CustomItemDataTable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CustomItemDataTable is null."));
+		return;
+	}
 
     static const FString ContextString(TEXT("Item Lookup"));
     FCustomItemData* FoundItem = CustomItemDataTable->FindRow<FCustomItemData>(FName(*FString::FromInt(ItemID)), ContextString);
@@ -90,6 +112,7 @@ void UCharacterCustomizationComponent::EquipItem(FCustomItemData ItemData)
     UStaticMeshComponent* NewItemComponent = NewObject<UStaticMeshComponent>(OwnerPawn);
     if (NewItemComponent)
     {
+        NewItemComponent->SetIsReplicated(true);
         UStaticMesh* ItemMesh = ItemData.ItemMesh.LoadSynchronous();
         NewItemComponent->SetStaticMesh(ItemMesh);
         NewItemComponent->RegisterComponent();
@@ -121,58 +144,6 @@ void UCharacterCustomizationComponent::UnequipAllItems()
 	EquippedItems.Empty();
 }
 
-void UCharacterCustomizationComponent::SavePreset(FPresetItemsindex PresetIndexes)
-{
-    APawn* OwnerPawn = Cast<APawn>(GetOwner());
-    if (OwnerPawn)
-    {
-        ABasePreviewPawn* PreviewPawn = Cast<ABasePreviewPawn>(OwnerPawn);
-        if (PreviewPawn)
-        {
-            PresetIndexes.HeadIndex = EquippedItems.Contains(EItemSlot::Head) ? EquippedItems[EItemSlot::Head]->GetUniqueID() : -1;
-            PresetIndexes.FaceIndex = EquippedItems.Contains(EItemSlot::Face) ? EquippedItems[EItemSlot::Face]->GetUniqueID() : -1;
-            PresetIndexes.ShoulderIndex = EquippedItems.Contains(EItemSlot::Shoulder) ? EquippedItems[EItemSlot::Shoulder]->GetUniqueID() : -1;
-        }
-    }
-
-    FName CharacterID = GetCharacterID();
-
-    APlayerController* PC = GetWorld()->GetFirstPlayerController();
-    if (!PC || !PC->IsLocalController())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SavePreset failed: No valid local PlayerController found."));
-        return;
-    }
-
-    Server_SavePreset(PC, CharacterID, PresetIndexes);
-
-    UE_LOG(LogTemp, Log, TEXT("Preset saved: CharacterID: %s, PresetIndex: %d, Head: %d, Face: %d, Shoulder: %d"),
-        *CharacterID.ToString(), PresetIndexes.PresetIndex, PresetIndexes.HeadIndex, PresetIndexes.FaceIndex, PresetIndexes.ShoulderIndex);
-}
-
-
-void UCharacterCustomizationComponent::Server_SavePreset_Implementation(APlayerController* PC, FName CharacterID, FPresetItemsindex PresetIndexes)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset RPC Called"));
-
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: Invalid PlayerController."));
-        return;
-    }
-
-    AMainMenuPlayerState* PS = Cast<AMainMenuPlayerState>(PC->PlayerState);
-
-    if (!PS)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset failed: PlayerState is NULL or wrong type. Actual PlayerState: %s"),
-            *GetNameSafe(PC->PlayerState));
-        return;
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("Server_SavePreset succeeded: Found PlayerState %s"), *PS->GetName());
-}
-
 FName UCharacterCustomizationComponent::GetCharacterID() const
 {
     APawn* OwnerPawn = Cast<APawn>(GetOwner());
@@ -192,4 +163,48 @@ FName UCharacterCustomizationComponent::GetCharacterID() const
     }
 
     return TEXT("Unknown");
+}
+
+void UCharacterCustomizationComponent::EquipPreset(FCustomizationPreset Preset)
+{
+    for (const FEquippedItemData& Item : Preset.EquippedItems)
+	{
+		FName ItemID = Item.ItemID;
+		int32 ItemIDInt = FCString::Atoi(*ItemID.ToString());
+		EquipItemByID(ItemIDInt, Item.EquipSlot);
+	}
+}
+
+USkeletalMesh* UCharacterCustomizationComponent::GetBaseMeshByCharacterID(FName CharacterID) const
+{
+    if (USkeletalMesh* const* FoundMesh = CharacterMeshMap.Find(CharacterID))
+    {
+        return *FoundMesh;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("[CustomizationComponent] No mesh found for CharacterID: %s"), *CharacterID.ToString());
+    return nullptr;
+}
+
+FPresetItemsIndex UCharacterCustomizationComponent::GetCurrentCustomItemsIndex() const
+{
+	FPresetItemsIndex PresetItemsIndex;
+	for (const auto& Item : EquippedItems)
+	{
+		switch (Item.Key)
+		{
+		case EItemSlot::Head:
+			PresetItemsIndex.HeadIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		case EItemSlot::Face:
+			PresetItemsIndex.FaceIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		case EItemSlot::Shoulder:
+			PresetItemsIndex.ShoulderIndex = FCString::Atoi(*Item.Value->GetName());
+			break;
+		default:
+			break;
+		}
+	}
+	return PresetItemsIndex;
 }
