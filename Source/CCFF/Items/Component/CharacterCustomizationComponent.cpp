@@ -167,7 +167,7 @@ FName UCharacterCustomizationComponent::GetCharacterID() const
 
 void UCharacterCustomizationComponent::EquipPreset(FCustomizationPreset Preset)
 {
-	for (const FEquippedItemData& Item : Preset.EquippedItems)
+    for (const FEquippedItemData& Item : Preset.EquippedItems)
 	{
 		FName ItemID = Item.ItemID;
 		int32 ItemIDInt = FCString::Atoi(*ItemID.ToString());
