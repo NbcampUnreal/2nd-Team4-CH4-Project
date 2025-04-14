@@ -2,7 +2,6 @@
 #include "Components/ComboBoxString.h"
 #include "Components/Button.h"
 #include "GameFramework/GameUserSettings.h"
-#include "Misc/DisplayMetrics.h"
 #include "Framework/Application/SlateApplication.h"
 
 void UGraphicSettingsWidget::NativeConstruct()
