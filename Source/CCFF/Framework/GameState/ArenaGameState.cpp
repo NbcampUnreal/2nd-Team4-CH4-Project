@@ -40,6 +40,7 @@ void AArenaGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AArenaGameState, bIsFinishCountdown);
 	DOREPLIFETIME(AArenaGameState, ArenaRemainingTime);
 	DOREPLIFETIME(AArenaGameState, RankingInfos);
+	DOREPLIFETIME(AArenaGameState, RoundStartTime);
 }
 
 void AArenaGameState::OnRep_ArenaRoundProgress()
