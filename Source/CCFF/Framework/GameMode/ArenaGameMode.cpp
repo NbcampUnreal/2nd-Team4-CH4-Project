@@ -10,18 +10,20 @@
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraActor.h"
+#include "GameFramework/PlayerStart.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
-	, DamageWeight(0.6f)
-	, TimeWeight(0.4f)
+	, DamageWeight(0.4f)
+	, TimeWeight(0.2f)
+	, KillCountWeight(0.4f)
 {
 	GameStateClass = AArenaGameState::StaticClass();
 	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
-	RoundTime = 10.0f;  // Default
+	RoundTime = 30.0f;  // Default
 	CountdownTime = 5.0f;
 }
 
@@ -117,27 +119,27 @@ void AArenaGameMode::CheckGameConditions()
 			return;
 		}
 	}
-	// TODO :: 남은 플레이어 수 1명 이상인지 확인
-	//int32 AliveCount = 0;
-	//for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	
+	//if (!bIsDeathmatch)
 	//{
-	//	if (APlayerController* PC = It->Get())
+	//	int32 AliveCount = 0;
+	//	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	//	{
-	//		if (APawn* Pawn = PC->GetPawn())
+	//		if (APlayerController* PC = It->Get())
 	//		{
-	//			// Pawn이 아직 살아있다면 카운트
-	//			if (IsValid(Pawn))
+	//			if (APawn* Pawn = PC->GetPawn())
 	//			{
 	//				AliveCount++;
+	//				UE_LOG(LogTemp, Log, TEXT("AliveCount : %d"), AliveCount);
 	//			}
 	//		}
 	//	}
-	//}
 
-	//if (AliveCount == 0)
-	//{
-	//	EndRound();
-	//	return;
+	//	if (AliveCount <= 1)
+	//	{
+	//		EndRound();
+	//		return;
+	//	}
 	//}
 }
 
@@ -167,8 +169,8 @@ void AArenaGameMode::UpdatePlayerRating()
 
 	Algo::Sort(RankingPlayers, [this](const AArenaPlayerState* A, const AArenaPlayerState* B)
 		{
-			const float ScoreA = (A->GetTotalDamage() * DamageWeight) + (A->GetSurvivalTime() * TimeWeight);
-			const float ScoreB = (B->GetTotalDamage() * DamageWeight) + (B->GetSurvivalTime() * TimeWeight);
+			const float ScoreA = (A->GetKillCount() * KillCountWeight) + (A->GetTotalDamage() * DamageWeight) + (A->GetSurvivalTime() * TimeWeight);
+			const float ScoreB = (B->GetKillCount() * KillCountWeight) + (B->GetTotalDamage() * DamageWeight) + (B->GetSurvivalTime() * TimeWeight);
 			return ScoreA > ScoreB;
 		});
 
@@ -179,22 +181,21 @@ void AArenaGameMode::UpdatePlayerRating()
 	{
 		AArenaPlayerState* ArenaPlayerState = RankingPlayers[Index];
 		FArenaRankInfo Info;
+
 		Info.Rank = Index + 1;
 
 		const FString NickName = ArenaPlayerState->GetPlayerNickname();
 		if (!NickName.IsEmpty())
 		{
-			UE_LOG(LogTemp, Log, TEXT("Using PlayerNickname: %s"), *NickName);
-			//Info.PlayerName = NickName;
 			Info.PlayerName = RankingPlayers[Index]->GetPlayerName();
 		}
 		else
 		{
 			const FString PSName = ArenaPlayerState->GetPlayerName();
-			UE_LOG(LogTemp, Warning, TEXT("PlayerNickname is empty, falling back to PlayerState Name: %s"), *PSName);
 			Info.PlayerName = PSName;
 		}
 
+		Info.KillCount = ArenaPlayerState->GetKillCount();
 		Info.TotalDamage = ArenaPlayerState->GetTotalDamage();
 		Info.SurvivalTime = ArenaPlayerState->GetSurvivalTime();
 		RankingInfos.Add(Info);
@@ -226,6 +227,27 @@ void AArenaGameMode::UpdateCountdown()
 
 	CountdownTime -= 1.0f;
 	ArenaGameState->CountdownTime = CountdownTime;
+}
+
+// TODO :: Player Respawn
+void AArenaGameMode::RespawnPlayer(AController* Controller)
+{
+	if (Controller)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
+		if (PlayerStarts.Num() > 0)
+		{
+			int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
+			APlayerStart* SpawnPoint = Cast<APlayerStart>(PlayerStarts[Index]);
+			if (SpawnPoint)
+			{
+				RestartPlayerAtPlayerStart(Controller, SpawnPoint);
+				return;
+			}
+		}
+		RestartPlayer(Controller);
+	}
 }
 
 

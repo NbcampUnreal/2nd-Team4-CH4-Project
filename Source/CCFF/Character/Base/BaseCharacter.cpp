@@ -150,6 +150,11 @@ void ABaseCharacter::BeginPlay()
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
+	}
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -786,57 +791,31 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 void ABaseCharacter::OnDeath()
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+	
+	if (!HasAuthority()) { return; }
 
-	if(!HasAuthority())
+	AController* MyController = GetController();
+	HandlePlayerStateOnDeath();
+	bool bRespawn = CanRespawn();
+	HandleControllerOnDeath(bRespawn);
+
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (bRespawn && ArenaGameMode && MyController)
 	{
-		return;
-	}
-
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
-	if (ArenaPlayerState && ArenaGameState)
-	{
-		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
-		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
-	}
-
-	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-	{
-		DisableInput(CC);
-		CC->UnPossess();
-
-		if (FollowCamera)
-		{
-			FollowCamera->Deactivate();
-			FollowCamera->SetActive(false);
-		}
-		if (CameraBoom)
-		{
-			CameraBoom->Deactivate();
-		}
-
-		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-		if (GM && GM->SpectatorCamera)
-		{
-			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
-			CC->ChangeState(NAME_Spectating);
-
-			FTimerHandle ForceSwitchTimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+		FTimerHandle RespawnTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [ArenaGameMode, MyController]()
+			{
+				if (ArenaGameMode && MyController)
 				{
-					AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-					if (LocalGM && LocalGM->SpectatorCamera)
+					if (ACharacterController* CC = Cast<ACharacterController>(MyController))
 					{
-						CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
-						CC->ChangeState(NAME_Spectating);
+						ArenaGameMode->RespawnPlayer(CC);
 					}
-				}, 0.1f, false);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("OnDeath: SpectatorCamera is null"));
-		}
+				}
+			}, 1.5f, false);
 	}
+
+	Destroy();
 }
 
 void ABaseCharacter::SwitchToSpectatorCamera()
@@ -1004,6 +983,98 @@ void ABaseCharacter::NotifyControllerChanged()
 			{
 				Subsystem->AddMappingContext(MyController->DefaultMappingContext, 0);
 			}
+		}
+	}
+}
+
+void ABaseCharacter::HandlePlayerStateOnDeath()
+{
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
+
+	if (ArenaPlayerState && ArenaGameState)
+	{
+		if (ArenaPlayerState->MaxLives <= 0)
+		{
+			float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+			ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. SurvivalTime si %.2f"), ArenaGameState->GetRoundStartTime());
+		}
+		else
+		{
+			ArenaPlayerState->MaxLives -= 1;
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. Lives %d"), ArenaPlayerState->MaxLives);
+		}
+	}
+}
+
+bool ABaseCharacter::CanRespawn() const
+{
+	const AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	return (ArenaPlayerState && ArenaPlayerState->MaxLives > 0);
+}
+
+void ABaseCharacter::DeactivatePawnCamera()
+{
+	if (FollowCamera)
+	{
+		FollowCamera->Deactivate();
+		FollowCamera->SetActive(false);
+	}
+	if (CameraBoom)
+	{
+		CameraBoom->Deactivate();
+	}
+}
+
+void ABaseCharacter::TransitionToSpectator(ACharacterController* CC)
+{
+	AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM && GM->SpectatorCamera)
+	{
+		CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+		CC->ChangeState(NAME_Spectating);
+
+		FTimerHandle ForceSwitchTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+			{
+				AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+				if (LocalGM && LocalGM->SpectatorCamera)
+				{
+					CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
+					CC->ChangeState(NAME_Spectating);
+				}
+			}, 0.1f, false);
+	}
+}
+
+void ABaseCharacter::HandleControllerOnDeath(bool bRespawn)
+{
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		DisableInput(CC);
+		CC->UnPossess();
+		DeactivatePawnCamera();
+
+		if (!bRespawn)
+		{
+			TransitionToSpectator(CC);
+		}
+	}
+}
+
+void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bIsDying) { return; }
+
+	if (OtherActor && OtherActor != this)
+	{
+		if (OtherActor->ActorHasTag(FName("River")))
+		{
+			UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
+			bIsDying = true;
+			OnDeath();
 		}
 	}
 }

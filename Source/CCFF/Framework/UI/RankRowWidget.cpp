@@ -16,6 +16,10 @@ void URankRowWidget::SetHeaderRow()
 	{
 		NickNameText->SetText(FText::FromString(TEXT("NickName")));
 	}
+	if (KillCountText)
+	{
+		KillCountText->SetText(FText::FromString(TEXT("KillCount")));
+	}
 	if (TotalDamageText)
 	{
 		TotalDamageText->SetText(FText::FromString(TEXT("TotalDamage")));
@@ -26,7 +30,7 @@ void URankRowWidget::SetHeaderRow()
 	}
 }
 
-void URankRowWidget::SetRankInfo(int32 InRank, const FString& InPlayerName, float InTotalDamage, float InSurvivalTime)
+void URankRowWidget::SetRankInfo(int32 InRank, const FString& InPlayerName, float InTotalDamage, float InSurvivalTime, int32 InKillCount)
 {
 	if (RankText)
 	{
@@ -35,6 +39,10 @@ void URankRowWidget::SetRankInfo(int32 InRank, const FString& InPlayerName, floa
 	if (NickNameText)
 	{
 		NickNameText->SetText(FText::FromString(InPlayerName));
+	}
+	if (KillCountText)
+	{
+		KillCountText->SetText(FText::AsNumber(InKillCount));
 	}
 	if (TotalDamageText)
 	{
