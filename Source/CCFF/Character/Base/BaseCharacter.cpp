@@ -29,9 +29,12 @@
 #include "Framework/GameMode/ArenaGameMode.h"
 #include "Camera/CameraActor.h"  
 
+#include "ClearReplacementShaders.h"
+
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
+	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
@@ -339,11 +342,26 @@ void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, 
 	}
 }
 
+void ABaseCharacter::ExecuteBufferedAction()
+{
+	const float CurrentTime=GetWorld()->GetTimeSeconds();
+	const int32 InputAction=static_cast<int32>(InputBuffer.InputAttack);
+	//Execute Buffered Input Action
+	if (InputAction>=0&&InputAction<8&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
+	{
+		ExecuteAttackByIndex(InputAction);
+		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
+	}
+	// Clear Buffer
+	InputBuffer=FBufferedInput();
+}
+
 void ABaseCharacter::OnRep_CanAttack()
 {
 	if (bCanAttack==true)
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		ExecuteBufferedAction();
 	}
 	else
 	{
@@ -365,6 +383,11 @@ void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 			OnRep_CanAttack();
 			PlayAttackMontage(Index);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Buffered Input Index: %d"),Index);
+		InputBuffer=FBufferedInput(static_cast<EAttackType>(Index),GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -478,6 +501,7 @@ void ABaseCharacter::StopSprint(const FInputActionValue& Value)
 	ServerRPCSetMaxWalkSpeed(BalanceStats.MaxWalkSpeed);
 	bIsDoubleTab=false;
 }
+
 
 void ABaseCharacter::StartJump(const FInputActionValue& Value)
 {
@@ -859,8 +883,8 @@ void ABaseCharacter::PreLoadAttackCollisions()
 			if (UEnum* Type=StaticEnum<EAttackType>())
 			{
 				const int32 n=Type->NumEnums();
-				AttackCollisions.SetNum(n-1);
-				HitBoxList.SetNum(n-1);
+				AttackCollisions.SetNum(n-2);
+				HitBoxList.SetNum(n-2);
 				for (int32 i=0;i<n-1;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);

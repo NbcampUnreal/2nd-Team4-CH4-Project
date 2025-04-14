@@ -24,6 +24,19 @@ class UItemInteractionComponent;
 struct FInputActionValue;
 struct FHitBoxData;
 
+USTRUCT(BlueprintType)
+struct FBufferedInput
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	EAttackType InputAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	float BufferedTime;
+	FBufferedInput(): InputAttack(EAttackType::None), BufferedTime(0.f) {}
+	FBufferedInput(EAttackType InAction, const float InTime): InputAttack(InAction), BufferedTime(InTime) {}
+};
+
 UCLASS()
 class CCFF_API ABaseCharacter : public ACharacter, public IDamageAble
 {
@@ -113,7 +126,7 @@ protected:
 	void ServerRPCSetMaxWalkSpeed(const float Value);
 	
 #pragma endregion
-
+	
 #pragma region AttackFunctions
 	UFUNCTION(Server,Reliable,WithValidation)
 	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
@@ -137,6 +150,15 @@ protected:
 	void OnRep_CanAttack();
 	UFUNCTION()
 	void ExecuteAttackByIndex(const int32 Index);
+	UFUNCTION()
+	void ExecuteBufferedAction();
+#pragma endregion
+
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
 #pragma endregion
 	
 protected:
@@ -190,7 +212,7 @@ protected:
 #pragma endregion
 
 
-private:
+protected:
 #pragma region Meter
 	// === Meter Handling ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")
