@@ -8,6 +8,8 @@
 #include "Algo/Sort.h"
 #include "GameFramework/Pawn.h"
 #include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Camera/CameraActor.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
@@ -19,7 +21,7 @@ AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer)
 	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
-	RoundTime = 5.0f;  // Default
+	RoundTime = 10.0f;  // Default
 	CountdownTime = 5.0f;
 }
 
@@ -44,6 +46,17 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
+	}
+
+	TArray<AActor*> Found;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpectatorCamera"), Found);
+	if (Found.Num() > 0)
+	{
+		SpectatorCamera = Cast<ACameraActor>(Found[0]);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ArenaGameMode: SpectatorCam not found"));
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);

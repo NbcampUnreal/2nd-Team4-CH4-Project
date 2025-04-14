@@ -26,6 +26,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Camera/CameraActor.h"  
 
 
 // Sets default values
@@ -746,6 +748,23 @@ void ABaseCharacter::OnDeath() const
 	{
 		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
 		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+	}
+
+	if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		ACameraActor* SpectatorCamera = ArenaGameMode->GetSpectatorCamera();
+		if (SpectatorCamera)
+		{
+			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera exist"));
+			if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+			{
+				CC->ClientSpectateCamera(SpectatorCamera);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera is not found"));
+		}
 	}
 }
 
