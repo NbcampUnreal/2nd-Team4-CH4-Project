@@ -181,8 +181,10 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void Clash(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnDeath() const;
+	void OnDeath();
 
+	UFUNCTION()
+	void SwitchToSpectatorCamera();
 #pragma endregion
 
 
