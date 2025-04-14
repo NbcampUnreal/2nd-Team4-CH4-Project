@@ -26,6 +26,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddSurvivalTime(float DeltaTime) { SurvivalTime += DeltaTime; }
+	
+	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
+	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	FORCEINLINE void SetPlayerNickname(const FString& InNickname) { PlayerNickname = InNickname; }
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
@@ -33,4 +38,7 @@ public:
 	float TotalDamage;
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	float SurvivalTime;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|Player Statistics")
+	FString PlayerNickname;
 };

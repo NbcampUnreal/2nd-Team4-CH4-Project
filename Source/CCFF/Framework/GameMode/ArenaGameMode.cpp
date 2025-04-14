@@ -7,6 +7,9 @@
 #include "Framework/UI/CountdownWidget.h"
 #include "Algo/Sort.h"
 #include "GameFramework/Pawn.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Camera/CameraActor.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
@@ -43,6 +46,17 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
+	}
+
+	TArray<AActor*> Found;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpectatorCamera"), Found);
+	if (Found.Num() > 0)
+	{
+		SpectatorCamera = Cast<ACameraActor>(Found[0]);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ArenaGameMode: SpectatorCam not found"));
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
@@ -144,8 +158,7 @@ void AArenaGameMode::UpdatePlayerRating()
 	{
 		for (APlayerState* PS : GameState->PlayerArray)
 		{
-			AArenaPlayerState* ArenaPS = Cast<AArenaPlayerState>(PS);
-			if (IsValid(ArenaPS))
+			if (AArenaPlayerState* ArenaPS = Cast<AArenaPlayerState>(PS))
 			{
 				RankingPlayers.Add(ArenaPS);
 			}
@@ -154,20 +167,37 @@ void AArenaGameMode::UpdatePlayerRating()
 
 	Algo::Sort(RankingPlayers, [this](const AArenaPlayerState* A, const AArenaPlayerState* B)
 		{
-			const float ScoreA = (A->GetTotalDamage() * this->DamageWeight) + (A->GetSurvivalTime() * this->TimeWeight);
-			const float ScoreB = (B->GetTotalDamage() * this->DamageWeight) + (B->GetSurvivalTime() * this->TimeWeight);
+			const float ScoreA = (A->GetTotalDamage() * DamageWeight) + (A->GetSurvivalTime() * TimeWeight);
+			const float ScoreB = (B->GetTotalDamage() * DamageWeight) + (B->GetSurvivalTime() * TimeWeight);
 			return ScoreA > ScoreB;
 		});
 
 	TArray<FArenaRankInfo> RankingInfos;
-	for (int32 Index = 0; Index < RankingPlayers.Num(); Index++)
+	RankingInfos.Reserve(RankingPlayers.Num());
+
+	for (int32 Index = 0; Index < RankingPlayers.Num(); ++Index)
 	{
-		FArenaRankInfo RankInfo;
-		RankInfo.Rank = Index + 1;
-		RankInfo.PlayerName = RankingPlayers[Index]->GetPlayerName();
-		RankInfo.TotalDamage = RankingPlayers[Index]->GetTotalDamage();
-		RankInfo.SurvivalTime = RankingPlayers[Index]->GetSurvivalTime();
-		RankingInfos.Add(RankInfo);
+		AArenaPlayerState* ArenaPlayerState = RankingPlayers[Index];
+		FArenaRankInfo Info;
+		Info.Rank = Index + 1;
+
+		const FString NickName = ArenaPlayerState->GetPlayerNickname();
+		if (!NickName.IsEmpty())
+		{
+			UE_LOG(LogTemp, Log, TEXT("Using PlayerNickname: %s"), *NickName);
+			//Info.PlayerName = NickName;
+			Info.PlayerName = RankingPlayers[Index]->GetPlayerName();
+		}
+		else
+		{
+			const FString PSName = ArenaPlayerState->GetPlayerName();
+			UE_LOG(LogTemp, Warning, TEXT("PlayerNickname is empty, falling back to PlayerState Name: %s"), *PSName);
+			Info.PlayerName = PSName;
+		}
+
+		Info.TotalDamage = ArenaPlayerState->GetTotalDamage();
+		Info.SurvivalTime = ArenaPlayerState->GetSurvivalTime();
+		RankingInfos.Add(Info);
 	}
 
 	if (AArenaGameState* ArenaGS = Cast<AArenaGameState>(GameState))
