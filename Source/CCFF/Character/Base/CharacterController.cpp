@@ -18,6 +18,7 @@ ACharacterController::ACharacterController()
 	 AttackAction1(nullptr),
 	 AttackAction2(nullptr),
 	 AttackAction3(nullptr),
+	 AttackAction4(nullptr),
 	 PauseWidget(nullptr),
 	 bIsPause(false)
 {

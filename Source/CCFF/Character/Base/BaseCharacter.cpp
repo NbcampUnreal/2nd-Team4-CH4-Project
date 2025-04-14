@@ -31,12 +31,17 @@
 // Sets default values
 ABaseCharacter::ABaseCharacter():
 	CurrentActivatedCollision(-1),
+	bIsCancelable(true),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
 	LastMoveInputTime(0.f),
 	DoubleTapThreshold(0.3f),
-	bIsDoubleTab(false)
+	bIsDoubleTab(false),
+	bAttack1Pressed(false),
+	bAttack2Pressed(false),
+	bAttack3Pressed(false),
+	ComboInputThreshold(0.1f)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
@@ -138,7 +143,8 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterAnim();
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
-	
+	//Set MaxWalkSpeed
+	GetCharacterMovement()->MaxWalkSpeed = BalanceStats.MaxWalkSpeed;
 	// FString NetModeString = UDamageHelper::GetRoleString(this);
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
@@ -187,6 +193,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	DOREPLIFETIME(ThisClass,CurrentCharacterState);
 	DOREPLIFETIME(ThisClass,CurrentResistanceState);
 	DOREPLIFETIME(ThisClass,bCanAttack);
+	DOREPLIFETIME(ThisClass,bIsCancelable);
 }
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
@@ -290,6 +297,7 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 	if (KINDA_SMALL_NUMBER<MontagePlayTime-ServerDelay)
 	{
 		bCanAttack=false;
+		bIsCancelable = Num<=2;
 		OnRep_CanAttack();
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(Handle,FTimerDelegate::CreateLambda([&]()
@@ -316,17 +324,18 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 
 bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num, float InStartAttackTime)
 {
+	return true;
 	// First Attack input
-	if (LastAttackStartTime==0.f)
-	{
-		return true;
-	}
-	const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
-	if (!bIsValid)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
-	}
-	return bIsValid;
+	// if (LastAttackStartTime==0.f)
+	// {
+	// 	return true;
+	// }
+	// const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
+	// if (!bIsValid)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
+	// }
+	// return bIsValid;
 }
 void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, ABaseCharacter* InTargetCharacter)
 {
@@ -348,48 +357,76 @@ void ABaseCharacter::OnRep_CanAttack()
 	}
 }
 
-void ABaseCharacter::Attack1(const FInputActionValue& Value)
+void ABaseCharacter::ResetInputFlags()
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	bAttack1Pressed=false;
+	bAttack2Pressed=false;
+	bAttack3Pressed=false;
+}
+
+void ABaseCharacter::SpecialAttackByIndex(const int32 Index)
+{
+	//ResetInputFlags();
+	ExecuteAttackByIndex(Index);
+}
+
+
+void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
+{
+	UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d, bIsCancelable: %d, Index: %d"),bCanAttack,bIsCancelable,Index);
+	if (bCanAttack&&GetCharacterMovement()->IsFalling()==false)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
-		ServerRPCAttack(0,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
+		ServerRPCAttack(Index,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
 		// Play Montage in Owning Client
 		if (HasAuthority()==false&&IsLocallyControlled()==true)
 		{
+			//bIsCancelable = Index<=2;
 			bCanAttack=false;
 			OnRep_CanAttack();
-			PlayAttackMontage(0);
+			PlayAttackMontage(Index);
 		}
+	}
+}
+
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	//bAttack1Pressed=true;
+	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
+	if (bAttack2Pressed) //Special Attack Triggered
+	{
+		SpecialAttackByIndex(3);
+	}
+	else
+	{
+		ExecuteAttackByIndex(0);
 	}
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	//bAttack2Pressed=true;
+	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
+	if (bAttack1Pressed) //Special Attack Triggered
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack2 Called !!"));
-		ServerRPCAttack(1,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(1);
-		}
+		SpecialAttackByIndex(3);
+	}
+	else
+	{
+		ExecuteAttackByIndex(1);
 	}
 }
 void ABaseCharacter::Attack3(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
-    {
-		UE_LOG(LogTemp,Warning,TEXT("Attack3 Called !!"));
-		ServerRPCAttack(2,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(2);
-		}
-    }
+	//bAttack3Pressed=true;
+	//GetWorld()->GetTimerManager().SetTimer(ComboResetHandle, this,&ABaseCharacter::ResetInputFlags,ComboInputThreshold,false);
+	
+	ExecuteAttackByIndex(2);
+}
+
+
+void ABaseCharacter::Attack4(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(3);
 }
 
 void ABaseCharacter::PlayAttackMontage(const int32& Num)
@@ -873,6 +910,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
 			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
 			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
+			EnhancedInputComponent->BindAction(MyController->AttackAction4,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack4);
 		}
 	}
 	else
