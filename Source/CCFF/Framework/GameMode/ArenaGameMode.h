@@ -26,6 +26,8 @@ public:
 	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
 
+	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
+
 #pragma region Arena
 	// TODO :: 업적 시스템(어시스트, 등등)
 
@@ -47,6 +49,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float TimeWeight;
+
+	UPROPERTY()
+	ACameraActor* SpectatorCamera = nullptr;
+
 
 private:
 	FTimerHandle ArenaTimerHandle;

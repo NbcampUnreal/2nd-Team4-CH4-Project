@@ -113,8 +113,14 @@ void AMainMenuHUD::ShowLockerRoomWidget()
 
 	APlayerController* PlayerController = GetOwningPlayerController();
 
-	if (!CharacterSelectWidget && CharacterSelectWidgetClass)
+	if (CharacterSelectWidgetClass)
 	{
+		if (CharacterSelectWidget)
+		{
+			CharacterSelectWidget->RemoveFromParent();
+			CharacterSelectWidget = nullptr;
+		}
+
 		CharacterSelectWidget = CreateWidget<UCharacterSelectWidget>(PlayerController, CharacterSelectWidgetClass);
 
 		if (CharacterSelectWidget)
