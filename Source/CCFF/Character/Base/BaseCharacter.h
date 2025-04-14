@@ -126,9 +126,13 @@ protected:
 	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
 	UFUNCTION()
-	void Attack3(const FInputActionValue& Value);
-	UFUNCTION()
 	void Attack4(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack5(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack7(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack8(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnRep_CanAttack();
 	UFUNCTION()

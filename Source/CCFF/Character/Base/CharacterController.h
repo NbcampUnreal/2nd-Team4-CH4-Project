@@ -32,13 +32,8 @@ public:
 	UInputAction* JumpAction;
 	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction1;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction2;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction3;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction4;
+	TArray<TObjectPtr<UInputAction>> AttackAction;
+	
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();

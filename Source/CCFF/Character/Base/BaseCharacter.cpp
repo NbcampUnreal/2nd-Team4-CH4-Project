@@ -374,17 +374,42 @@ void ABaseCharacter::Attack1(const FInputActionValue& Value)
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	ExecuteAttackByIndex(1);
-}
-void ABaseCharacter::Attack3(const FInputActionValue& Value)
-{
-	ExecuteAttackByIndex(2);
+	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	{
+		ExecuteAttackByIndex(2);		
+	}
+	else
+	{
+		ExecuteAttackByIndex(1);
+	}
 }
 
 
 void ABaseCharacter::Attack4(const FInputActionValue& Value)
 {
 	ExecuteAttackByIndex(3);
+}
+
+void ABaseCharacter::Attack5(const FInputActionValue& Value)
+{
+	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	{
+		ExecuteAttackByIndex(5);
+	}
+	else
+	{
+		ExecuteAttackByIndex(4);
+	}
+}
+
+void ABaseCharacter::Attack7(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(6);
+}
+
+void ABaseCharacter::Attack8(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(7);
 }
 
 void ABaseCharacter::PlayAttackMontage(const int32& Num)
@@ -415,6 +440,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 	// Compare direction (95% match)
 	if (FVector2D::DotProduct(LastMoveInputDirection, CurrentInputDirection)>0.95f&&bIsDoubleTab)
 	{
+		GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxRunSpeed;
 		ServerRPCSetMaxWalkSpeed(BalanceStats.MaxRunSpeed);
 	}
 	float CurrentTime=GetWorld()->GetTimeSeconds();	
@@ -448,6 +474,7 @@ void ABaseCharacter::StartSprint(const FInputActionValue& Value)
 
 void ABaseCharacter::StopSprint(const FInputActionValue& Value)
 {
+	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
 	ServerRPCSetMaxWalkSpeed(BalanceStats.MaxWalkSpeed);
 	bIsDoubleTab=false;
 }
@@ -882,10 +909,12 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 			//Attack Actions
-			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
-			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
-			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
-			EnhancedInputComponent->BindAction(MyController->AttackAction4,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack4);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[0],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[1],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[3],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack4);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[4],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack5);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[6],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack7);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[7],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack8);
 		}
 	}
 	else

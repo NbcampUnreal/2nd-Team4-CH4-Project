@@ -18,13 +18,10 @@ ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
      MoveAction(nullptr),
      JumpAction(nullptr),
-	 AttackAction1(nullptr),
-	 AttackAction2(nullptr),
-	 AttackAction3(nullptr),
-	 AttackAction4(nullptr),
 	 PauseWidget(nullptr),
 	 bIsPause(false)
 {
+	AttackAction.SetNum(8);
 }
 
 void ACharacterController::BeginPlay()
