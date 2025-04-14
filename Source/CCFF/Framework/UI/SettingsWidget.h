@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Framework/UI/BaseUserWidget.h"
+#include "Components/Border.h"
 #include "SettingsWidget.generated.h"
 
 UCLASS()
@@ -13,8 +14,6 @@ public:
 
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
-
-//protected:
 	
 	UFUNCTION()
 	void OnAudioTabClicked();
@@ -37,6 +36,9 @@ public:
 	void UpdateTabFocus();
 
 	// Tab buttons for category switching
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* SettingsContentBorder;
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* AudioTabButton;
 
@@ -69,7 +71,7 @@ public:
 private:
 
 	UPROPERTY()
-	UUserWidget* CurrentSettingsWidget;
+	UUserWidget* CurrentSettingsWidget = nullptr;
 
 	int32 CurrentTabIndex = 0;
 
@@ -77,25 +79,27 @@ private:
 	TArray<UButton*> TabButtons;
 
 	template<typename TWidget>
-	void SwitchSettingsWidget(TSubclassOf<TWidget> WidgetClass);
+	void SwitchSettingsWidget(TSubclassOf<TWidget> NewWidgetClass);
 
 };
 
 template<typename TWidget>
-inline void USettingsWidget::SwitchSettingsWidget(TSubclassOf<TWidget> WidgetClass)
+inline void USettingsWidget::SwitchSettingsWidget(TSubclassOf<TWidget> NewWidgetClass)
 {
+	if (!SettingsContentBorder || !NewWidgetClass) return;
+
 	if (CurrentSettingsWidget)
 	{
 		CurrentSettingsWidget->RemoveFromParent();
 		CurrentSettingsWidget = nullptr;
 	}
 
-	if (WidgetClass)
+	if (NewWidgetClass)
 	{
-		CurrentSettingsWidget = CreateWidget<TWidget>(GetWorld(), WidgetClass);
+		CurrentSettingsWidget = CreateWidget<TWidget>(GetWorld(), NewWidgetClass);
 		if (CurrentSettingsWidget)
 		{
-			CurrentSettingsWidget->AddToViewport();
+			SettingsContentBorder->SetContent(CurrentSettingsWidget);
 		}
 	}
 }
