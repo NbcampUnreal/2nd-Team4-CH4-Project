@@ -27,7 +27,7 @@ void UGraphicSettingsWidget::InitializeWindowModeOptions()
 	WindowModeComboBox->AddOption(TEXT("Windowed"));
 	WindowModeComboBox->AddOption(TEXT("Borderless"));
 
-	WindowModeComboBox->SetSelectedOption(TEXT("Fullscreen"));
+	WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
 	WindowModeComboBox->OnSelectionChanged.AddDynamic(this, &UGraphicSettingsWidget::OnWindowModeChanged);
 
 	SelectedWindowMode = DefaultWindowMode;
@@ -52,7 +52,7 @@ void UGraphicSettingsWidget::InitializeResolutionOptions()
 		ResolutionComboBox->AddOption(Option);
 	}
 
-	ResolutionComboBox->SetSelectedOption(TEXT("1920x1080"));
+	ResolutionComboBox->SetSelectedOption(TEXT("1280x720"));
 	ResolutionComboBox->OnSelectionChanged.AddDynamic(this, &UGraphicSettingsWidget::OnResolutionChanged);
 
 	SelectedResolution = DefaultResolution;
@@ -101,11 +101,11 @@ void UGraphicSettingsWidget::ResetSettings_Implementation()
 
 	if (ResolutionComboBox)
 	{
-		ResolutionComboBox->SetSelectedOption(TEXT("1920x1080"));
+		ResolutionComboBox->SetSelectedOption(TEXT("1280x720"));
 	}
 	if (WindowModeComboBox)
 	{
-		WindowModeComboBox->SetSelectedOption(TEXT("Fullscreen"));
+		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
 	}
 }
 
