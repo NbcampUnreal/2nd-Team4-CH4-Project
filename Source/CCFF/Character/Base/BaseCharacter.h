@@ -23,6 +23,7 @@ class UBattleComponent;
 class UItemInteractionComponent;
 struct FInputActionValue;
 struct FHitBoxData;
+class ACharacterController;
 
 UCLASS()
 class CCFF_API ABaseCharacter : public ACharacter, public IDamageAble
@@ -187,6 +188,19 @@ protected:
 	void SwitchToSpectatorCamera();
 #pragma endregion
 
+protected:
+	void HandlePlayerStateOnDeath();
+	bool CanRespawn() const;
+	void HandleControllerOnDeath(bool bRespawn);
+	void DeactivatePawnCamera();
+	void TransitionToSpectator(ACharacterController* CC);
+
+	UFUNCTION()
+	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bIsDying = false;
 
 private:
 #pragma region Meter

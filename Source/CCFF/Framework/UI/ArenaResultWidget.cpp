@@ -44,7 +44,13 @@ void UArenaResultWidget::SetRankingInfos(const TArray<FArenaRankInfo>& RankingIn
 			URankRowWidget* RowWidget = CreateWidget<URankRowWidget>(GetWorld(), RowWidgetClass);
 			if (IsValid(RowWidget))
 			{
-				RowWidget->SetRankInfo(Info.Rank, Info.PlayerName, Info.TotalDamage, Info.SurvivalTime);
+				RowWidget->SetRankInfo(
+					Info.Rank,
+					Info.PlayerName,
+					Info.TotalDamage,
+					Info.SurvivalTime,
+					Info.KillCount
+				);
 				RankingListBox->AddChild(RowWidget);
 			}
 		}

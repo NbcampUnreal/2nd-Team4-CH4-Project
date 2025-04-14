@@ -15,7 +15,13 @@ public:
 	void SetHeaderRow();
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
-	void SetRankInfo(int32 InRank, const FString& InPlayerName, float InTotalDamage, float InSurvivalTime);
+	void SetRankInfo(
+		int32 InRank,
+		const FString& InPlayerName,
+		float InTotalDamage,
+		float InSurvivalTime,
+		int32 InKillCount
+	);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -25,6 +31,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* NickNameText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* KillCountText;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* TotalDamageText;
