@@ -12,7 +12,8 @@ UStatusComponent::UStatusComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	//Initialize Status
-	MaxHP=10000;
+	//MaxHP=10000;
+	MaxHP=1000;
 	CurrentHP=MaxHP;
 	SuperMeter=0;
 	MaxSuperMeter=10000;
