@@ -114,6 +114,11 @@ void USettingsWidget::OnResetClicked()
 
 void USettingsWidget::OnCancelClicked()
 {
+	if (CurrentSettingsWidget && CurrentSettingsWidget->Implements<UApplySettingsInterface>())
+	{
+		IApplySettingsInterface::Execute_CancelSettings(CurrentSettingsWidget);
+	}
+
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{

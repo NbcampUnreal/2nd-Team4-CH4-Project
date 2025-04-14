@@ -28,6 +28,7 @@
 #include "Framework/GameState/ArenaGameState.h"
 #include "Framework/GameMode/ArenaGameMode.h"
 #include "Camera/CameraActor.h"  
+#include <Kismet/GameplayStatics.h>
 
 
 // Sets default values
@@ -758,9 +759,14 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 	TakeHitlagAndStoredKnockback(HitBoxList[CurrentActivatedCollision].Hitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 }
 
-void ABaseCharacter::OnDeath() const
+void ABaseCharacter::OnDeath()
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+
+	if(!HasAuthority())
+	{
+		return;
+	}
 
 	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
@@ -770,20 +776,58 @@ void ABaseCharacter::OnDeath() const
 		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
 	}
 
-	if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
 	{
-		ACameraActor* SpectatorCamera = ArenaGameMode->GetSpectatorCamera();
-		if (SpectatorCamera)
+		DisableInput(CC);
+		CC->UnPossess();
+
+		if (FollowCamera)
 		{
-			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera exist"));
-			if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-			{
-				CC->ClientSpectateCamera(SpectatorCamera);
-			}
+			FollowCamera->Deactivate();
+			FollowCamera->SetActive(false);
+		}
+		if (CameraBoom)
+		{
+			CameraBoom->Deactivate();
+		}
+
+		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+		if (GM && GM->SpectatorCamera)
+		{
+			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+			CC->ChangeState(NAME_Spectating);
+
+			FTimerHandle ForceSwitchTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+				{
+					AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+					if (LocalGM && LocalGM->SpectatorCamera)
+					{
+						CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
+						CC->ChangeState(NAME_Spectating);
+					}
+				}, 0.1f, false);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera is not found"));
+			UE_LOG(LogTemp, Warning, TEXT("OnDeath: SpectatorCamera is null"));
+		}
+	}
+}
+
+void ABaseCharacter::SwitchToSpectatorCamera()
+{
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+		if (GM && GM->SpectatorCamera)
+		{
+			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+			CC->ChangeState(NAME_Spectating);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SwitchToSpectatorCamera: SpectatorCamera is null"));
 		}
 	}
 }
