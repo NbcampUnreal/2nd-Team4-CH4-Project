@@ -110,13 +110,6 @@ void USettingsWidget::OnCancelClicked()
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
-		/*AMainMenuHUD* HUD = Cast<AMainMenuHUD>(PlayerController->GetHUD());
-		if (HUD)
-		{
-			HUD->HideSettingsWidget();
-		}*/
-
-		// Notice :: Dahye
 		AHUD* CurrentHUD = PlayerController->GetHUD();
 		if (CurrentHUD)
 		{

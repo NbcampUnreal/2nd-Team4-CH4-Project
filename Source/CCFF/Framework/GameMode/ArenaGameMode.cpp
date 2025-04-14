@@ -1,14 +1,21 @@
 ﻿#include "Framework/GameMode/ArenaGameMode.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/HUD/ArenaModeHUD.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/CountdownWidget.h"
+#include "Algo/Sort.h"
+#include "GameFramework/Pawn.h"
 
 
-AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer)
+	, DamageWeight(0.6f)
+	, TimeWeight(0.4f)
 {
 	GameStateClass = AArenaGameState::StaticClass();
+	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
 	RoundTime = 10.0f;  // Default
@@ -34,6 +41,7 @@ void AArenaGameMode::BeginPlay()
 	{
 		ArenaGameState->InitializeGameState();
 		ArenaGameState->SetCountdownTime(CountdownTime);
+		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 	}
 
@@ -42,8 +50,6 @@ void AArenaGameMode::BeginPlay()
 
 void AArenaGameMode::StartArenaRound()
 {
-	if (!HasAuthority()) { return; }
-
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
@@ -59,36 +65,33 @@ void AArenaGameMode::StartArenaRound()
 
 void AArenaGameMode::EndRound()
 {
-	if (!HasAuthority()) return;
-
 	Super::EndRound();
 
 	GetWorld()->GetTimerManager().ClearTimer(ArenaTimerHandle);
 	RoundTime = 0.0f;
-
-	UpdatePlayerRating();
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
 		ArenaGameState->SetRemainingTime(RoundTime);
 		ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
-	}
+		
+		float Initial = ArenaGameState->GetRoundStartTime();
 
-    // Move Result Map
-	GetWorld()->GetTimerManager().SetTimer(
-		LevelTransitionTimerHandle,
-		this,
-		&AArenaGameMode::MoveResultLevel,
-		1.0f,
-		false
-	);
+		for (APlayerState* BasePlayerState : GameState->PlayerArray)
+		{
+			AArenaPlayerState* ArenaPlayerState = Cast<AArenaPlayerState>(BasePlayerState);
+			if (ArenaPlayerState && ArenaPlayerState->GetSurvivalTime() <= 0.0f)
+			{
+				ArenaPlayerState->SetSurvivalTime(Initial);
+			}
+		}
+	}
+	UpdatePlayerRating();
 } 
 
 void AArenaGameMode::CheckGameConditions()
 {
-	if (!HasAuthority()) { return; }
-
 	Super::CheckGameConditions();
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
@@ -97,15 +100,35 @@ void AArenaGameMode::CheckGameConditions()
 		if (ArenaGameState->GetRemainingTime() <= 0.0f)
 		{
 			EndRound();
+			return;
 		}
-		// TODO :: Get PlayerState RemainPlayer Or Other Conditions
 	}
+	// TODO :: 남은 플레이어 수 1명 이상인지 확인
+	//int32 AliveCount = 0;
+	//for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	//{
+	//	if (APlayerController* PC = It->Get())
+	//	{
+	//		if (APawn* Pawn = PC->GetPawn())
+	//		{
+	//			// Pawn이 아직 살아있다면 카운트
+	//			if (IsValid(Pawn))
+	//			{
+	//				AliveCount++;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//if (AliveCount == 0)
+	//{
+	//	EndRound();
+	//	return;
+	//}
 }
 
 void AArenaGameMode::UpdateArenaStats()
 {
-	if (!HasAuthority()) return;
-
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
@@ -116,6 +139,41 @@ void AArenaGameMode::UpdateArenaStats()
 
 void AArenaGameMode::UpdatePlayerRating()
 {
+	TArray<AArenaPlayerState*> RankingPlayers;
+	if (GameState)
+	{
+		for (APlayerState* PS : GameState->PlayerArray)
+		{
+			AArenaPlayerState* ArenaPS = Cast<AArenaPlayerState>(PS);
+			if (IsValid(ArenaPS))
+			{
+				RankingPlayers.Add(ArenaPS);
+			}
+		}
+	}
+
+	Algo::Sort(RankingPlayers, [this](const AArenaPlayerState* A, const AArenaPlayerState* B)
+		{
+			const float ScoreA = (A->GetTotalDamage() * this->DamageWeight) + (A->GetSurvivalTime() * this->TimeWeight);
+			const float ScoreB = (B->GetTotalDamage() * this->DamageWeight) + (B->GetSurvivalTime() * this->TimeWeight);
+			return ScoreA > ScoreB;
+		});
+
+	TArray<FArenaRankInfo> RankingInfos;
+	for (int32 Index = 0; Index < RankingPlayers.Num(); Index++)
+	{
+		FArenaRankInfo RankInfo;
+		RankInfo.Rank = Index + 1;
+		RankInfo.PlayerName = RankingPlayers[Index]->GetPlayerName();
+		RankInfo.TotalDamage = RankingPlayers[Index]->GetTotalDamage();
+		RankInfo.SurvivalTime = RankingPlayers[Index]->GetSurvivalTime();
+		RankingInfos.Add(RankInfo);
+	}
+
+	if (AArenaGameState* ArenaGS = Cast<AArenaGameState>(GameState))
+	{
+		ArenaGS->SetRankingInfos(RankingInfos);
+	}
 }
 
 void AArenaGameMode::UpdateCountdown()
@@ -140,9 +198,4 @@ void AArenaGameMode::UpdateCountdown()
 	ArenaGameState->CountdownTime = CountdownTime;
 }
 
-void AArenaGameMode::MoveResultLevel()
-{
-	if (!HasAuthority()) return;
 
-	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
-}

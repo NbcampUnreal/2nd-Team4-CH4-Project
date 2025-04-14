@@ -35,36 +35,28 @@ void ATrainingPlayerController::UpdateLocalTraining()
         EndLocalTraining();
         return;
     }
-
-    LocalRemainingTime -= 1.f;
-
-    float Elapsed = LocalInitialTime - LocalRemainingTime;
-    LocalDPS = (Elapsed > 0.f) ? (LocalTotalDamage / Elapsed) : 0.f;
-
-    if (ATrainingModeHUD* TrainingModeHUD = Cast<ATrainingModeHUD>(GetHUD()))
+    if (IsLocalController())
     {
-        if (UTrainingWidget* TrainingWidget = TrainingModeHUD->GetTrainingWidget())
+        LocalRemainingTime -= 1.f;
+
+        float Elapsed = LocalInitialTime - LocalRemainingTime;
+        LocalDPS = (Elapsed > 0.f) ? (LocalTotalDamage / Elapsed) : 0.f;
+
+        if (ATrainingModeHUD* TrainingModeHUD = Cast<ATrainingModeHUD>(GetHUD()))
         {
-            TrainingWidget->UpdateTimer(LocalRemainingTime);
-            TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
+            if (UTrainingWidget* TrainingWidget = TrainingModeHUD->GetTrainingWidget())
+            {
+                TrainingWidget->UpdateTimer(LocalRemainingTime);
+                TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
+            }
         }
     }
 }
 
 void ATrainingPlayerController::ClientAddLocalDamage_Implementation(float Damage)
 {
-    ATrainingGameState* TrainingGameState = Cast<ATrainingGameState>(GetWorld()->GetGameState());
-    if (IsValid(TrainingGameState))
-    {
-        if (TrainingGameState->GetRoundProgress() == ERoundProgress::InProgress)
-            AddLocalDamage(Damage);
-    }
-}
-
-void ATrainingPlayerController::AddLocalDamage(float DamageAmount)
-{
-    LocalTotalDamage += DamageAmount;
-    if (IsLocalController())
+    LocalTotalDamage += Damage;
+    /*if (IsLocalController())
     {
         if (ATrainingModeHUD* TrainingModeHUD = Cast<ATrainingModeHUD>(GetHUD()))
         {
@@ -73,7 +65,7 @@ void ATrainingPlayerController::AddLocalDamage(float DamageAmount)
                 TrainingWidget->UpdateTrainingStatsData(LocalTotalDamage, LocalDPS);
             }
         }
-    }
+    }*/
 }
 
 void ATrainingPlayerController::EndLocalTraining()

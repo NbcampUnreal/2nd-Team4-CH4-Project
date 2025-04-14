@@ -7,6 +7,9 @@
 #include "BaseCharacter.h"
 #include "Framework/HUD/TrainingModeHUD.h"
 #include "Framework/UI/TrainingWidget.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Engine/World.h"
+
 
 ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
@@ -72,3 +75,12 @@ void ACharacterController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("TogglePause"), EInputEvent::IE_Pressed, this, &ACharacterController::TogglePause);
 }
 
+void ACharacterController::ServerReturnToLobby_Implementation()
+{
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/LobbyMap?Listen"));
+}
+
+bool ACharacterController::ServerReturnToLobby_Validate()
+{
+	return true;
+}

@@ -34,19 +34,21 @@ public:
 	void UpdatePlayerRating();
 	void UpdateCountdown();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Arena")
+	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
 
 #pragma endregion
 
-	/* 게임 시작 이후 입장 제한 */
 	UPROPERTY()
 	bool bHasGameStarted = false;
 
-private:
-	UFUNCTION()
-	void MoveResultLevel();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
+	float DamageWeight;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
+	float TimeWeight;
+
+private:
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle LevelTransitionTimerHandle;
