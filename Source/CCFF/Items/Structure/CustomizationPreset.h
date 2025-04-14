@@ -54,7 +54,7 @@ struct FCustomizationPreset
 	TArray<FEquippedItemData> EquippedItems;
 
 	FCustomizationPreset()
-		: PresetIndex(0), EquippedItems() {
+		: PresetIndex(-1), EquippedItems() {
 	}
 };
 

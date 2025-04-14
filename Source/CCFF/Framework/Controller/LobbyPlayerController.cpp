@@ -335,29 +335,33 @@ void ALobbyPlayerController::RequestEquipPreset(FCustomizationPreset Preset)
 	UE_LOG(LogTemp, Log, TEXT("[Server] RequestEquipPreset called. PresetIndex = %d, EquippedItemsCount = %d"),
 		Preset.PresetIndex,
 		Preset.EquippedItems.Num());
-
+	
 	APawn* ServerPawn = GetPawn();
-	if (!ServerPawn)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Server] GetPawn() returned nullptr."));
-		return;
-	}
+	if (!ServerPawn) {return;}
 
 	ABasePreviewPawn* ServerPreviewPawn = Cast<ABasePreviewPawn>(ServerPawn);
-	if (!ServerPreviewPawn)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Server] Cast to ABasePreviewPawn failed."));
-		return;
-	}
+	if (!ServerPreviewPawn)	{return;}
 
 	UCharacterCustomizationComponent* CustomizationComponent = Cast<UCharacterCustomizationComponent>(
 		ServerPreviewPawn->GetComponentByClass(UCharacterCustomizationComponent::StaticClass()));
 
 	if (CustomizationComponent)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Server] CustomizationComponent found. Equipping preset..."));
-		CustomizationComponent->EquipPreset(Preset);
+		
+		UE_LOG(LogTemp, Log, TEXT("[Server] CustomizationComponent found."));
+		if (Preset.PresetIndex == -1)
+		{
+			CustomizationComponent->UnequipAllItems();
+			UE_LOG(LogTemp, Log, TEXT("[Server] No Saved Index. Unequipped all items."));
+		}
+
+		else
+		{
+			CustomizationComponent->EquipPreset(Preset);
+			UE_LOG(LogTemp, Log, TEXT("[Server] Equipped Preset with Index %d"), Preset.PresetIndex);
+		}
 	}
+
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Server] CustomizationComponent not found on PreviewPawn."));

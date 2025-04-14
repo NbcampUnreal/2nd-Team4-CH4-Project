@@ -108,7 +108,7 @@ private:
 	void Server_SwitchPresetIndex_Implementation(int32 IndexDirection);
 
 	UPROPERTY(Replicated)
-	int32 CurrentPresetIndex = 0;
+	int32 CurrentPresetIndex = -1;
 	
 	virtual void OnRep_PlayerState() override;
 	void SetCustomizationPresets();
