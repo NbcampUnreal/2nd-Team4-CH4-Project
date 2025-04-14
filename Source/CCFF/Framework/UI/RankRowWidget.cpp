@@ -42,7 +42,12 @@ void URankRowWidget::SetRankInfo(int32 InRank, const FString& InPlayerName, floa
 	}
 	if (SurvivalTimeText)
 	{
-		SurvivalTimeText->SetText(FText::FromString(FString::Printf(TEXT("%.2f"), InSurvivalTime)));
+		int32 TotalSeconds = FMath::RoundToInt(InSurvivalTime);
+		int32 Minutes = TotalSeconds / 60;
+		int32 Seconds = TotalSeconds % 60;
+		FString TimeString = FString::Printf(TEXT("%02d : %02d"), Minutes, Seconds);
+
+		SurvivalTimeText->SetText(FText::FromString(TimeString));
 	}
 }
 
