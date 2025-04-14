@@ -21,4 +21,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Settings")
 	void ResetSettings();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Settings")
+	void CancelSettings();
 };

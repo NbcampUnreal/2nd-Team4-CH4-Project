@@ -2,36 +2,38 @@
 
 
 #include "BaseCharacter.h"
-#include "Engine/LocalPlayer.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "CharacterController.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "EnhancedInputComponent.h"
-#include "BattleComponent.h"
+#include <Kismet/GameplayStatics.h>
+#include "ClearReplacementShaders.h"
 #include "EngineUtils.h"
-#include "HPWidgetComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "StatusComponent.h"
-#include "UW_HPWidget.h"
-#include "Character/DataLoaderSubSystem.h"
-#include "Character/Base/AttackCollisionData.h"
-#include "Components/BoxComponent.h"
-#include "Items/Component/ItemInteractionComponent.h"
-#include "Character/DamageHelper.h"
-#include "Framework/UI/BaseInGameWidget.h"
-#include "GameFramework/GameStateBase.h"
-#include "Net/UnrealNetwork.h"
-#include "Framework/PlayerState/ArenaPlayerState.h"
-#include "Framework/GameState/ArenaGameState.h"
-#include "Framework/GameMode/ArenaGameMode.h"
 #include "Camera/CameraActor.h"  
-
+#include "Camera/CameraComponent.h"
+#include "Character/Components/BattleComponent.h"
+#include "Character/Components/HPWidgetComponent.h"
+#include "Character/Components/StatusComponent.h"
+#include "Character/DataStruct/AttackCollisionData.h"
+#include "Character/Utilities/DamageHelper.h"
+#include "Character/Utilities/DataLoaderSubSystem.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Engine/LocalPlayer.h"
+#include "Framework/Controller/CharacterController.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Framework/GameState/ArenaGameState.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
+#include "Framework/UI/BaseInGameWidget.h"
+#include "Framework/UI/Character/UW_HPWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Items/Component/ItemInteractionComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
+	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
 	bCanAttack(true),
 	LastAttackStartTime(0.f),
@@ -140,11 +142,17 @@ void ABaseCharacter::BeginPlay()
 	PreLoadCharacterAnim();
 	PreLoadCharacterBalanceStats();
 	PreLoadBattleModifiers();
-	
+	//Set MaxWalkSpeed
+	GetCharacterMovement()->MaxWalkSpeed = BalanceStats.MaxWalkSpeed;
 	// FString NetModeString = UDamageHelper::GetRoleString(this);
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
+	}
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -270,7 +278,6 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	bIsCancelable = true;
 	CurrentCharacterState = ECharacterState::Normal;
 }
 
@@ -318,17 +325,18 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 
 bool ABaseCharacter::ServerRPCAttack_Validate(const int32 Num, float InStartAttackTime)
 {
+	return true;
 	// First Attack input
-	if (LastAttackStartTime==0.f)
-	{
-		return true;
-	}
-	const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
-	if (!bIsValid)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
-	}
-	return bIsValid;
+	// if (LastAttackStartTime==0.f)
+	// {
+	// 	return true;
+	// }
+	// const bool bIsValid=(PrevMontagePlayTime-0.1f)<(InStartAttackTime-LastAttackStartTime);
+	// if (!bIsValid)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("ServerRPCAttack_Validate failed. InCheckTime: %f, LastTime: %f, MontagePlayTime : %f"), InStartAttackTime, LastAttackStartTime, PrevMontagePlayTime);
+	// }
+	// return bIsValid;
 }
 void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, ABaseCharacter* InTargetCharacter)
 {
@@ -338,11 +346,26 @@ void ABaseCharacter::ClientRPCPlayAttackMontage_Implementation(const int32 Num, 
 	}
 }
 
+void ABaseCharacter::ExecuteBufferedAction()
+{
+	const float CurrentTime=GetWorld()->GetTimeSeconds();
+	const int32 InputAction=static_cast<int32>(InputBuffer.InputAttack);
+	//Execute Buffered Input Action
+	if (InputAction>=0&&InputAction<8&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
+	{
+		ExecuteAttackByIndex(InputAction);
+		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
+	}
+	// Clear Buffer
+	InputBuffer=FBufferedInput();
+}
+
 void ABaseCharacter::OnRep_CanAttack()
 {
 	if (bCanAttack==true)
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		ExecuteBufferedAction();
 	}
 	else
 	{
@@ -350,48 +373,70 @@ void ABaseCharacter::OnRep_CanAttack()
 	}
 }
 
-void ABaseCharacter::Attack1(const FInputActionValue& Value)
+void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	if (bCanAttack&&GetCharacterMovement()->IsFalling()==false)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
-		ServerRPCAttack(0,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
+		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
+		ServerRPCAttack(Index,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
 		// Play Montage in Owning Client
 		if (HasAuthority()==false&&IsLocallyControlled()==true)
 		{
+			//bIsCancelable = Index<=2;
 			bCanAttack=false;
 			OnRep_CanAttack();
-			PlayAttackMontage(0);
+			PlayAttackMontage(Index);
 		}
 	}
+	else
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Buffered Input Index: %d"),Index);
+		InputBuffer=FBufferedInput(static_cast<EAttackType>(Index),GetWorld()->GetTimeSeconds());
+	}
+}
+
+void ABaseCharacter::Attack1(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(0);
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
+	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Attack2 Called !!"));
-		ServerRPCAttack(1,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(1);
-		}
+		ExecuteAttackByIndex(2);		
+	}
+	else
+	{
+		ExecuteAttackByIndex(1);
 	}
 }
-void ABaseCharacter::Attack3(const FInputActionValue& Value)
+
+
+void ABaseCharacter::Attack4(const FInputActionValue& Value)
 {
-	if (bCanAttack==true&&GetCharacterMovement()->IsFalling()==false)
-    {
-		UE_LOG(LogTemp,Warning,TEXT("Attack3 Called !!"));
-		ServerRPCAttack(2,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
-		if (HasAuthority()==false&&IsLocallyControlled()==true)
-		{
-			bCanAttack=false;
-			OnRep_CanAttack();
-			PlayAttackMontage(2);
-		}
-    }
+	ExecuteAttackByIndex(3);
+}
+
+void ABaseCharacter::Attack5(const FInputActionValue& Value)
+{
+	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	{
+		ExecuteAttackByIndex(5);
+	}
+	else
+	{
+		ExecuteAttackByIndex(4);
+	}
+}
+
+void ABaseCharacter::Attack7(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(6);
+}
+
+void ABaseCharacter::Attack8(const FInputActionValue& Value)
+{
+	ExecuteAttackByIndex(7);
 }
 
 void ABaseCharacter::PlayAttackMontage(const int32& Num)
@@ -422,6 +467,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 	// Compare direction (95% match)
 	if (FVector2D::DotProduct(LastMoveInputDirection, CurrentInputDirection)>0.95f&&bIsDoubleTab)
 	{
+		GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxRunSpeed;
 		ServerRPCSetMaxWalkSpeed(BalanceStats.MaxRunSpeed);
 	}
 	float CurrentTime=GetWorld()->GetTimeSeconds();	
@@ -455,9 +501,11 @@ void ABaseCharacter::StartSprint(const FInputActionValue& Value)
 
 void ABaseCharacter::StopSprint(const FInputActionValue& Value)
 {
+	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
 	ServerRPCSetMaxWalkSpeed(BalanceStats.MaxWalkSpeed);
 	bIsDoubleTab=false;
 }
+
 
 void ABaseCharacter::StartJump(const FInputActionValue& Value)
 {
@@ -738,32 +786,49 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 	TakeHitlagAndStoredKnockback(HitBoxList[CurrentActivatedCollision].Hitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 }
 
-void ABaseCharacter::OnDeath() const
+void ABaseCharacter::OnDeath()
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+	
+	if (!HasAuthority()) { return; }
 
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
-	if (ArenaPlayerState && ArenaGameState)
+	AController* MyController = GetController();
+	HandlePlayerStateOnDeath();
+	bool bRespawn = CanRespawn();
+	HandleControllerOnDeath(bRespawn);
+
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (bRespawn && ArenaGameMode && MyController)
 	{
-		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
-		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+		FTimerHandle RespawnTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [ArenaGameMode, MyController]()
+			{
+				if (ArenaGameMode && MyController)
+				{
+					if (ACharacterController* CC = Cast<ACharacterController>(MyController))
+					{
+						ArenaGameMode->RespawnPlayer(CC);
+					}
+				}
+			}, 1.5f, false);
 	}
 
-	if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+	Destroy();
+}
+
+void ABaseCharacter::SwitchToSpectatorCamera()
+{
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
 	{
-		ACameraActor* SpectatorCamera = ArenaGameMode->GetSpectatorCamera();
-		if (SpectatorCamera)
+		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+		if (GM && GM->SpectatorCamera)
 		{
-			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera exist"));
-			if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-			{
-				CC->ClientSpectateCamera(SpectatorCamera);
-			}
+			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+			CC->ChangeState(NAME_Spectating);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("SpectatorCamera is not found"));
+			UE_LOG(LogTemp, Warning, TEXT("SwitchToSpectatorCamera: SpectatorCamera is null"));
 		}
 	}
 }
@@ -839,8 +904,8 @@ void ABaseCharacter::PreLoadAttackCollisions()
 			if (UEnum* Type=StaticEnum<EAttackType>())
 			{
 				const int32 n=Type->NumEnums();
-				AttackCollisions.SetNum(n-1);
-				HitBoxList.SetNum(n-1);
+				AttackCollisions.SetNum(n-2);
+				HitBoxList.SetNum(n-2);
 				for (int32 i=0;i<n-1;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
@@ -889,9 +954,12 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 			//Attack Actions
-			EnhancedInputComponent->BindAction(MyController->AttackAction1,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
-			EnhancedInputComponent->BindAction(MyController->AttackAction2,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
-			EnhancedInputComponent->BindAction(MyController->AttackAction3,ETriggerEvent::Triggered,this,&ABaseCharacter::Attack3);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[0],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack1);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[1],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack2);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[3],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack4);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[4],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack5);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[6],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack7);
+			EnhancedInputComponent->BindAction(MyController->AttackAction[7],ETriggerEvent::Triggered,this,&ABaseCharacter::Attack8);
 		}
 	}
 	else
@@ -913,6 +981,98 @@ void ABaseCharacter::NotifyControllerChanged()
 			{
 				Subsystem->AddMappingContext(MyController->DefaultMappingContext, 0);
 			}
+		}
+	}
+}
+
+void ABaseCharacter::HandlePlayerStateOnDeath()
+{
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
+
+	if (ArenaPlayerState && ArenaGameState)
+	{
+		if (ArenaPlayerState->MaxLives <= 0)
+		{
+			float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+			ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. SurvivalTime si %.2f"), ArenaGameState->GetRoundStartTime());
+		}
+		else
+		{
+			ArenaPlayerState->MaxLives -= 1;
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. Lives %d"), ArenaPlayerState->MaxLives);
+		}
+	}
+}
+
+bool ABaseCharacter::CanRespawn() const
+{
+	const AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	return (ArenaPlayerState && ArenaPlayerState->MaxLives > 0);
+}
+
+void ABaseCharacter::DeactivatePawnCamera()
+{
+	if (FollowCamera)
+	{
+		FollowCamera->Deactivate();
+		FollowCamera->SetActive(false);
+	}
+	if (CameraBoom)
+	{
+		CameraBoom->Deactivate();
+	}
+}
+
+void ABaseCharacter::TransitionToSpectator(ACharacterController* CC)
+{
+	AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM && GM->SpectatorCamera)
+	{
+		CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+		CC->ChangeState(NAME_Spectating);
+
+		FTimerHandle ForceSwitchTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+			{
+				AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+				if (LocalGM && LocalGM->SpectatorCamera)
+				{
+					CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
+					CC->ChangeState(NAME_Spectating);
+				}
+			}, 0.1f, false);
+	}
+}
+
+void ABaseCharacter::HandleControllerOnDeath(bool bRespawn)
+{
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		DisableInput(CC);
+		CC->UnPossess();
+		DeactivatePawnCamera();
+
+		if (!bRespawn)
+		{
+			TransitionToSpectator(CC);
+		}
+	}
+}
+
+void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bIsDying) { return; }
+
+	if (OtherActor && OtherActor != this)
+	{
+		if (OtherActor->ActorHasTag(FName("River")))
+		{
+			UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
+			bIsDying = true;
+			OnDeath();
 		}
 	}
 }

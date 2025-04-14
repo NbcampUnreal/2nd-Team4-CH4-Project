@@ -3,14 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterEnum.h"
+#include "InputActionValue.h"
+#include "Character/DataStruct/CharacterAnim.h"
+#include "Character/DataStruct/CharacterStats.h"
+#include "Character/Utilities/DamageAble.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
-#include "CharacterStats.h"
-#include "CharacterAnim.h"
-#include "CharacterEnum.h"
-#include "DamageAble.h"
-#include "InputActionValue.h"
-#include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
 class UBoxComponent;
@@ -23,6 +22,20 @@ class UBattleComponent;
 class UItemInteractionComponent;
 struct FInputActionValue;
 struct FHitBoxData;
+class ACharacterController;
+
+USTRUCT(BlueprintType)
+struct FBufferedInput
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	EAttackType InputAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	float BufferedTime;
+	FBufferedInput(): InputAttack(EAttackType::None), BufferedTime(0.f) {}
+	FBufferedInput(EAttackType InAction, const float InTime): InputAttack(InAction), BufferedTime(InTime) {}
+};
 
 UCLASS()
 class CCFF_API ABaseCharacter : public ACharacter, public IDamageAble
@@ -113,7 +126,7 @@ protected:
 	void ServerRPCSetMaxWalkSpeed(const float Value);
 	
 #pragma endregion
-
+	
 #pragma region AttackFunctions
 	UFUNCTION(Server,Reliable,WithValidation)
 	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
@@ -126,9 +139,26 @@ protected:
 	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
 	UFUNCTION()
-	void Attack3(const FInputActionValue& Value);
+	void Attack4(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack5(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack7(const FInputActionValue& Value);
+	UFUNCTION()
+	void Attack8(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnRep_CanAttack();
+	UFUNCTION()
+	void ExecuteAttackByIndex(const int32 Index);
+	UFUNCTION()
+	void ExecuteBufferedAction();
+#pragma endregion
+
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
 #pragma endregion
 	
 protected:
@@ -177,12 +207,27 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void Clash(ABaseCharacter* Attacker, FHitBoxData& HitData);
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
-	void OnDeath() const;
+	void OnDeath();
 
+	UFUNCTION()
+	void SwitchToSpectatorCamera();
 #pragma endregion
 
+protected:
+	void HandlePlayerStateOnDeath();
+	bool CanRespawn() const;
+	void HandleControllerOnDeath(bool bRespawn);
+	void DeactivatePawnCamera();
+	void TransitionToSpectator(ACharacterController* CC);
 
-private:
+	UFUNCTION()
+	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bIsDying = false;
+
+protected:
 #pragma region Meter
 	// === Meter Handling ===
 	UFUNCTION(BlueprintCallable, Category = "Combat/Meter")
@@ -245,8 +290,6 @@ protected:
 #pragma region Cached variables
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
-	UPROPERTY()
-	bool bIsCancelable = true;
 	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
 	uint8 bCanAttack : 1;
 	UPROPERTY()
@@ -266,6 +309,7 @@ protected:
 	float LastMoveInputTime;
 	float DoubleTapThreshold;
 	uint8 bIsDoubleTab;
+	
 #pragma endregion
 	
 	

@@ -86,3 +86,4 @@ DerivedDataCache/*
 *.d
 
 Content/Character/BP_Cactus.uasset
+Content/CCFF/Maps/TitleMap.umap

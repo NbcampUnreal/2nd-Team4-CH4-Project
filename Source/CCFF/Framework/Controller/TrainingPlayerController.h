@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Character/Base/CharacterController.h"
+#include "Framework/Controller/CharacterController.h"
 #include "TrainingPlayerController.generated.h"
 
 

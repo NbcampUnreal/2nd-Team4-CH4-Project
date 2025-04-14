@@ -12,6 +12,7 @@ struct FArenaRankInfo
 	FArenaRankInfo()
 		: Rank(0)
 		, PlayerName(TEXT(""))
+		, KillCount(0)
 		, TotalDamage(0.f)
 		, SurvivalTime(0.f)
 	{
@@ -22,6 +23,9 @@ struct FArenaRankInfo
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Ranking")
 	FString PlayerName;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Ranking")
+	int32 KillCount;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float TotalDamage;
