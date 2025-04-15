@@ -19,8 +19,9 @@ ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
      MoveAction(nullptr),
      JumpAction(nullptr),
-	 PauseWidget(nullptr),
-	 bIsPause(false)
+	 bIsPause(false),
+	 PauseWidget(nullptr)
+	 
 {
 	AttackAction.SetNum(8);
 }
@@ -31,11 +32,14 @@ void ACharacterController::BeginPlay()
 
 	if (IsLocalController())
 	{
-		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
+		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
-			const FString Nick = GI->GetNickname();
+			const FString Nick = CCFFGameInstance->GetNickname();
 			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *Nick);
 			ServerSetNickname(Nick);
+
+			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
+			ServerSetCharacterID(SelectedCharacterID);
 		}
 	}
 
@@ -98,10 +102,10 @@ bool ACharacterController::ServerReturnToLobby_Validate()
 
 void ACharacterController::ServerSetNickname_Implementation(const FString& InNickname)
 {
-	if (AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>())
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
 	{
-		PS->SetPlayerNickname(InNickname);
-		PS->SetPlayerName(InNickname);
+		ArenaPlayerState->SetPlayerNickname(InNickname);
+		ArenaPlayerState->SetPlayerName(InNickname);
 
 		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
 	}
@@ -114,4 +118,33 @@ void ACharacterController::ServerSetNickname_Implementation(const FString& InNic
 bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
 {
 	return true;
+}
+
+void ACharacterController::ServerSetCharacterID_Implementation(FName InID)
+{
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	{
+		ArenaPlayerState->SetSelectedCharacterID(InID);
+		UE_LOG(LogTemp, Log, TEXT("[ServerSetCharacterID] SelectedCharacterID = %s"), *InID.ToString());
+	}
+}
+
+bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
+{
+	return true;
+}
+
+void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
+{
+	if (!SpectatorCam)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
+		return;
+	}
+
+	UnPossess();
+	ChangeState(NAME_Spectating);
+	SetViewTargetWithBlend(SpectatorCam, 0.f);
+
+	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
 }
