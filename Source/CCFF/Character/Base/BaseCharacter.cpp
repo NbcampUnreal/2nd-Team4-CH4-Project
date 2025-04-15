@@ -160,7 +160,6 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	GetCharacterMovement().Max
 	// // Client (Rotating Widget to focus camera)
 	// if (IsValid(HPWidgetComponent)==true&&HasAuthority()==false)
 	// {
