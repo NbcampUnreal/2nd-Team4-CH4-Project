@@ -1,5 +1,6 @@
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/Controller/LobbyPlayerController.h"
+#include "Framework/UI/Lobby/ArenaSubModeSelectorWidget.h"
 #include "Components/Button.h"
 
 void ULobbyWidget::NativeConstruct()
@@ -14,6 +15,19 @@ void ULobbyWidget::NativeConstruct()
     if (BackButton && !BackButton->OnClicked.IsAlreadyBound(this, &ULobbyWidget::OnBackClicked))
     {
         BackButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnBackClicked);
+    }
+
+    if (ArenaSubModeSelectorWidget)
+    {
+        ArenaSubModeSelectorWidget->OnSubModeSelected.AddDynamic(this, &ULobbyWidget::OnArenaSubModeSelected);
+    }
+}
+
+void ULobbyWidget::UpdateArenaSubModeUI(EArenaSubMode NewMode)
+{
+    if (ArenaSubModeSelectorWidget)
+    {
+        ArenaSubModeSelectorWidget->SetCurrentSelectedMode(NewMode);
     }
 }
 
@@ -39,6 +53,19 @@ void ULobbyWidget::OnBackClicked()
         if (LobbyPlayerController)
         {
             LobbyPlayerController->ClientTravel(TEXT("/Game/CCFF/Maps/MainMenuMap"), ETravelType::TRAVEL_Absolute);
+        }
+    }
+}
+
+void ULobbyWidget::OnArenaSubModeSelected(EArenaSubMode Selected)
+{
+    APlayerController* PlayerController = GetOwningPlayer();
+    if (PlayerController)
+    {
+        ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(PlayerController);
+        if (LobbyPlayerController)
+        {
+            LobbyPlayerController->ServerRequestChangeArenaSubMode(Selected);
         }
     }
 }
