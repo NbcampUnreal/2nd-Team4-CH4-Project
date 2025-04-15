@@ -63,4 +63,16 @@ private:
 	FCustomizationPreset CurrentCustomizationPreset;
 
 #pragma endregion
+
+#pragma region HostPlayer
+public:
+	FORCEINLINE bool GetIsHost() const { return bIsHost; }
+	FORCEINLINE void SetIsHost(bool bNewHost) { bIsHost = bNewHost; }
+
+protected:
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool bIsHost = false;
+
+#pragma endregion
+
 };

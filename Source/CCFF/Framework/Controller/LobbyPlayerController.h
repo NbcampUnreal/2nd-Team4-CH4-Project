@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Items/Structure/CustomizationPreset.h"
+#include "Framework/Data/ArenaSubModeType.h"
 #include "LobbyPlayerController.generated.h"
 
 UCLASS()
@@ -68,6 +69,9 @@ public:
 
 #pragma endregion
 
+public:
+	FORCEINLINE TObjectPtr<class ULobbyWidget> GetLobbyWidget() const { return LobbyWidgetInstance; }
+
 protected:
 	void ShowLobbyUI();
 	
@@ -96,7 +100,6 @@ protected:
 	
 
 #pragma region CHARACTER_CUSTOMIZATION
-
 protected:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPresetsToPlayerState(const TArray<FCharacterCustomizationPreset>& ClientPresets);
@@ -113,5 +116,13 @@ private:
 	virtual void OnRep_PlayerState() override;
 	void SetCustomizationPresets();
 	void RequestEquipPreset(FCustomizationPreset Preset);
+
+#pragma endregion
+
+#pragma region ArenaSubMode
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerRequestChangeArenaSubMode(EArenaSubMode NewMode);
+
 #pragma endregion
 };
