@@ -92,17 +92,6 @@ protected:
 	UFUNCTION()
 	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
-	
-#pragma region Timer
-protected:
-	// === Timers ===
-	UPROPERTY()
-	FTimerHandle HitstunTimerHandle;
-	UPROPERTY()
-	FTimerHandle HitlagTimerHandle;
-	UPROPERTY()
-	FTimerHandle BlockstunTimerHandle;
-#pragma endregion
 
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
@@ -266,6 +255,17 @@ protected:
 	TArray<UBoxComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
 	TArray<FHitBoxData> HitBoxList;
+#pragma endregion
+
+#pragma region Timer
+protected:
+	// === Timers ===
+	UPROPERTY()
+	FTimerHandle HitstunTimerHandle;
+	UPROPERTY()
+	FTimerHandle HitlagTimerHandle;
+	UPROPERTY()
+	FTimerHandle BlockstunTimerHandle;
 #pragma endregion
 	
 protected:
