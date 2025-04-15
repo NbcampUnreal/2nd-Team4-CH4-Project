@@ -12,6 +12,7 @@
 class UInputMappingContext;
 class UInputAction;
 class UUserWidget;
+class ABaseCharacter;
 
 UCLASS()
 class CCFF_API ACharacterController : public APlayerController
@@ -21,6 +22,7 @@ class CCFF_API ACharacterController : public APlayerController
 public:
 	ACharacterController();
 	
+#pragma region InputMapping
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -34,26 +36,46 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UInputAction>> AttackAction;
 	
+#pragma endregion
 
+#pragma region Character
+public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
 
-	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Character")
 	void ServerSetNickname(const FString& InNickname);
 
-	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Character")
 	void ServerSetCharacterID(FName InID);
 
-	bool bIsPause;
 
-	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
-	void ClientSpectateCamera(ACameraActor* SpectatorCam);
+#pragma endregion
+
+#pragma region DeathAndRespawn
+
+public:
+	void HandleRiverOverlap(ABaseCharacter* DeadPawn, AActor* OtherActor);
+	void OnPawnDeath(ABaseCharacter* DeadPawn);
+
 
 protected:
+	UFUNCTION(Server, Reliable)
+	void ServerRequestRespawn();
+
+	void StartRespawnTimer(float Delay);
+	void EnterSpectatorMode();
+
+private:
+	FTimerHandle RespawnTimerHandle;
+
+#pragma endregion
+
 	virtual void BeginPlay() override;
 
-protected:
+
 #pragma region GamePause
+protected:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	void TogglePause();
 
@@ -64,6 +86,9 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* PauseWidget;
+
+public:
+	bool bIsPause;
 #pragma endregion
 
 };

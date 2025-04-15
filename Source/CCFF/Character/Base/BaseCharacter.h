@@ -208,24 +208,20 @@ protected:
 	void ReceiveGrabbed();
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void Clash(ABaseCharacter* Attacker, FHitBoxData& HitData);
+
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath();
-
-	UFUNCTION()
-	void SwitchToSpectatorCamera();
 #pragma endregion
-
-protected:
-	void HandlePlayerStateOnDeath();
-	bool CanRespawn() const;
-	void HandleControllerOnDeath(bool bRespawn);
-	void DeactivatePawnCamera();
-	void TransitionToSpectator(ACharacterController* CC);
-
 	UFUNCTION()
 	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+public:
+		FORCEINLINE bool IsDying() const { return bIsDying; }
+		void MarkAsDying() { bIsDying = true; }
+		void ResetDying() { bIsDying = false; }
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	bool bIsDying = false;
 

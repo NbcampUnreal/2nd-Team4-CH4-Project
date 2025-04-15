@@ -1,4 +1,4 @@
-#include "CharacterController.h"
+﻿#include "CharacterController.h"
 #include "Blueprint/UserWidget.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Framework/UI/TogglePauseWidget.h"
@@ -19,8 +19,8 @@ ACharacterController::ACharacterController()
    : DefaultMappingContext(nullptr),
      MoveAction(nullptr),
      JumpAction(nullptr),
-	 bIsPause(false),
-	 PauseWidget(nullptr)
+	 PauseWidget(nullptr),
+	 bIsPause(false)
 	 
 {
 	AttackAction.SetNum(8);
@@ -134,17 +134,77 @@ bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
 	return true;
 }
 
-void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
+void ACharacterController::HandleRiverOverlap(ABaseCharacter* DeadPawn, AActor* OtherActor)
 {
-	if (!SpectatorCam)
+	if (DeadPawn->IsDying()) return;
+
+	UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++[River] Controller handling River death for: %s"), *DeadPawn->GetName());
+	DeadPawn->MarkAsDying();
+
+	OnPawnDeath(DeadPawn);
+}
+
+void ACharacterController::OnPawnDeath(ABaseCharacter* DeadPawn)
+{
+	constexpr float RespawnDelay = 1.5f;
+	bool bHadExtraLives = false;
+
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
-		return;
+		bHadExtraLives = (ArenaPlayerState->MaxLives > 0);
+		if (bHadExtraLives)
+		{
+			ArenaPlayerState->MaxLives--;
+		}
+		else
+		{
+			if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
+			{
+				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+			}
+		}
 	}
 
-	UnPossess();
-	ChangeState(NAME_Spectating);
-	SetViewTargetWithBlend(SpectatorCam, 0.f);
+	if (HasAuthority())
+	{
+		if (bHadExtraLives)
+		{
+			StartRespawnTimer(RespawnDelay);
+		}
+		else
+		{
+			EnterSpectatorMode();
+		}
+	}
+}
 
-	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
+void ACharacterController::StartRespawnTimer(float Delay)
+{
+	GetWorld()->GetTimerManager().SetTimer(
+		RespawnTimerHandle,
+		this,
+		&ACharacterController::ServerRequestRespawn,
+		Delay,
+		false
+	);
+}
+
+void ACharacterController::ServerRequestRespawn_Implementation()
+{
+	if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		ArenaGameMode->RespawnPlayer(this);
+	}
+}
+
+void ACharacterController::EnterSpectatorMode()
+{
+	if (ACameraActor* SpectatorCamera = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode())->GetSpectatorCamera())
+	{
+		// TODO :: 강제로 한 번 더 카메라 Set 해주는 부분 추가
+		UnPossess();
+		ChangeState(NAME_Spectating);
+		SetViewTargetWithBlend(SpectatorCamera, 0.f);
+	}
 }
