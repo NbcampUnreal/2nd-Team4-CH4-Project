@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Framework/Data/PlayerMetaData.h"
+#include "Framework/Data/ArenaSubModeType.h"
 #include "Framework/Online/SessionDataStruct.h"
 #include "CCFFGameInstance.generated.h"
 
@@ -37,6 +38,9 @@ public:
 	FORCEINLINE FString GetServerIP() const { return ServerIP; }
 	void SetServerIP(const FString& NewServerIP);
 
+	FORCEINLINE EArenaSubMode GetArenaSubMode() const { return ArenaSubMode; }
+	FORCEINLINE void SetArenaSubMode(EArenaSubMode NewMode) { ArenaSubMode = NewMode; }
+
 	UPROPERTY(BlueprintAssignable)
 	FOnSessionsFound OnSessionsFound;
 
@@ -48,5 +52,8 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = true))
 	FString ServerIP = TEXT("127.0.0.1:7777");
+
+	UPROPERTY()
+	EArenaSubMode ArenaSubMode = EArenaSubMode::Elimination;
 
 };

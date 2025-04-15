@@ -76,7 +76,7 @@ void ASpawnableItem::OnItemOverlap(
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, LogMsg);
 #endif
 
-        if (bIsLocallyControlled && bHasAuthority)
+        if (bIsLocallyControlled && !bHasAuthority)
         {
             UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
             if (InteractionComponent)

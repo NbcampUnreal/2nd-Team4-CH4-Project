@@ -122,5 +122,6 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ALobbyPlayerState, bIsReady);
 	DOREPLIFETIME(ALobbyPlayerState, CharacterID);
 	DOREPLIFETIME(ALobbyPlayerState, ClientCharacterCustomizationPresets);
-
+	DOREPLIFETIME(ALobbyPlayerState, bIsHost);
+	
 }

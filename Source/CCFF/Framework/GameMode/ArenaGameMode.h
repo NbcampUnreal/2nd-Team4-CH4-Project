@@ -68,4 +68,11 @@ private:
 
 	bool bIsStartedRound;
 
+#pragma region SpawnCharacter
+public:
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+
+	UFUNCTION()
+	void SpawnPlayer(AController* NewPlayer);
 };

@@ -118,3 +118,32 @@ bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
 {
 	return true;
 }
+
+void ACharacterController::ServerSetCharacterID_Implementation(FName InID)
+{
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	{
+		ArenaPlayerState->SetSelectedCharacterID(InID);
+		UE_LOG(LogTemp, Log, TEXT("[ServerSetCharacterID] SelectedCharacterID = %s"), *InID.ToString());
+	}
+}
+
+bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
+{
+	return true;
+}
+
+void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
+{
+	if (!SpectatorCam)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
+		return;
+	}
+
+	UnPossess();
+	ChangeState(NAME_Spectating);
+	SetViewTargetWithBlend(SpectatorCam, 0.f);
+
+	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
+}

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "Framework/Data/ArenaSubModeType.h"
 #include "LobbyGameState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAllowStartGameChanged, bool);
@@ -31,6 +32,18 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_bAllowStartGame, BlueprintReadOnly, Category = "Lobby")
 	bool bAllowStartGame = false;
+#pragma endregion
+
+#pragma region ArenaSubMode
+public:
+	UFUNCTION()
+	void SetArenaSubMode(EArenaSubMode NewMode);
+
+	UFUNCTION()
+	void OnRep_ArenaSubMode();
+
+	UPROPERTY(ReplicatedUsing = OnRep_ArenaSubMode, BlueprintReadOnly)
+	EArenaSubMode ArenaSubMode;
 #pragma endregion
 
 public:

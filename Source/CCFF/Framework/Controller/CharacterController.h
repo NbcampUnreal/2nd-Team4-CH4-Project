@@ -49,7 +49,13 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
+	void ServerSetCharacterID(FName InID);
+
 	bool bIsPause;
+
+	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
+	void ClientSpectateCamera(ACameraActor* SpectatorCam);
 
 protected:
 	virtual void BeginPlay() override;

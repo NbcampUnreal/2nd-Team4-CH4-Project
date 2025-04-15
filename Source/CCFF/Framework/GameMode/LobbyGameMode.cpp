@@ -1,4 +1,5 @@
 #include "Framework/GameMode/LobbyGameMode.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
@@ -83,6 +84,18 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	LobbyPlayerController->Possess(PreviewPawn);
 	LobbyPlayerController->SetLobbyCameraView();
+
+	if (APlayerState* NewPlayerState = NewPlayer->GetPlayerState<APlayerState>())
+	{
+		if (GameState->PlayerArray.Num() == 1)
+		{
+			if (ALobbyPlayerState* LobbyState = Cast<ALobbyPlayerState>(NewPlayerState))
+			{
+				LobbyState->SetIsHost(true);
+				UE_LOG(LogTemp, Log, TEXT("[LobbyGameMode] Player %s set as Host"), *LobbyState->GetPlayerNickname());
+			}
+		}
+	}
 }
 
 void ALobbyGameMode::NotifyPlayerReadyStatusChanged()
@@ -131,6 +144,12 @@ void ALobbyGameMode::StartGame()
 		{
 			PC->ClientTeardownCountdown();
 		}
+	}
+
+	UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (CCFFGameInstance)
+	{
+		CCFFGameInstance->SetArenaSubMode(LobbyGameState->ArenaSubMode);
 	}
 
 	int32 RandomIndex = FMath::RandRange(0, AvailableMapPaths.Num() - 1);
