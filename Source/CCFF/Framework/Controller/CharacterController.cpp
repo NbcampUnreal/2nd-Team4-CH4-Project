@@ -15,15 +15,13 @@
 #include "Framework/GameState/ArenaGameState.h"
 
 
-ACharacterController::ACharacterController():
-	DefaultMappingContext(nullptr),
-    MoveAction(nullptr),
-    JumpAction(nullptr),
-	GuardAction(nullptr),
-	DodgeAction(nullptr),
-	BurstAction(nullptr),
+ACharacterController::ACharacterController()
+	: DefaultMappingContext(nullptr),
+	MoveAction(nullptr),
+	JumpAction(nullptr),
 	bIsPause(false),
 	PauseWidget(nullptr)
+
 {
 	AttackAction.SetNum(8);
 }
@@ -34,11 +32,14 @@ void ACharacterController::BeginPlay()
 
 	if (IsLocalController())
 	{
-		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
+		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
-			const FString Nick = GI->GetNickname();
+			const FString Nick = CCFFGameInstance->GetNickname();
 			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *Nick);
 			ServerSetNickname(Nick);
+
+			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
+			ServerSetCharacterID(SelectedCharacterID);
 		}
 	}
 
@@ -66,7 +67,7 @@ void ACharacterController::TogglePause()
 				ToggleWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
-	
+
 	if (bIsPause)
 	{
 		FInputModeGameAndUI InputMode;
@@ -101,10 +102,10 @@ bool ACharacterController::ServerReturnToLobby_Validate()
 
 void ACharacterController::ServerSetNickname_Implementation(const FString& InNickname)
 {
-	if (AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>())
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
 	{
-		PS->SetPlayerNickname(InNickname);
-		PS->SetPlayerName(InNickname);
+		ArenaPlayerState->SetPlayerNickname(InNickname);
+		ArenaPlayerState->SetPlayerName(InNickname);
 
 		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
 	}
