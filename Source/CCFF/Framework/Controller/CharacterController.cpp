@@ -15,12 +15,15 @@
 #include "Framework/GameState/ArenaGameState.h"
 
 
-ACharacterController::ACharacterController()
-   : DefaultMappingContext(nullptr),
-     MoveAction(nullptr),
-     JumpAction(nullptr),
-	 PauseWidget(nullptr),
-	 bIsPause(false)
+ACharacterController::ACharacterController():
+	DefaultMappingContext(nullptr),
+    MoveAction(nullptr),
+    JumpAction(nullptr),
+	GuardAction(nullptr),
+	DodgeAction(nullptr),
+	BurstAction(nullptr),
+	bIsPause(false),
+	PauseWidget(nullptr)
 {
 	AttackAction.SetNum(8);
 }
