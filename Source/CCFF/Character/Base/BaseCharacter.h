@@ -105,7 +105,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadBattleModifiers();
 #pragma endregion
-
+	
 #pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -161,13 +161,6 @@ protected:
 	UFUNCTION()
 	void ExecuteBufferedAction();
 	
-#pragma endregion
-
-#pragma region Buffer
-	UPROPERTY()
-	FBufferedInput InputBuffer;
-	UPROPERTY()
-	float BufferThreshold;
 #pragma endregion
 	
 protected:
@@ -249,6 +242,13 @@ protected:
 	TArray<FHitBoxData> HitBoxList;
 #pragma endregion
 
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
+#pragma endregion
+	
 #pragma region Timer
 protected:
 	// === Timers ===

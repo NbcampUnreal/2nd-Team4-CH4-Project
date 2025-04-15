@@ -279,6 +279,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Montage %s Ended. Interrupted: %d"), *Montage->GetName(), bInterrupted);
 	//CurrentCharacterState = ECharacterState::Normal;
 }
 
@@ -385,7 +386,6 @@ void ABaseCharacter::ExecuteBufferedAction()
 
 void ABaseCharacter::OnRep_CurrentCharacterState()
 {
-	UE_LOG(LogTemp,Warning,TEXT("CurState: %d"),CurrentCharacterState);
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
@@ -524,8 +524,10 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		PlayMontage=Anim.BurstMontage;
 		break;
 	case ECharacterState::Dead:
-		UE_LOG(LogTemp,Warning,TEXT("Death called"));
 		PlayMontage=Anim.DeathMontage;
+		break;
+	case ECharacterState::Hitted:
+		PlayMontage=Anim.HittedMontage;
 		break;
 	default:
 		break;
@@ -533,12 +535,14 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 	//둘다 유효
 	if (AnimInstance&&PlayMontage)
 	{
+		UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s, PlayMontage: %s"),CurrentCharacterState,*GetName(),*PlayMontage->GetName());
+		AnimInstance->Montage_Stop(0.2f);
 		//몽타주 실행
 		AnimInstance->Montage_Play(PlayMontage);
 	}
 	else if (!PlayMontage&&InState==ECharacterState::Normal)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
+		//UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
@@ -624,8 +628,8 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
 	float NewHealth = FMath::Clamp(StatusComponent->GetCurrentHP() - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, StatusComponent->GetMaxHP());
-	StatusComponent->SetCurrentHP(NewHealth);
 	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
+	StatusComponent->SetCurrentHP(NewHealth);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
 	return ScaledDamage;
@@ -883,11 +887,11 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
+	UE_LOG(LogTemp,Warning,TEXT("Authority: %d, LocallyControlled: %d"),HasAuthority(),IsLocallyControlled());
 	//Set off Collision and change state to dead
 	CurrentCharacterState=ECharacterState::Dead;
-	OnRep_CurrentCharacterState();
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	AController* MyController = GetController();
+	//Set off Overlap event
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	//Raise KillCount of DamageCauser
 	if (LastDamageCauser)
 	{
@@ -900,11 +904,17 @@ void ABaseCharacter::OnDeath()
 		}
 	}
 	
-	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
 	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 	{
 		CharacterController->NotifyPawnDeath();
 	}
+	float MontageLength=Anim.DeathMontage->GetPlayLength();
+	FTimerHandle DestroyTimerHandle;
+	GetWorldTimerManager().SetTimer(
+		DestroyTimerHandle,
+		[this](){
+			Destroy();
+		},MontageLength,false);
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
@@ -980,7 +990,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 				const int32 n=Type->NumEnums();
 				AttackCollisions.SetNum(n-2);
 				HitBoxList.SetNum(n-2);
-				for (int32 i=0;i<n-1;i++)
+				for (int32 i=0;i<n-2;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
 					//UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
