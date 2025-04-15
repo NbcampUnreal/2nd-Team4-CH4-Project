@@ -61,7 +61,6 @@ void ATrainingGameMode::SpawnPlayer(AController* NewPlayer)
 		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
 		{
 			FRotator CR = PC->GetControlRotation();
-			CR.Yaw += 360.f;
 			PC->SetControlRotation(CR);
 		}
 	}
