@@ -48,8 +48,14 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* BackButton;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class UCheckPopupWidget> CheckPopupClass;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAcess = "true"))
 	TSubclassOf<class UConfirmPopupWidget> ConfirmPopupClass;
+
+	UPROPERTY()
+	class UCheckPopupWidget* AdventureModePopup;
 
 	UPROPERTY()
 	class UConfirmPopupWidget* TrainingRoomPopup;
