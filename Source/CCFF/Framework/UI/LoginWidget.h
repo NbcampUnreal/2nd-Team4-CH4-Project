@@ -15,6 +15,7 @@ public:
 #pragma region Constructor & Overrides
 	ULoginWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void NativeConstruct() override;
+	FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent);
 #pragma endregion
 
 	UPROPERTY(BlueprintAssignable)
@@ -61,6 +62,9 @@ protected:
 
 	UFUNCTION()
 	void HandleExitGameCanceled();
+
+	UFUNCTION()
+	void HandleErrorPopupClosed();
 #pragma endregion
 
 private:
