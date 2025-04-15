@@ -32,6 +32,10 @@ void ABasePreviewPawn::InitializePreview(FName CharacterID)
 		if (USkeletalMesh* Mesh = CustomizationComponent->GetBaseMeshByCharacterID(CharacterID))
 		{
 			PreviewMesh->SetSkeletalMesh(Mesh);
+			if (UClass* AnimBPClass = CustomizationComponent->GetAnimBlueprintByCharacterID(CharacterID))
+			{
+				PreviewMesh->SetAnimInstanceClass(AnimBPClass);
+			}
 			OnCharacterChanged.ExecuteIfBound();
 
 			if (!IsLocallyControlled())

@@ -30,6 +30,8 @@ public:
 	// Character base mesh accessor
 	UFUNCTION(BlueprintCallable)
 	USkeletalMesh* GetBaseMeshByCharacterID(FName CharacterID) const;
+	UFUNCTION(BlueprintCallable)
+	UClass* GetAnimBlueprintByCharacterID(FName CharacterID) const;
 
 protected:
     virtual void BeginPlay() override;
@@ -45,5 +47,7 @@ private:
 	// Character ID ¡æ SkeletalMesh map
 	UPROPERTY(EditDefaultsOnly, Category = "Character")
 	TMap<FName, USkeletalMesh*> CharacterMeshMap;
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	TMap<FName, UClass*> CharacterAnimBPMap;
 
 };
