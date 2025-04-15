@@ -14,12 +14,7 @@ void UBaseUserWidget::PlayClickSound()
 {
 	if (ClickSound && GetWorld())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[UBaseUserWidget] PlayClickSound called"));
 		UGameplayStatics::PlaySound2D(GetWorld(), ClickSound);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[UBaseUserWidget] ClickSound or World is NULL"));
 	}
 }
 

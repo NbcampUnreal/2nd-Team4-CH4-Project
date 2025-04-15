@@ -30,10 +30,11 @@ void ALobbyPlayerController::BeginPlay()
 
 	HandleLocalSetup();
 
-	UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
-	if (GameInstance)
+	UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (CCFFGameInstance)
 	{
-		ServerSetNickname(GameInstance->GetNickname());
+		ServerSetNickname(CCFFGameInstance->GetNickname());
+		CCFFGameInstance->PlayBGMForCurrentMap();
 	}
 
 	if (CharacterSelectWidgetClass && !CharacterSelectWidgetInstance)
