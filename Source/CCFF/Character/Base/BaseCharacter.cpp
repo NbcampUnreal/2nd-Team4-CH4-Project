@@ -37,7 +37,7 @@
 ABaseCharacter::ABaseCharacter():
 	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
-	bCanAttack(true),
+	//bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
 	LastMoveInputTime(0.f),
@@ -193,7 +193,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ThisClass,CurrentCharacterState);
 	DOREPLIFETIME(ThisClass,CurrentResistanceState);
-	DOREPLIFETIME(ThisClass,bCanAttack);
+	//DOREPLIFETIME(ThisClass,bCanAttack);
 }
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
@@ -275,7 +275,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	CurrentCharacterState = ECharacterState::Normal;
+	//CurrentCharacterState = ECharacterState::Normal;
 }
 
 void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
@@ -295,13 +295,13 @@ void ABaseCharacter::ServerRPCAttack_Implementation(const int32 Num, float InSta
 	// Consider ServerDelay Timer (Can Attack)
 	if (KINDA_SMALL_NUMBER<MontagePlayTime-ServerDelay)
 	{
-		bCanAttack=false;
-		OnRep_CanAttack();
+		CurrentCharacterState=ECharacterState::Attack;
+		OnRep_CurrentCharacterState();
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(Handle,FTimerDelegate::CreateLambda([&]()
 		{
-			bCanAttack=true;
-			OnRep_CanAttack();
+			CurrentCharacterState=ECharacterState::Normal;
+			OnRep_CurrentCharacterState();
 		}),
 		MontagePlayTime-ServerDelay,false,-1.f);
 	}
@@ -357,9 +357,10 @@ void ABaseCharacter::ExecuteBufferedAction()
 	InputBuffer=FBufferedInput();
 }
 
-void ABaseCharacter::OnRep_CanAttack()
+void ABaseCharacter::OnRep_CurrentCharacterState()
 {
-	if (bCanAttack==true)
+	UE_LOG(LogTemp,Warning,TEXT("CurState: %d"),CurrentCharacterState);
+	if (CurrentCharacterState==ECharacterState::Normal)
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
@@ -370,18 +371,23 @@ void ABaseCharacter::OnRep_CanAttack()
 	}
 }
 
+void ABaseCharacter::OnRep_CurrentResistanceState()
+{
+	
+}
+
 void ABaseCharacter::ExecuteAttackByIndex(const int32 Index)
 {
-	if (bCanAttack&&GetCharacterMovement()->IsFalling()==false)
+	if (CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)
 	{
 		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
 		ServerRPCAttack(Index,GetWorld()->GetGameState()->GetServerWorldTimeSeconds());
 		// Play Montage in Owning Client
 		if (HasAuthority()==false&&IsLocallyControlled()==true)
 		{
-			//bIsCancelable = Index<=2;
-			bCanAttack=false;
-			OnRep_CanAttack();
+			CurrentCharacterState=ECharacterState::Attack;
+			// bCanAttack=false;
+			OnRep_CurrentCharacterState();
 			PlayAttackMontage(Index);
 		}
 	}
