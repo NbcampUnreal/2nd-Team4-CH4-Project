@@ -122,11 +122,11 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Rotate Camera properly
-	// if (IsValid(CameraBoom))
-	// {
-	// 	const float CameraRotation=GetActorRotation().Yaw;
-	// 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
-	// }
+	 if (IsValid(CameraBoom))
+	 {
+	 	const float CameraRotation=GetActorRotation().Yaw;
+	 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	 }
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -394,8 +394,11 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 		break;
 	case ECharacterState::Hitted:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
-		PlayHittedMontage();
+		PlayActionMontage(ECharacterState::Hitted,0);
 		break;
+	case ECharacterState::Dead:
+		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		PlayActionMontage(ECharacterState::Dead,0);
 	default:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
@@ -472,17 +475,6 @@ void ABaseCharacter::Attack7(const FInputActionValue& Value)
 void ABaseCharacter::Attack8(const FInputActionValue& Value)
 {
 	ExecuteActionByIndex(ECharacterState::Attack,7);
-}
-
-void ABaseCharacter::PlayHittedMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.HittedMontage)
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.HittedMontage);
-	}
 }
 
 void ABaseCharacter::Guard()
@@ -891,33 +883,24 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
+	//Set off Collision and change state to dead
+	CurrentCharacterState=ECharacterState::Dead;
+	OnRep_CurrentCharacterState();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AController* MyController = GetController();
 	//Raise KillCount of DamageCauser
-	ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
-	AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
-	if (IsValid(DamageCauserPS))
+	if (LastDamageCauser)
 	{
-		const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
-		DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
+		AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
+		if (IsValid(DamageCauserPS))
+		{
+			const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
+			DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		}
 	}
-	//Play Dead Animation
-	UAnimInstance* AnimInstance=GetMesh()->GetAnimInstance();
-    if (IsValid(AnimInstance)&&Anim.DeathMontage)
-    {
-    	float DeathAnimLength=Anim.DeathMontage->GetPlayLength();
-    	UE_LOG(LogTemp,Warning,TEXT("OnDeath call Play Montage"));
-    	AnimInstance->Montage_Play(Anim.DeathMontage);
-    	FTimerHandle DestroyTimerHandle;
-    	//ClientRPCPlayActionMontage(ECharacterState::Dead,0,this);
-    	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
-    	{
-    		Destroy();
-    	},DeathAnimLength+3.0f,false);
-    }
-    else
-    {
-    	Destroy();
-    }
-
+	
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
 	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 	{
 		CharacterController->NotifyPawnDeath();
