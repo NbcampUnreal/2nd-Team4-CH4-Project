@@ -1,4 +1,5 @@
-#include "Framework/UI/SelectModeWidget.h"
+﻿#include "Framework/UI/SelectModeWidget.h"
+#include "Framework/UI/CheckPopupWidget.h"
 #include "Framework/UI/ConfirmPopupWidget.h"
 #include "Framework/UI/ArenaModeWidget.h"
 #include "Framework/HUD/MainMenuHUD.h"
@@ -32,7 +33,18 @@ void USelectModeWidget::NativeConstruct()
 
 void USelectModeWidget::OnAdventureClicked()
 {
-	// Todo: 
+	if (!CheckPopupClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SelectModeWidget] OnAdventureClicked : CheckPopupClass is NULL!"));
+		return;
+	}
+
+	AdventureModePopup = CreateWidget<UCheckPopupWidget>(GetWorld(), CheckPopupClass);
+	if (AdventureModePopup)
+	{
+		AdventureModePopup->SetMessage(FText::FromString(TEXT("미개발 구역")));
+		AdventureModePopup->AddToViewport();
+	}
 }
 
 void USelectModeWidget::OnArenaClicked()
