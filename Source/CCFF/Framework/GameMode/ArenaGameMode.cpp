@@ -12,7 +12,6 @@
 #include "Camera/CameraActor.h"
 #include "GameFramework/PlayerStart.h"
 #include "Framework/Controller/CharacterController.h"
-#include "Character/Base/BaseCharacter.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
@@ -64,11 +63,11 @@ void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
 	{
 		NewPlayer->Possess(NewPawn);
 
-		if (APlayerController* PlayerController = Cast<APlayerController>(NewPlayer))
+		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
 		{
-			FRotator CharacterRotation = PlayerController->GetControlRotation();
-			CharacterRotation.Yaw += 360.0f;
-			PlayerController->SetControlRotation(CharacterRotation);
+			FRotator CR = PC->GetControlRotation();
+			CR.Yaw += 90.f;
+			PC->SetControlRotation(CR);
 		}
 	}
 	else
@@ -291,37 +290,21 @@ void AArenaGameMode::UpdateCountdown()
 // TODO :: Player Respawn
 void AArenaGameMode::RespawnPlayer(AController* Controller)
 {
-	UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++ InArenaGameMode Call RespawnPlayer!"));
-	if (!Controller) return;
-
-	TArray<AActor*> PlayerStarts;
-	UGameplayStatics::GetAllActorsOfClass(
-		GetWorld(),
-		APlayerStart::StaticClass(),
-		PlayerStarts
-	);
-
-	if (PlayerStarts.Num() > 0)
+	if (Controller)
 	{
-		int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
-		if (APlayerStart* SpawnPoint = Cast<APlayerStart>(PlayerStarts[Index]))
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
+		if (PlayerStarts.Num() > 0)
 		{
-			RestartPlayerAtPlayerStart(Controller, SpawnPoint);
+			int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
+			APlayerStart* SpawnPoint = Cast<APlayerStart>(PlayerStarts[Index]);
+			if (SpawnPoint)
+			{
+				RestartPlayerAtPlayerStart(Controller, SpawnPoint);
+				return;
+			}
 		}
-	}
-	else
-	{
 		RestartPlayer(Controller);
-	}
-
-	if (ABaseCharacter* BaseCharacter = Cast<ABaseCharacter>(Controller->GetPawn()))
-	{
-		BaseCharacter->ResetDying();
-
-		if (AArenaPlayerState* ArenaPlayerState = Controller->GetPlayerState<AArenaPlayerState>())
-		{
-			float MaxHP = ArenaPlayerState->GetMaxHP();
-		}
 	}
 }
 

@@ -38,9 +38,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
 	FORCEINLINE void SetSelectedCharacterID(FName CharacterID) { SelectedCharacterID = CharacterID; }
 
-	FORCEINLINE float GetMaxHP() const { return MaxHP; }
-	FORCEINLINE void SetMaxHP(float HP) { MaxHP = HP; }
-
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddDamage(float Amount) { TotalDamage += Amount; }
 
@@ -67,8 +64,5 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	FName SelectedCharacterID;
-
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
-	float MaxHP;
 
 };
