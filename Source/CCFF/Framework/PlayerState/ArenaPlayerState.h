@@ -33,6 +33,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
 	FORCEINLINE void SetKillCount(int Kill) { KillCount = Kill; }
 
+	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	FORCEINLINE FName GetSelectedCharacterID() const { return SelectedCharacterID; }
+	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	FORCEINLINE void SetSelectedCharacterID(FName CharacterID) { SelectedCharacterID = CharacterID; }
+
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddDamage(float Amount) { TotalDamage += Amount; }
 
@@ -43,16 +48,21 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
+	FString PlayerNickname;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
+	int32 KillCount;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	float TotalDamage;
+
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	float SurvivalTime;
-
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|Player Statistics")
-	FString PlayerNickname;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	int32 MaxLives;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
-	int32 KillCount;
+	FName SelectedCharacterID;
+
 };

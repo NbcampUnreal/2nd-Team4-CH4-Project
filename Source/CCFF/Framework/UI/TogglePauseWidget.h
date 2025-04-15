@@ -13,6 +13,8 @@ class CCFF_API UTogglePauseWidget : public UUserWidget
 	GENERATED_BODY()
 	
 protected:
+	UTogglePauseWidget(const FObjectInitializer& ObjectInitializer);
+
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()
