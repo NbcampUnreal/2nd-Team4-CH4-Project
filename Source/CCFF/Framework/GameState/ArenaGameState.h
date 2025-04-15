@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Framework/GameState/BaseInGameState.h"
+#include "Framework/Data/ArenaSubModeType.h"
 #include "ArenaGameState.generated.h"
 
 USTRUCT(BlueprintType)
@@ -56,6 +57,9 @@ public:
 	FORCEINLINE float GetRoundStartTime() { return RoundStartTime; }
 	FORCEINLINE void SetRoundStartTime(float Time) { RoundStartTime = Time; }
 
+	FORCEINLINE EArenaSubMode GetArenaSubMode() const { return CurrentArenaSubMode; }
+	FORCEINLINE void SetArenaSubMode(EArenaSubMode NewMode) { CurrentArenaSubMode = NewMode; }
+
 	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
 	void SetRankingInfos(const TArray<FArenaRankInfo>& Infos) { RankingInfos = Infos; }
 
@@ -88,5 +92,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
 	float RoundStartTime;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
+	EArenaSubMode CurrentArenaSubMode;
 
 };

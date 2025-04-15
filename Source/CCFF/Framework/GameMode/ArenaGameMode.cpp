@@ -15,8 +15,8 @@
 #include "Items/Manager/ItemManager.h"
 
 
-AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
+AArenaGameMode::AArenaGameMode()
+	: CachedArenaSubMode(EArenaSubMode::Elimination)
 	, DamageWeight(0.4f)
 	, TimeWeight(0.2f)
 	, KillCountWeight(0.4f)
@@ -26,7 +26,7 @@ AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer)
 	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
-	RoundTime = 30.0f;  // Default
+	RoundTime = 70.0f;  // Default
 	CountdownTime = 5.0f;
 }
 
@@ -91,6 +91,13 @@ void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
+	if (CCFFGameInstance)
+	{
+		CachedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++++ Cached ArenaSubMode: %d"), (uint8)CachedArenaSubMode);
+	}
+
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
@@ -98,6 +105,7 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
+		ArenaGameState->SetArenaSubMode(CachedArenaSubMode);
 	}
 
 	TArray<AActor*> Found;
@@ -132,7 +140,7 @@ void AArenaGameMode::StartArenaRound()
 	}
 
 	// CheckCondition every second
-	GetWorld()->GetTimerManager().SetTimer(GameTimerHandle, this, &AArenaGameMode::CheckGameConditions, 1.0f, true);
+	GetWorld()->GetTimerManager().SetTimer(ConditionCheckTimerHandle, this, &AArenaGameMode::CheckGameConditions, 1.0f, true);
 
 	GetWorld()->GetTimerManager().SetTimer(ArenaTimerHandle, this, &AArenaGameMode::UpdateArenaStats, 1.0f, true);
 }
@@ -166,7 +174,10 @@ void AArenaGameMode::EndRound()
 
 void AArenaGameMode::CheckGameConditions()
 {
-	Super::CheckGameConditions();
+	if (!bHasGameStarted)
+	{
+		return;
+	}
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
@@ -177,18 +188,28 @@ void AArenaGameMode::CheckGameConditions()
 			return;
 		}
 	}
-	
-	/*if (!bIsDeathmatch)
+
+	if (CachedArenaSubMode == EArenaSubMode::Elimination)
 	{
 		int32 AliveCount = 0;
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		{
-			if (APlayerController* PC = It->Get())
+			if (APlayerController* PlayerController = It->Get())
 			{
-				if (APawn* Pawn = PC->GetPawn())
+				if (APawn* Pawn = PlayerController->GetPawn())
 				{
 					AliveCount++;
-					UE_LOG(LogTemp, Log, TEXT("AliveCount : %d"), AliveCount);
+					UE_LOG(LogTemp, Log, TEXT("CheckGameConditions [Elimination]: AliveCount = %d"), AliveCount);
+				}
+				else
+				{
+					if (AArenaPlayerState * ArenaPlayerState = Cast<AArenaPlayerState>(PlayerController->PlayerState))
+					 {
+						if (ArenaPlayerState->MaxLives > 0)
+						{
+							AliveCount++;
+						}
+					 }
 				}
 			}
 		}
@@ -198,7 +219,7 @@ void AArenaGameMode::CheckGameConditions()
 			EndRound();
 			return;
 		}
-	}*/
+	}
 }
 
 void AArenaGameMode::ResetSubsystem()

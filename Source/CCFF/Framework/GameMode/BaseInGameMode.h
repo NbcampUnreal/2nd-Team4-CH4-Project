@@ -10,7 +10,7 @@ class CCFF_API ABaseInGameMode : public AGameMode
 	GENERATED_BODY()
 
 public:
-	ABaseInGameMode(const FObjectInitializer& ObjectInitializer);
+	ABaseInGameMode();
 
 	virtual void BeginPlay() override;
 

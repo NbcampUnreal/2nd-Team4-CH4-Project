@@ -2,7 +2,7 @@
 #include "Framework/GameState/BaseInGameState.h"
 #include "Items/Manager/ItemManager.h"
 
-ABaseInGameMode::ABaseInGameMode(const FObjectInitializer & ObjectInitializer) : Super(ObjectInitializer)
+ABaseInGameMode::ABaseInGameMode()
 {
 	GameStateClass = ABaseInGameState::StaticClass();
 

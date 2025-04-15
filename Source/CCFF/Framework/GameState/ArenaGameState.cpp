@@ -8,6 +8,7 @@ AArenaGameState::AArenaGameState()
 	: CountdownTime(0.0f)
 	, bIsFinishCountdown(false)
 	, ArenaRemainingTime(0.0f)
+	, CurrentArenaSubMode(EArenaSubMode::Elimination)
 {
 	bReplicates = true;
 
@@ -41,6 +42,7 @@ void AArenaGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AArenaGameState, ArenaRemainingTime);
 	DOREPLIFETIME(AArenaGameState, RankingInfos);
 	DOREPLIFETIME(AArenaGameState, RoundStartTime);
+	DOREPLIFETIME(AArenaGameState, CurrentArenaSubMode);
 }
 
 void AArenaGameState::OnRep_ArenaRoundProgress()

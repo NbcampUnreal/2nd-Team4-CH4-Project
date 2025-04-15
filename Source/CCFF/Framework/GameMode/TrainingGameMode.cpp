@@ -7,8 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 
 
-ATrainingGameMode::ATrainingGameMode(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+ATrainingGameMode::ATrainingGameMode()
 {
     PlayerControllerClass = ATrainingPlayerController::StaticClass();
     GameStateClass = ATrainingGameState::StaticClass();
