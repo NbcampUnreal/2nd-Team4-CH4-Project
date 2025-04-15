@@ -48,6 +48,10 @@ public:
 	ABaseCharacter();
 
 public:
+#pragma region SetFunction
+	FORCEINLINE void SetResistanceState(const EResistanceState InState) { CurrentResistanceState=InState; }
+#pragma endregion 
+	
 #pragma region Widget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 	void SetHUDWidget(UUserWidget* HUDWidget);

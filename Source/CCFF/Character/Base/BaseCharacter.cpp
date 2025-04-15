@@ -122,11 +122,11 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Rotate Camera properly
-	if (IsValid(CameraBoom))
-	{
-		const float CameraRotation=GetActorRotation().Yaw;
-		CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
-	}
+	// if (IsValid(CameraBoom))
+	// {
+	// 	const float CameraRotation=GetActorRotation().Yaw;
+	// 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	// }
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -160,7 +160,7 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	GetCharacterMovement().Max
 	// // Client (Rotating Widget to focus camera)
 	// if (IsValid(HPWidgetComponent)==true&&HasAuthority()==false)
 	// {

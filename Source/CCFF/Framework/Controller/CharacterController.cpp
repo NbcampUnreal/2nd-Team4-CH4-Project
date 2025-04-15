@@ -13,6 +13,7 @@
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Camera/CameraActor.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 ACharacterController::ACharacterController()
@@ -29,7 +30,6 @@ ACharacterController::ACharacterController()
 void ACharacterController::BeginPlay()
 {
 	Super::BeginPlay();
-
 	if (IsLocalController())
 	{
 		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
