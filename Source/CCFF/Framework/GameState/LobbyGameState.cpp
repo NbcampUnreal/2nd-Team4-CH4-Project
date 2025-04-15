@@ -3,6 +3,7 @@
 #include "Framework/GameMode/LobbyGameMode.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
+#include "Framework/UI/LobbyWidget.h"
 
 void ALobbyGameState::UpdateAllowStartGame()
 {
@@ -63,6 +64,31 @@ void ALobbyGameState::OnRep_bAllowStartGame()
 	UE_LOG(LogTemp, Log, TEXT("[LobbyGameState] OnRep_bAllowStartGame: %s"), bAllowStartGame ? TEXT("true") : TEXT("false"));
 
 	OnAllowStartGameChanged.Broadcast(bAllowStartGame);
+}
+
+void ALobbyGameState::SetArenaSubMode(EArenaSubMode NewMode)
+{
+	if (HasAuthority())
+	{
+		ArenaSubMode = NewMode;
+		OnRep_ArenaSubMode();
+	}
+}
+
+void ALobbyGameState::OnRep_ArenaSubMode()
+{
+	UE_LOG(LogTemp, Log, TEXT("[LobbyGameState] ArenaSubMode updated to: %s"), *UEnum::GetValueAsString(ArenaSubMode));
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*It))
+		{
+			if (ULobbyWidget* LobbyUI = LobbyPlayerController->GetLobbyWidget())
+			{
+				LobbyUI->UpdateArenaSubModeUI(ArenaSubMode);
+			}
+		}
+	}
 }
 
 void ALobbyGameState::OnRep_RemainingCountdownTime()
