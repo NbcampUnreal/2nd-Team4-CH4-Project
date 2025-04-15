@@ -2,10 +2,10 @@
 
 
 #include "DataLoaderSubSystem.h"
-#include "Base/CharacterStats.h"
-#include "Base/BattleModifiers.h"
-#include "Base/CharacterAnim.h"
-#include "Base/AttackCollisionData.h"
+#include "Character/DataStruct/CharacterStats.h"
+#include "Character/DataStruct/BattleModifiers.h"
+#include "Character/DataStruct/CharacterAnim.h"
+#include "Character/DataStruct/AttackCollisionData.h"
 
 UDataLoaderSubSystem::UDataLoaderSubSystem()
 {

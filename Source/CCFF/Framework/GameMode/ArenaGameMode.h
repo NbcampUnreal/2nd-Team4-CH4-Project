@@ -36,8 +36,14 @@ public:
 	void UpdatePlayerRating();
 	void UpdateCountdown();
 
+	UFUNCTION()
+	void RespawnPlayer(AController* Controller);
+
 	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Rules")
+	bool bIsDeathmatch = false;
 
 #pragma endregion
 
@@ -46,9 +52,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float DamageWeight;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float TimeWeight;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
+	float KillCountWeight;
 
 	UPROPERTY()
 	ACameraActor* SpectatorCamera = nullptr;

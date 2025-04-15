@@ -3,7 +3,7 @@
 
 #include "UW_HPWidget.h"
 #include "Character/Base/BaseCharacter.h"
-#include "StatusComponent.h"
+#include "Character/Components/StatusComponent.h"
 #include "Components/ProgressBar.h"
 
 UUW_HPWidget::UUW_HPWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)

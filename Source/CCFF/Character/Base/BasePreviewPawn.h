@@ -7,6 +7,8 @@
 class USkeletalMeshComponent;
 class UCharacterCustomizationComponent;
 
+DECLARE_DELEGATE(FOnCharacterChanged);
+
 UCLASS()
 class CCFF_API ABasePreviewPawn : public APawn
 {
@@ -18,12 +20,12 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     USceneComponent* SceneRoot;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     USkeletalMeshComponent* PreviewMesh;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     UCharacterCustomizationComponent* CustomizationComponent;
+
+	FOnCharacterChanged OnCharacterChanged;
 
     void InitializePreview(FName CharacterID);
     void InitializePreview(FName CharacterID, UObject* PresetSource);
@@ -33,6 +35,6 @@ protected:
 	virtual void BeginPlay() override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
-	FName CurrentCharacterID = NAME_None; // Default character ID
+    FName CurrentCharacterID = "Cactus"; // Default character ID
 
 };

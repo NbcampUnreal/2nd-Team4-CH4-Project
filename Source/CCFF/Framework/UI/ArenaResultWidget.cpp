@@ -1,7 +1,7 @@
 ﻿#include "Framework/UI/ArenaResultWidget.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "Framework/UI/RankRowWidget.h"
-#include "Character/Base/CharacterController.h"
+#include "Framework/Controller/CharacterController.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/Button.h"
@@ -44,7 +44,13 @@ void UArenaResultWidget::SetRankingInfos(const TArray<FArenaRankInfo>& RankingIn
 			URankRowWidget* RowWidget = CreateWidget<URankRowWidget>(GetWorld(), RowWidgetClass);
 			if (IsValid(RowWidget))
 			{
-				RowWidget->SetRankInfo(Info.Rank, Info.PlayerName, Info.TotalDamage, Info.SurvivalTime);
+				RowWidget->SetRankInfo(
+					Info.Rank,
+					Info.PlayerName,
+					Info.TotalDamage,
+					Info.SurvivalTime,
+					Info.KillCount
+				);
 				RankingListBox->AddChild(RowWidget);
 			}
 		}

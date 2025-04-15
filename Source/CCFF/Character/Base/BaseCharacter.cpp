@@ -2,36 +2,34 @@
 
 
 #include "BaseCharacter.h"
-#include "Engine/LocalPlayer.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "CharacterController.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "EnhancedInputComponent.h"
-#include "BattleComponent.h"
-#include "EngineUtils.h"
-#include "HPWidgetComponent.h"
-#include "InputActionValue.h"
-#include "StatusComponent.h"
-#include "UW_HPWidget.h"
-#include "Character/DataLoaderSubSystem.h"
-#include "Character/Base/AttackCollisionData.h"
-#include "Components/BoxComponent.h"
-#include "Items/Component/ItemInteractionComponent.h"
-#include "Character/DamageHelper.h"
-#include "Framework/UI/BaseInGameWidget.h"
-#include "GameFramework/GameStateBase.h"
-#include "Net/UnrealNetwork.h"
-#include "Framework/PlayerState/ArenaPlayerState.h"
-#include "Framework/GameState/ArenaGameState.h"
-#include "Framework/GameMode/ArenaGameMode.h"
-#include "Camera/CameraActor.h"  
 #include <Kismet/GameplayStatics.h>
-
 #include "ClearReplacementShaders.h"
-
+#include "EngineUtils.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
+#include "Camera/CameraActor.h"  
+#include "Camera/CameraComponent.h"
+#include "Character/Components/BattleComponent.h"
+#include "Character/Components/HPWidgetComponent.h"
+#include "Character/Components/StatusComponent.h"
+#include "Character/DataStruct/AttackCollisionData.h"
+#include "Character/Utilities/DamageHelper.h"
+#include "Character/Utilities/DataLoaderSubSystem.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Engine/LocalPlayer.h"
+#include "Framework/Controller/CharacterController.h"
+#include "Framework/GameMode/ArenaGameMode.h"
+#include "Framework/GameState/ArenaGameState.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
+#include "Framework/UI/BaseInGameWidget.h"
+#include "Framework/UI/Character/UW_HPWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Items/Component/ItemInteractionComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
@@ -58,7 +56,7 @@ ABaseCharacter::ABaseCharacter():
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 300.f;
+	GetCharacterMovement()->JumpZVelocity = 500.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
@@ -150,6 +148,11 @@ void ABaseCharacter::BeginPlay()
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
+
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
+	}
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -792,57 +795,31 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 void ABaseCharacter::OnDeath()
 {
 	// 사망 애니메이션 재생, 입력 차단, 리스폰 타이머 등
+	
+	if (!HasAuthority()) { return; }
 
-	if(!HasAuthority())
+	AController* MyController = GetController();
+	HandlePlayerStateOnDeath();
+	bool bRespawn = CanRespawn();
+	HandleControllerOnDeath(bRespawn);
+
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (bRespawn && ArenaGameMode && MyController)
 	{
-		return;
-	}
-
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
-	if (ArenaPlayerState && ArenaGameState)
-	{
-		float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
-		ArenaPlayerState->SetSurvivalTime(SurvivalTime);
-	}
-
-	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-	{
-		DisableInput(CC);
-		CC->UnPossess();
-
-		if (FollowCamera)
-		{
-			FollowCamera->Deactivate();
-			FollowCamera->SetActive(false);
-		}
-		if (CameraBoom)
-		{
-			CameraBoom->Deactivate();
-		}
-
-		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-		if (GM && GM->SpectatorCamera)
-		{
-			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
-			CC->ChangeState(NAME_Spectating);
-
-			FTimerHandle ForceSwitchTimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+		FTimerHandle RespawnTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [ArenaGameMode, MyController]()
+			{
+				if (ArenaGameMode && MyController)
 				{
-					AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-					if (LocalGM && LocalGM->SpectatorCamera)
+					if (ACharacterController* CC = Cast<ACharacterController>(MyController))
 					{
-						CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
-						CC->ChangeState(NAME_Spectating);
+						ArenaGameMode->RespawnPlayer(CC);
 					}
-				}, 0.1f, false);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("OnDeath: SpectatorCamera is null"));
-		}
+				}
+			}, 1.5f, false);
 	}
+
+	Destroy();
 }
 
 void ABaseCharacter::SwitchToSpectatorCamera()
@@ -1010,6 +987,98 @@ void ABaseCharacter::NotifyControllerChanged()
 			{
 				Subsystem->AddMappingContext(MyController->DefaultMappingContext, 0);
 			}
+		}
+	}
+}
+
+void ABaseCharacter::HandlePlayerStateOnDeath()
+{
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
+
+	if (ArenaPlayerState && ArenaGameState)
+	{
+		if (ArenaPlayerState->MaxLives <= 0)
+		{
+			float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+			ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. SurvivalTime si %.2f"), ArenaGameState->GetRoundStartTime());
+		}
+		else
+		{
+			ArenaPlayerState->MaxLives -= 1;
+			UE_LOG(LogTemp, Log, TEXT("Player Die.. Lives %d"), ArenaPlayerState->MaxLives);
+		}
+	}
+}
+
+bool ABaseCharacter::CanRespawn() const
+{
+	const AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	return (ArenaPlayerState && ArenaPlayerState->MaxLives > 0);
+}
+
+void ABaseCharacter::DeactivatePawnCamera()
+{
+	if (FollowCamera)
+	{
+		FollowCamera->Deactivate();
+		FollowCamera->SetActive(false);
+	}
+	if (CameraBoom)
+	{
+		CameraBoom->Deactivate();
+	}
+}
+
+void ABaseCharacter::TransitionToSpectator(ACharacterController* CC)
+{
+	AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM && GM->SpectatorCamera)
+	{
+		CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
+		CC->ChangeState(NAME_Spectating);
+
+		FTimerHandle ForceSwitchTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
+			{
+				AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+				if (LocalGM && LocalGM->SpectatorCamera)
+				{
+					CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
+					CC->ChangeState(NAME_Spectating);
+				}
+			}, 0.1f, false);
+	}
+}
+
+void ABaseCharacter::HandleControllerOnDeath(bool bRespawn)
+{
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		DisableInput(CC);
+		CC->UnPossess();
+		DeactivatePawnCamera();
+
+		if (!bRespawn)
+		{
+			TransitionToSpectator(CC);
+		}
+	}
+}
+
+void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bIsDying) { return; }
+
+	if (OtherActor && OtherActor != this)
+	{
+		if (OtherActor->ActorHasTag(FName("River")))
+		{
+			UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
+			bIsDying = true;
+			OnDeath();
 		}
 	}
 }

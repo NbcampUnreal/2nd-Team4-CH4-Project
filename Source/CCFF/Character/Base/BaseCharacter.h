@@ -3,14 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterEnum.h"
+#include "InputActionValue.h"
+#include "Character/DataStruct/CharacterAnim.h"
+#include "Character/DataStruct/CharacterStats.h"
+#include "Character/Utilities/DamageAble.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
-#include "CharacterStats.h"
-#include "CharacterAnim.h"
-#include "CharacterEnum.h"
-#include "DamageAble.h"
-#include "InputActionValue.h"
-#include "Character/Base/DamageAble.h"
 #include "BaseCharacter.generated.h"
 
 class UBoxComponent;
@@ -23,6 +22,7 @@ class UBattleComponent;
 class UItemInteractionComponent;
 struct FInputActionValue;
 struct FHitBoxData;
+class ACharacterController;
 
 USTRUCT(BlueprintType)
 struct FBufferedInput
@@ -215,6 +215,19 @@ protected:
 	void SwitchToSpectatorCamera();
 #pragma endregion
 
+protected:
+	void HandlePlayerStateOnDeath();
+	bool CanRespawn() const;
+	void HandleControllerOnDeath(bool bRespawn);
+	void DeactivatePawnCamera();
+	void TransitionToSpectator(ACharacterController* CC);
+
+	UFUNCTION()
+	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bIsDying = false;
 
 protected:
 #pragma region Meter

@@ -33,7 +33,6 @@ public:
 	
 	void SavePreset(FPresetItemsIndex PresetIndexes);
 	void LoadPreset(FName CharacterID, int32 PresetIndex);
-	/*void LoadAllPresets();*/
 
 	void InitiailizeDataTable();
 protected:
@@ -52,6 +51,7 @@ private:
 	int32 TotalFaceItemNums = 0;
 	int32 TotalShoulderItemNums = 0;
 
+	// Preset Index Synchronization for LockerRoom
 	FPresetItemsIndex AppliedPresetIndexes;
 	
 	TArray <FCharacterCustomizationPreset> CharacterCustomizationPresets;

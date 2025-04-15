@@ -64,6 +64,7 @@ void ULockerRoomWidget::NativeConstruct()
 	
 	InitializeCustomizationManager();
 	InitializePreviewPawn();
+	BindToCharacterChangedEvent();
 }
 
 void ULockerRoomWidget::InitializePreviewPawn()
@@ -293,4 +294,19 @@ void ULockerRoomWidget::CountTotalItemNums()
 	TotalHeadNums = CustomizationManager->GetTotalHeadItems();
 	TotalFaceNums = CustomizationManager->GetTotalFaceItems();
 	TotalShoulderNums = CustomizationManager->GetTotalShoulderItems();
+}
+
+void ULockerRoomWidget::HandleCharacterChanged()
+{
+	UE_LOG(LogTemp, Log, TEXT("Character changed in LockerRoomWidget"));
+
+	LoadPreset(CurrentPresetIndex);
+}
+
+void ULockerRoomWidget::BindToCharacterChangedEvent()
+{
+	if (PreviewPawn)
+	{
+		PreviewPawn->OnCharacterChanged.BindUObject(this, &ULockerRoomWidget::HandleCharacterChanged);
+	}
 }

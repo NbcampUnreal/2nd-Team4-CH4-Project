@@ -1,9 +1,9 @@
 #include "Framework/UI/BaseInGameWidget.h"
 
 #include "Character/Base/BaseCharacter.h"
-#include "Character/Base/ProfileWidget.h"
-#include "Character/Base/SideBarWidget.h"
-#include "Character/Base/StatusComponent.h"
+#include "Framework/UI/Character/ProfileWidget.h"
+#include "Framework/UI/Character/SideBarWidget.h"
+#include "Character/Components/StatusComponent.h"
 #include "Components/TextBlock.h"
 
 

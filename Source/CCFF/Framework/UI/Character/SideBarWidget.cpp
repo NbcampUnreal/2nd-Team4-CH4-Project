@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Character/Base/SideBarWidget.h"
+#include "Framework/UI/Character/SideBarWidget.h"
 #include "Components/ProgressBar.h"
 
 USideBarWidget::USideBarWidget(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)

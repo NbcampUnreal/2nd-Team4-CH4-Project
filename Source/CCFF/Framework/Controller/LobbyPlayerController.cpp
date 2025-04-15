@@ -208,6 +208,11 @@ void ALobbyPlayerController::HandleCharacterSelectedFromUI(FName CharacterID)
 {
 	ServerSetCharacterID(CharacterID);
 
+	if (UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>())
+	{
+		CCFFGameInstance->SetSelectedCharacterID(CharacterID);
+	}
+
 	int32 Index = CharacterIDList.IndexOfByKey(CharacterID);
 	if (Index != INDEX_NONE)
 	{
@@ -232,6 +237,7 @@ void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Valu
 
 	const FName SelectedID = CharacterIDList[CurrentCharacterIndex];
 	ServerSetCharacterID(SelectedID);
+
 }
 
 void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
@@ -261,6 +267,8 @@ void ALobbyPlayerController::ServerSetCharacterID_Implementation(FName Character
 	{
 		LobbyPlayerState->SetCharacterID(CharacterID);
 	}
+
+	CurrentPresetIndex = -1;
 }
 
 void ALobbyPlayerController::OnRep_PlayerState()

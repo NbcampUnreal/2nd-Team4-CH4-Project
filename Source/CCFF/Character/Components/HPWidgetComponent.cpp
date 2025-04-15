@@ -2,7 +2,7 @@
 
 
 #include "HPWidgetComponent.h"
-#include "UW_HPWidget.h"
+#include "Framework/UI/Character/UW_HPWidget.h"
 
 
 // Sets default values for this component's properties
