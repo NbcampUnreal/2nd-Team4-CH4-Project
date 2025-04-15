@@ -50,10 +50,11 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
 	void ServerSetCharacterID(FName InID);
 
-	bool bIsPause;
-
 	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
 	void ClientSpectateCamera(ACameraActor* SpectatorCam);
+
+	UFUNCTION(BlueprintCallable, Category = "Arena|Death")
+	void NotifyPawnDeath();
 
 protected:
 	virtual void BeginPlay() override;
@@ -70,6 +71,9 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* PauseWidget;
+
+public:
+	bool bIsPause;
 #pragma endregion
 
 };

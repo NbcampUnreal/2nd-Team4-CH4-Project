@@ -23,10 +23,12 @@ void ABaseInGameMode::ResetSubsystem()
 	UItemManager* ItemManager = GetGameInstance()->GetSubsystem<UItemManager>();
 	if (ItemManager)
 	{
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++[BaseInGameMode initialize ResetSubsystem]"));
 		ItemManager->InitializeItemManager();
 	}
 	else
 	{
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++[BaseInGameMode not initialized ResetSubsystem]"));
 		UE_LOG(LogTemp, Error, TEXT("ItemManager is not initialized!"));
 	}
 }
@@ -60,6 +62,8 @@ void ABaseInGameMode::EndRound()
 	{
 		BGameState->RoundProgress = ERoundProgress::Ended;
 	}
+
+	ResetSubsystem();
 }
 
 void ABaseInGameMode::CheckGameConditions()

@@ -28,7 +28,7 @@ public:
 
 protected:
 	UFUNCTION()
-	void ResetSubsystem();
+	virtual void ResetSubsystem();
 
 	FTimerHandle GameTimerHandle;
 	FString MyClassName;

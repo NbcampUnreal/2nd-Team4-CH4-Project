@@ -12,6 +12,7 @@
 #include "Camera/CameraActor.h"
 #include "GameFramework/PlayerStart.h"
 #include "Framework/Controller/CharacterController.h"
+#include "Items/Manager/ItemManager.h"
 
 
 AArenaGameMode::AArenaGameMode(const FObjectInitializer& ObjectInitializer) 
@@ -200,6 +201,11 @@ void AArenaGameMode::CheckGameConditions()
 	}*/
 }
 
+void AArenaGameMode::ResetSubsystem()
+{
+	Super::ResetSubsystem();
+}
+
 void AArenaGameMode::UpdateArenaStats()
 {
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
@@ -266,6 +272,19 @@ void AArenaGameMode::UpdatePlayerRating()
 
 void AArenaGameMode::UpdateCountdown()
 {
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	{
+		if (APlayerController* PlayerController = It->Get())
+		{
+			if (PlayerController && SpectatorCamera)
+			{
+				PlayerController->UnPossess();
+				PlayerController->ChangeState(NAME_Spectating);
+				PlayerController->SetViewTargetWithBlend(SpectatorCamera, 0.f);
+			}
+		}
+	}
+
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (!IsValid(ArenaGameState))
 	{
@@ -286,24 +305,11 @@ void AArenaGameMode::UpdateCountdown()
 	ArenaGameState->CountdownTime = CountdownTime;
 }
 
-// TODO :: Player Respawn
 void AArenaGameMode::RespawnPlayer(AController* Controller)
 {
 	if (Controller)
 	{
-		TArray<AActor*> PlayerStarts;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
-		if (PlayerStarts.Num() > 0)
-		{
-			int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
-			APlayerStart* SpawnPoint = Cast<APlayerStart>(PlayerStarts[Index]);
-			if (SpawnPoint)
-			{
-				RestartPlayerAtPlayerStart(Controller, SpawnPoint);
-				return;
-			}
-		}
-		RestartPlayer(Controller);
+		SpawnPlayer(Controller);
 	}
 }
 
