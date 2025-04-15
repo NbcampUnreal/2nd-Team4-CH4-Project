@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "Framework/UI/BaseUserWidget.h"
 #include "TogglePauseWidget.generated.h"
 
 class UButton;
 class UConfirmPopupWidget;
 
 UCLASS()
-class CCFF_API UTogglePauseWidget : public UUserWidget
+class CCFF_API UTogglePauseWidget : public UBaseUserWidget
 {
 	GENERATED_BODY()
 	
