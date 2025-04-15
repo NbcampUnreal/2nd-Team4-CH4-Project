@@ -30,11 +30,13 @@ struct FBufferedInput
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	ECharacterState InputState;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
 	EAttackType InputAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
 	float BufferedTime;
-	FBufferedInput(): InputAttack(EAttackType::None), BufferedTime(0.f) {}
-	FBufferedInput(EAttackType InAction, const float InTime): InputAttack(InAction), BufferedTime(InTime) {}
+	FBufferedInput(): InputState(ECharacterState::Normal),InputAttack(EAttackType::None), BufferedTime(0.f) {}
+	FBufferedInput(ECharacterState InState, EAttackType InAction, const float InTime): InputState(InState), InputAttack(InAction), BufferedTime(InTime) {}
 };
 
 UCLASS()
@@ -126,14 +128,27 @@ protected:
 	void ServerRPCSetMaxWalkSpeed(const float Value);
 	
 #pragma endregion
+
+#pragma region UtilityActions
+	UFUNCTION()
+	void Guard();
+	UFUNCTION()
+	void StopGuard();
+	UFUNCTION()
+	void Dodge();
+	UFUNCTION()
+	void Burst();
+	UFUNCTION()
+	void PlayActionMontage(ECharacterState InState, const int32 Num);
+#pragma endregion
 	
 #pragma region AttackFunctions
 	UFUNCTION(Server,Reliable,WithValidation)
-	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
+	void ServerRPCAction(ECharacterState InState, float InStartAttackTime, const int32 Num); //if not Attack action assign num=8
 	UFUNCTION(Client,Unreliable)
-	void ClientRPCPlayAttackMontage(const int32 Num, ABaseCharacter* InTargetCharacter);
+	void ClientRPCPlayActionMontage(ECharacterState InState, const int32 Num, ABaseCharacter* InTargetCharacter);
 	UFUNCTION()
-	void PlayAttackMontage(const int32& Num);
+	void PlayHittedMontage();
 	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
 	UFUNCTION()
@@ -151,9 +166,10 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentResistanceState();
 	UFUNCTION()
-	void ExecuteAttackByIndex(const int32 Index);
+	void ExecuteActionByIndex(ECharacterState InState, const int32 Index);
 	UFUNCTION()
 	void ExecuteBufferedAction();
+	
 #pragma endregion
 
 #pragma region Buffer
@@ -311,7 +327,9 @@ protected:
 	float LastMoveInputTime;
 	float DoubleTapThreshold;
 	uint8 bIsDoubleTab;
-	
+
+	UPROPERTY()
+	AActor* LastDamageCauser;
 #pragma endregion
 	
 	
