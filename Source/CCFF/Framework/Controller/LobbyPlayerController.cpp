@@ -376,6 +376,21 @@ void ALobbyPlayerController::RequestEquipPreset(FCustomizationPreset Preset)
 	}
 }
 
+void ALobbyPlayerController::ServerRequestChangeArenaSubMode_Implementation(EArenaSubMode NewMode)
+{
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (LobbyPlayerState)
+	{
+		if (LobbyPlayerState->GetIsHost())
+		{
+			ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
+			if (LobbyGameState)
+			{
+				LobbyGameState->SetArenaSubMode(NewMode);
+			}
+		}
+	}
+}
 
 void ALobbyPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
