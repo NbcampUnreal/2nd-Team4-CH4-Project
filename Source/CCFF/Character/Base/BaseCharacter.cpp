@@ -122,11 +122,11 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Rotate Camera properly
-	// if (IsValid(CameraBoom))
-	// {
-	// 	const float CameraRotation=GetActorRotation().Yaw;
-	// 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
-	// }
+	 if (IsValid(CameraBoom))
+	 {
+	 	const float CameraRotation=GetActorRotation().Yaw;
+	 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	 }
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -290,7 +290,7 @@ void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 
 void ABaseCharacter::ServerRPCAction_Implementation(ECharacterState InState, float InStartAttackTime, const int32 Num)
 {
-	UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d !!"),Num);
+	UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d (State: %d) !!"),Num,InState);
 	float MontagePlayTime=0.f;
 	ECharacterState TempState=ECharacterState::Normal;
 	
@@ -385,7 +385,7 @@ void ABaseCharacter::ExecuteBufferedAction()
 
 void ABaseCharacter::OnRep_CurrentCharacterState()
 {
-	UE_LOG(LogTemp,Warning,TEXT("CurState: %d"),CurrentCharacterState);
+	UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s"),CurrentCharacterState,*GetName());
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
@@ -394,8 +394,11 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 		break;
 	case ECharacterState::Hitted:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
-		PlayHittedMontage();
+		PlayActionMontage(ECharacterState::Hitted,0);
 		break;
+	case ECharacterState::Dead:
+		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		PlayActionMontage(ECharacterState::Dead,0);
 	default:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
@@ -474,17 +477,6 @@ void ABaseCharacter::Attack8(const FInputActionValue& Value)
 	ExecuteActionByIndex(ECharacterState::Attack,7);
 }
 
-void ABaseCharacter::PlayHittedMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.HittedMontage)
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.HittedMontage);
-	}
-}
-
 void ABaseCharacter::Guard()
 {
 	UE_LOG(LogTemp,Warning,TEXT("Guard Start"));
@@ -535,13 +527,18 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		UE_LOG(LogTemp,Warning,TEXT("Death called"));
 		PlayMontage=Anim.DeathMontage;
 		break;
+	case ECharacterState::Hitted:
+		PlayMontage=Anim.HittedMontage;
 	default:
 		break;
 	}
+	
 	//둘다 유효
 	if (AnimInstance&&PlayMontage)
 	{
+		UE_LOG(LogTemp,Warning,TEXT("Montage: %s"),*GetNameSafe(PlayMontage));
 		//몽타주 실행
+		AnimInstance->Montage_Stop(0.2f);
 		AnimInstance->Montage_Play(PlayMontage);
 	}
 	else if (!PlayMontage&&InState==ECharacterState::Normal)
@@ -639,9 +636,10 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 	return ScaledDamage;
 }
 
-void ABaseCharacter::TakeHitstun(int32 Hitstun)
+void ABaseCharacter::
+TakeHitstun(int32 Hitstun)
 {
-	if (Hitstun == 0)
+	if (Hitstun == 0||StatusComponent->GetCurrentHP()<=0)
 	{
 		return;
 	}
@@ -663,13 +661,17 @@ void ABaseCharacter::TakeHitstun(int32 Hitstun)
 
 void ABaseCharacter::EndHitstun()
 {
-	CurrentCharacterState = ECharacterState::Normal;
-	BattleComponent->ResetCombo();
+	//UE_LOG(LogTemp,Warning,TEXT("EndHitstun, CurrentHP: %.1f, Name: %s, State: %d"),StatusComponent->GetCurrentHP(),*GetName(),CurrentCharacterState);
+	if (CurrentCharacterState!=ECharacterState::Dead)
+	{
+		CurrentCharacterState = ECharacterState::Normal;
+		BattleComponent->ResetCombo();	
+	}
 }
 
 void ABaseCharacter::TakeHitlag(int32 Hitlag)
 {
-	if (Hitlag == 0)
+	if (Hitlag == 0||StatusComponent->GetCurrentHP()<=0)
 	{
 		return;
 	}
@@ -689,6 +691,7 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 
 void ABaseCharacter::EndHitlag()
 {
+	//UE_LOG(LogTemp,Warning,TEXT("EndHitlag, CurrentHP: %.1f, Name: %s"),StatusComponent->GetCurrentHP(),*GetName());
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->SetMovementMode(MOVE_Walking);
@@ -699,7 +702,7 @@ void ABaseCharacter::EndHitlag()
 
 void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce)
 {
-	if (Hitlag == 0)
+	if (Hitlag == 0||StatusComponent->GetCurrentHP()<=0)
 	{
 		TakeKnockback(KnockbackAngle, KnockbackForce);
 		return;
@@ -745,7 +748,8 @@ void ABaseCharacter::TakeBlockstun(int32 Blockstun)
 
 void ABaseCharacter::EndBlockstun()
 {
-	if (CurrentCharacterState == ECharacterState::Blockstun)
+	//UE_LOG(LogTemp,Warning,TEXT("EndHitlag, CurrentHP: %.1f, Name: %s"),StatusComponent->GetCurrentHP(),*GetName());
+	if (CurrentCharacterState == ECharacterState::Blockstun&&CurrentCharacterState!=ECharacterState::Dead)
 	{
 		CurrentCharacterState = ECharacterState::Normal;
 	}
@@ -842,7 +846,7 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	TakeHitstun(Hitstun);
 	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 	float DealtDamage = TakeNormalDamage(Damage, HitData.MinimumDamage);
-
+	
 	Attacker->OnAttackHit(DealtDamage);
 	return;
 }
@@ -891,52 +895,47 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
+	//Set off Collision and change state to dead
+	CurrentCharacterState=ECharacterState::Dead;
+	OnRep_CurrentCharacterState();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AController* MyController = GetController();
 	HandlePlayerStateOnDeath();
 	bool bRespawn = CanRespawn();
 	HandleControllerOnDeath(bRespawn);
 	//Raise KillCount of DamageCauser
-	ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
-	AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
-	if (IsValid(DamageCauserPS))
+	if (LastDamageCauser)
 	{
-		const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
-		DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
+		AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
+		if (IsValid(DamageCauserPS))
+		{
+			const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
+			DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		}
 	}
-	//Play Dead Animation
-	UAnimInstance* AnimInstance=GetMesh()->GetAnimInstance();
-    if (IsValid(AnimInstance)&&Anim.DeathMontage)
-    {
-    	float DeathAnimLength=Anim.DeathMontage->GetPlayLength();
-    	UE_LOG(LogTemp,Warning,TEXT("OnDeath call Play Montage"));
-    	AnimInstance->Montage_Play(Anim.DeathMontage);
-    	FTimerHandle DestroyTimerHandle;
-    	//ClientRPCPlayActionMontage(ECharacterState::Dead,0,this);
-    	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
-    	{
-    		Destroy();
-    	},DeathAnimLength+3.0f,false);
-    }
-    else
-    {
-    	Destroy();
-    }
 	
 	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
 	if (bRespawn && ArenaGameMode && MyController)
 	{
 		FTimerHandle RespawnTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [ArenaGameMode, MyController]()
+		{
+			if (ArenaGameMode && MyController)
 			{
-				if (ArenaGameMode && MyController)
+				if (ACharacterController* CC = Cast<ACharacterController>(MyController))
 				{
-					if (ACharacterController* CC = Cast<ACharacterController>(MyController))
-					{
-						ArenaGameMode->RespawnPlayer(CC);
-					}
+					ArenaGameMode->RespawnPlayer(CC);
 				}
-			}, 1.5f, false);
+			}
+		}, 1.5f, false);
 	}
+	//Destroy Actor
+	FTimerHandle DestroyTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
+	 {
+		 Destroy();
+	 },3.0f,false);
 }
 
 void ABaseCharacter::SwitchToSpectatorCamera()

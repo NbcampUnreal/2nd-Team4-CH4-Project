@@ -152,8 +152,6 @@ protected:
 	UFUNCTION(Client,Unreliable)
 	void ClientRPCPlayActionMontage(ECharacterState InState, const int32 Num, ABaseCharacter* InTargetCharacter);
 	UFUNCTION()
-	void PlayHittedMontage();
-	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
 	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
