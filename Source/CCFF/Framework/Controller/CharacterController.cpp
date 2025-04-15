@@ -205,55 +205,6 @@ void ACharacterController::NotifyPawnDeath()
 			}
 		}
 	}
-
-
-	/*if (ArenaPlayerState->MaxLives > 0)
-	{
-		ArenaPlayerState->MaxLives--;
-
-		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			if (ACameraActor* SpectatorCam = ArenaGameMode->GetSpectatorCamera())
-			{
-				ClientSpectateCamera(SpectatorCam);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: SpectatorCamera not invaild"));
-			}
-		}
-
-		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
-			{
-				if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-				{
-					ArenaGameMode->RespawnPlayer(this);
-				}
-			}, 5.0f, false);
-	}
-	else
-	{
-		if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
-		{
-			float CurrentRoundTime = ArenaGameState->GetRemainingTime();
-			float TotalRountTime = ArenaGameState->GetRoundStartTime();
-			ArenaPlayerState->SetSurvivalTime(TotalRountTime - CurrentRoundTime);
-			UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: Survivla time is %.2f"), CurrentRoundTime);
-		}
-
-		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			if (ACameraActor* SpectatorCam = ArenaGameMode->GetSpectatorCamera())
-			{
-				ClientSpectateCamera(SpectatorCam);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: SpectatorCamera not invaild"));
-			}
-		}
-	}*/
 }
 
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
