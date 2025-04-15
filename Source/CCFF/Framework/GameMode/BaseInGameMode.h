@@ -27,9 +27,10 @@ public:
 	float RoundTime;
 
 protected:
+	UFUNCTION()
+	void ResetSubsystem();
+
 	FTimerHandle GameTimerHandle;
 	FString MyClassName;
-
-private:
-	void ResetSubsystem();
+	
 };
