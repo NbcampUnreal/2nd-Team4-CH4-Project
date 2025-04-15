@@ -7,7 +7,7 @@
 #include "CharacterController.generated.h"
 
 /**
- * 
+ *
  */
 class UInputMappingContext;
 class UInputAction;
@@ -20,7 +20,7 @@ class CCFF_API ACharacterController : public APlayerController
 
 public:
 	ACharacterController();
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -33,15 +33,7 @@ public:
 	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UInputAction>> AttackAction;
-	/** Guard Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* GuardAction;
-	/** Dodge Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* DodgeAction;
-	/** Burst Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* BurstAction;
+
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
