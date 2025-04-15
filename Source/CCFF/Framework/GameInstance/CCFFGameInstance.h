@@ -28,6 +28,9 @@ public:
 	FORCEINLINE FString GetNickname() const { return PlayerMeta.Nickname; }
 	void SetNickname(const FString& NewNickname);
 
+	FORCEINLINE FName GetSelectedCharacterID() const { return PlayerMeta.SelectedCharacterID; }
+	void SetSelectedCharacterID(FName NewID);
+
 	FORCEINLINE const FPlayerMetaData& GetPlayerMeta() const { return PlayerMeta; }
 	void SetPlayerMeta(const FPlayerMetaData& NewPlayerMeta);
 
