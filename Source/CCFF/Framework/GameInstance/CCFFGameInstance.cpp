@@ -113,6 +113,11 @@ void UCCFFGameInstance::SetNickname(const FString& NewNickname)
 	PlayerMeta.Nickname = NewNickname;
 }
 
+void UCCFFGameInstance::SetSelectedCharacterID(FName NewID)
+{
+	PlayerMeta.SelectedCharacterID = NewID;
+}
+
 void UCCFFGameInstance::SetPlayerMeta(const FPlayerMetaData& NewPlayerMeta)
 {
 	PlayerMeta = NewPlayerMeta;
