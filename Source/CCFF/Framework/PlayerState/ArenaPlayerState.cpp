@@ -6,7 +6,8 @@ AArenaPlayerState::AArenaPlayerState()
 	  KillCount(0),
 	  TotalDamage(0.0f),
 	  SurvivalTime(0.0f),
-	  MaxLives(3)
+	  MaxLives(3),
+	  MaxHP(1000.0f)
 {
 	bReplicates = true;
 }
@@ -21,4 +22,5 @@ void AArenaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AArenaPlayerState, MaxLives);
 	DOREPLIFETIME(AArenaPlayerState, KillCount);
 	DOREPLIFETIME(AArenaPlayerState, SelectedCharacterID);
+	DOREPLIFETIME(AArenaPlayerState, MaxHP);
 }
