@@ -147,7 +147,9 @@ protected:
 	UFUNCTION()
 	void Attack8(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnRep_CanAttack();
+	void OnRep_CurrentCharacterState();
+	UFUNCTION()
+	void OnRep_CurrentResistanceState();
 	UFUNCTION()
 	void ExecuteAttackByIndex(const int32 Index);
 	UFUNCTION()
@@ -272,10 +274,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	FString CharacterType;
 	//Character State
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentCharacterState)
 	ECharacterState CurrentCharacterState;
 	//Character Resistance State
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentResistanceState)
 	EResistanceState CurrentResistanceState;
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))
@@ -290,8 +292,8 @@ protected:
 #pragma region Cached variables
 	UPROPERTY()
 	FVector2D CurrentMoveInput;
-	UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
-	uint8 bCanAttack : 1;
+	// UPROPERTY(ReplicatedUsing=OnRep_CanAttack)
+	// uint8 bCanAttack : 1;
 	UPROPERTY()
 	FVector StoredVelocity;
 	UPROPERTY()

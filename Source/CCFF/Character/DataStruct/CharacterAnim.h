@@ -16,10 +16,18 @@ public:
 
 	// Attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Attack")
-	TArray<UAnimMontage*> AttackMontage;
+	TArray<TObjectPtr<UAnimMontage>> AttackMontage;
 
 	// Hitted
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Hitted")
-	UAnimMontage* HittedMontage;
+	TObjectPtr<UAnimMontage> HittedMontage;
+
+	//Guard
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Guard")
+	TObjectPtr<UAnimMontage> GuardMontage;
+	
+	//Dodge
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation/Dodge")
+	TObjectPtr<UAnimMontage> DodgeMontage;
 	
 };

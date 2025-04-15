@@ -208,6 +208,11 @@ void ALobbyPlayerController::HandleCharacterSelectedFromUI(FName CharacterID)
 {
 	ServerSetCharacterID(CharacterID);
 
+	if (UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>())
+	{
+		CCFFGameInstance->SetSelectedCharacterID(CharacterID);
+	}
+
 	int32 Index = CharacterIDList.IndexOfByKey(CharacterID);
 	if (Index != INDEX_NONE)
 	{

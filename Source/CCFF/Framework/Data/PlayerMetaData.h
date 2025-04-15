@@ -18,4 +18,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	FString Nickname;
 
+	UPROPERTY(BlueprintReadWrite)
+	FName SelectedCharacterID = "Cactus";
 };
