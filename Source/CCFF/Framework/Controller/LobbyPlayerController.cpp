@@ -30,10 +30,11 @@ void ALobbyPlayerController::BeginPlay()
 
 	HandleLocalSetup();
 
-	UCCFFGameInstance* GameInstance = GetGameInstance<UCCFFGameInstance>();
-	if (GameInstance)
+	UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (CCFFGameInstance)
 	{
-		ServerSetNickname(GameInstance->GetNickname());
+		ServerSetNickname(CCFFGameInstance->GetNickname());
+		CCFFGameInstance->PlayBGMForCurrentMap();
 	}
 
 	if (CharacterSelectWidgetClass && !CharacterSelectWidgetInstance)
@@ -243,18 +244,15 @@ void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Valu
 void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
 {
 	float Direction = Value.Get<float>();
-	UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Received input value: %f"), Direction);
 
 	if (Direction > 0.1f)
 	{
 		int32 IndexDirection = 1;
-		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
 		Server_SwitchPresetIndex(IndexDirection);
 	}
 	else if (Direction < -0.1f)
 	{
 		int32 IndexDirection = -1;
-		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
 		Server_SwitchPresetIndex(IndexDirection);
 	}
 }
@@ -277,7 +275,14 @@ void ALobbyPlayerController::OnRep_PlayerState()
 
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerState called. PlayerState is now valid."));
 
-	// Set Client's Customization Presets to Server PlayerState
+	if (ALobbyPlayerState* LobbyState = GetPlayerState<ALobbyPlayerState>())
+	{
+		if (ALobbyPreviewPawn* PreviewPawn = Cast<ALobbyPreviewPawn>(GetPawn()))
+		{
+			PreviewPawn->SetHostTagVisibility(LobbyState->GetIsHost());
+		}
+	}
+
 	SetCustomizationPresets();
 }
 
@@ -299,7 +304,6 @@ void ALobbyPlayerController::SetCustomizationPresets()
 			}
 		}
 	}
-
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SetCustomizationPresets called on server. Now Returning."));

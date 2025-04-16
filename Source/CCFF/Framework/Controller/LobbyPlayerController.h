@@ -100,6 +100,9 @@ protected:
 	
 
 #pragma region CHARACTER_CUSTOMIZATION
+public:
+	FORCEINLINE int32 GetCurrentPresetIndex() const { return CurrentPresetIndex; }
+
 protected:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPresetsToPlayerState(const TArray<FCharacterCustomizationPreset>& ClientPresets);

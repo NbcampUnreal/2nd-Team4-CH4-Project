@@ -55,6 +55,7 @@ public:
 #pragma region Widget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 	void SetHUDWidget(UUserWidget* HUDWidget);
+	void UpdateStockCount();
 #pragma endregion
 	
 #pragma region GetFunction
@@ -105,7 +106,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadBattleModifiers();
 #pragma endregion
-
+	
 #pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -162,13 +163,6 @@ protected:
 	void ExecuteBufferedAction();
 	
 #pragma endregion
-
-#pragma region Buffer
-	UPROPERTY()
-	FBufferedInput InputBuffer;
-	UPROPERTY()
-	float BufferThreshold;
-#pragma endregion
 	
 protected:
 #pragma region CombatEffect
@@ -218,17 +212,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath();
 
-	UFUNCTION()
-	void SwitchToSpectatorCamera();
 #pragma endregion
 
 protected:
-	void HandlePlayerStateOnDeath();
-	bool CanRespawn() const;
-	void HandleControllerOnDeath(bool bRespawn);
-	void DeactivatePawnCamera();
-	void TransitionToSpectator(ACharacterController* CC);
-
 	UFUNCTION()
 	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -257,6 +243,13 @@ protected:
 	TArray<FHitBoxData> HitBoxList;
 #pragma endregion
 
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
+#pragma endregion
+	
 #pragma region Timer
 protected:
 	// === Timers ===

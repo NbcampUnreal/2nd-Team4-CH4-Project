@@ -2,7 +2,7 @@
 #include "Framework/GameState/BaseInGameState.h"
 #include "Items/Manager/ItemManager.h"
 
-ABaseInGameMode::ABaseInGameMode(const FObjectInitializer & ObjectInitializer) : Super(ObjectInitializer)
+ABaseInGameMode::ABaseInGameMode()
 {
 	GameStateClass = ABaseInGameState::StaticClass();
 
@@ -23,10 +23,12 @@ void ABaseInGameMode::ResetSubsystem()
 	UItemManager* ItemManager = GetGameInstance()->GetSubsystem<UItemManager>();
 	if (ItemManager)
 	{
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++[BaseInGameMode initialize ResetSubsystem]"));
 		ItemManager->InitializeItemManager();
 	}
 	else
 	{
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++++++++++++++[BaseInGameMode not initialized ResetSubsystem]"));
 		UE_LOG(LogTemp, Error, TEXT("ItemManager is not initialized!"));
 	}
 }
@@ -41,13 +43,13 @@ void ABaseInGameMode::StartRound()
 		BGameState->RoundProgress = ERoundProgress::InProgress;
 	}
 
-	GetWorldTimerManager().SetTimer(
-		GameTimerHandle,
-		this,
-		&ABaseInGameMode::CheckGameConditions,
-		1.0f,
-		true
-	);
+	//GetWorldTimerManager().SetTimer(
+	//	GameTimerHandle,
+	//	this,
+	//	&ABaseInGameMode::CheckGameConditions,
+	//	1.0f,
+	//	true
+	//);
 }
 
 void ABaseInGameMode::EndRound()

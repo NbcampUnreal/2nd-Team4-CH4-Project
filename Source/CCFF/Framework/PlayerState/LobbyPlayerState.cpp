@@ -36,6 +36,7 @@ void ALobbyPlayerState::SetCharacterID(FName InID)
 
 void ALobbyPlayerState::OnRep_ReadyState()
 {
+	/*
 	APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
 	if (IsValid(PlayerController) == true)
 	{
@@ -45,10 +46,12 @@ void ALobbyPlayerState::OnRep_ReadyState()
 			PreviewPawn->SetReadyState(bIsReady);
 		}
 	}
+	*/
 }
 
 void ALobbyPlayerState::OnRep_PlayerNickname()
 {
+	/*
 	UWorld* World = GetWorld();
 	if (!World) return;
 
@@ -62,6 +65,7 @@ void ALobbyPlayerState::OnRep_PlayerNickname()
 			PreviewPawn->SetPlayerName(PlayerNickname);
 		}
 	}
+	*/
 }
 
 void ALobbyPlayerState::OnRep_CharacterID()
@@ -96,6 +100,19 @@ FCustomizationPreset ALobbyPlayerState::GetCustomizationPreset(FName RequestedCh
 	return FCustomizationPreset();
 }
 
+void ALobbyPlayerState::SetIsHost(bool bNewHost)
+{
+	if (HasAuthority())
+	{
+		bIsHost = bNewHost;
+		OnRep_IsHost();
+	}
+}
+
+void ALobbyPlayerState::OnRep_IsHost()
+{
+}
+
 void ALobbyPlayerState::SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets)
 {
 	ClientCharacterCustomizationPresets = Presets;
@@ -123,5 +140,4 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ALobbyPlayerState, CharacterID);
 	DOREPLIFETIME(ALobbyPlayerState, ClientCharacterCustomizationPresets);
 	DOREPLIFETIME(ALobbyPlayerState, bIsHost);
-	
 }

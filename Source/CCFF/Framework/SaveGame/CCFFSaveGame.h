@@ -15,9 +15,9 @@ public:
 	int32 SaveVersion;
 
 	UPROPERTY()
-	FPlayerMetaData PlayerMeta;
+	TArray<FPlayerMetaData> AllAccounts;
 
 	UPROPERTY()
-	FString ServerIP;
+	FString LastLoggedInNickname;
 	
 };

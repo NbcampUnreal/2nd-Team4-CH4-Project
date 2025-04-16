@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "Framework/UI/BaseUserWidget.h"
 #include "BaseInGameWidget.generated.h"
 
 class UStatusComponent;
@@ -10,7 +10,7 @@ class USideBarWidget;
 class UTextBlock;
 
 UCLASS()
-class CCFF_API UBaseInGameWidget : public UUserWidget
+class CCFF_API UBaseInGameWidget : public UBaseUserWidget
 {
 	GENERATED_BODY()
 
@@ -22,6 +22,7 @@ public:
 	virtual void UpdateTimerText_Implementation(const float NewTime);
 
 	void UpdateHealthBar(const float InPercentage);
+	void UpdateStockCount(const int32 InCount);
 	void UpdateSuperMeterBar(const float InPercentage);
 	void UpdateBurstMeterBar(const float InPercentage);
 

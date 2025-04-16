@@ -1,6 +1,7 @@
 #include "Framework/UI/LobbyWidget.h"
 #include "Framework/Controller/LobbyPlayerController.h"
 #include "Framework/UI/Lobby/ArenaSubModeSelectorWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Components/Button.h"
 
 void ULobbyWidget::NativeConstruct()
@@ -40,8 +41,16 @@ void ULobbyWidget::OnReadyClicked()
         if (LobbyPlayerController)
         {
             LobbyPlayerController->ServerToggleReady();
+            UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>();
+            if (CCFFGameInstance)
+            {
+				CCFFGameInstance->SetLobbyPresetIndex(LobbyPlayerController->GetCurrentPresetIndex());
+				UE_LOG(LogTemp, Warning, TEXT("[Client] SetLobbyPresetIndex = %d"), LobbyPlayerController->GetCurrentPresetIndex());
+            }
         }
     }
+
+    
 }
 
 void ULobbyWidget::OnBackClicked()

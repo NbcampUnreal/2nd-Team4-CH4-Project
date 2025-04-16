@@ -8,6 +8,7 @@
 #include "Items/Manager/ItemPoolManager.h"
 #include "NiagaraFunctionLibrary.h" 
 #include "NiagaraComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ASpawnableItem::ASpawnableItem()
 {
@@ -64,6 +65,7 @@ void ASpawnableItem::OnItemOverlap(
     {
         bool bIsLocallyControlled = OverlappingPawn->IsLocallyControlled();
         bool bHasAuthority = HasAuthority();
+        if (OwningSpawner == nullptr) { return; }
 
         FString LogMsg = FString::Printf(TEXT("Overlap Detected: %s | LocallyControlled: %s | HasAuthority: %s"),
             *OtherActor->GetName(),
@@ -109,6 +111,7 @@ void ASpawnableItem::Interact(AActor* Activator)
 #endif
 
 	// Item Interaction Logic Here
+    
 }
 
 void ASpawnableItem::OnInteract()
@@ -162,4 +165,9 @@ void ASpawnableItem::ResetItem()
     }
 }
 
+void ASpawnableItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass, OwningSpawner);
+}
 

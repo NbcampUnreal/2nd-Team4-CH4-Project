@@ -17,12 +17,6 @@ void ULoginWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (IsValid(NicknameText) && !NicknameText->OnTextCommitted.IsAlreadyBound(this, &ULoginWidget::OnTextCommitted))
-	{
-		NicknameText.Get()->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
-		NicknameText->SetKeyboardFocus();
-	}
-
 	if (IsValid(LoginButton) && !LoginButton->OnClicked.IsAlreadyBound(this, &ULoginWidget::OnLoginButtonClicked))
 	{
 		LoginButton.Get()->OnClicked.AddDynamic(this, &ULoginWidget::OnLoginButtonClicked);
@@ -32,52 +26,74 @@ void ULoginWidget::NativeConstruct()
 	{
 		ExitButton.Get()->OnClicked.AddDynamic(this, &ULoginWidget::OnExitButtonClicked);
 	}
+
+	if (IsValid(IDText))
+	{
+		FTimerHandle FocusTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(FocusTimerHandle, [this]()
+			{
+				if (IDText)
+				{
+					IDText->SetKeyboardFocus();
+				}
+			}, 0.1f, false);
+	}
+
+	if (IsValid(PasswordText) && !PasswordText->OnTextCommitted.IsAlreadyBound(this, &ULoginWidget::HandlePasswordCommitted))
+	{
+		PasswordText->OnTextCommitted.AddDynamic(this, &ULoginWidget::HandlePasswordCommitted);
+	}
 }
 
 FReply ULoginWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
 	if (InKeyEvent.GetKey() == EKeys::Enter || InKeyEvent.GetKey() == EKeys::Virtual_Accept)
 	{
-		if (!NicknameText->HasKeyboardFocus())
-		{
-			NicknameText->SetKeyboardFocus();
-			return FReply::Handled();
-		}
+		OnLoginButtonClicked();
+		return FReply::Handled();
 	}
 
 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
+void ULoginWidget::HandlePasswordCommitted(const FText& Text, ETextCommit::Type CommitMethod)
+{
+	if (CommitMethod == ETextCommit::OnEnter)
+	{
+		OnLoginButtonClicked();
+	}
+}
+
 void ULoginWidget::OnLoginButtonClicked()
 {
-	if (IsValid(NicknameText) == false)
+	if (!IsValid(IDText) || !IsValid(PasswordText))
 	{
-		UE_LOG(LogTemp, Error, TEXT("[LoginWidget] OnLoginButtonClicked : NicknameText is NULL"));
+		ShowErrorPopup(TEXT("ID 또는 비밀번호 입력 UI가 없습니다."));
 		return;
 	}
 
-	FString Nickname = NicknameText->GetText().ToString();
+	const FString ID = IDText->GetText().ToString().TrimStartAndEnd();
+	const FString Password = PasswordText->GetText().ToString().TrimStartAndEnd();
 
-	FString ErrorMessage;
-	if (!IsNicknameValid(Nickname, ErrorMessage))
+	if (ID.IsEmpty() || Password.IsEmpty())
 	{
-		ShowErrorPopup(ErrorMessage);
+		ShowErrorPopup(TEXT("ID와 비밀번호를 모두 입력해주세요."));
 		return;
 	}
 
 	UCCFFGameInstance* GameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
 	if (IsValid(GameInstance) == true)
 	{
-		GameInstance->SetNickname(Nickname);
-		GameInstance->SaveData();
+		if (GameInstance->TryLogin(ID, Password))
+		{
+			OnLoginSuccess.Broadcast();
+			return;
+		}
+		else
+		{
+			ShowErrorPopup(TEXT("ID 또는 비밀번호가 올바르지 않습니다."));
+		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[LoginWidget] OnConfirmClicked : GameInstance is NULL!"));
-		return;
-	}
-
-	OnLoginSuccess.Broadcast();
 }
 
 void ULoginWidget::OnExitButtonClicked()
@@ -121,16 +137,11 @@ void ULoginWidget::HandleExitGameCanceled()
 		ExitGamePopup = nullptr;
 	}
 
-	NicknameText->SetKeyboardFocus();
-}
-
-void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
-{
-	if (CommitMethod == ETextCommit::OnEnter)
+	if (IDText)
 	{
-		OnLoginButtonClicked();
+		IDText->SetKeyboardFocus();
 	}
-}																																																																																																																																																																																																							
+}																																																																																																																																																																																																					
 
 bool ULoginWidget::IsNicknameValid(const FString& Nickname, FString& OutErrorMessage) const
 {
@@ -170,7 +181,6 @@ void ULoginWidget::ShowErrorPopup(const FString& Message)
 	{
 		ErrorPopup->SetMessage(FText::FromString(Message));
 		ErrorPopup->AddToViewport();
-
 		ErrorPopup->SetKeyboardFocus();
 
 		ErrorPopup->OnCheckPopupConfirmed.AddDynamic(this, &ULoginWidget::HandleErrorPopupClosed);
@@ -180,8 +190,8 @@ void ULoginWidget::ShowErrorPopup(const FString& Message)
 void ULoginWidget::HandleErrorPopupClosed()
 {
 	ErrorPopup = nullptr;
-	if (NicknameText)
+	if (IDText)
 	{
-		NicknameText->SetKeyboardFocus();
+		IDText->SetKeyboardFocus();
 	}
 }

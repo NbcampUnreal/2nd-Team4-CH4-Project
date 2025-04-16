@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Framework/GameMode/BaseInGameMode.h"
+#include <Framework/Data/ArenaSubModeType.h>
 #include "ArenaGameMode.generated.h"
+
 
 class ABaseCharacter;
 
@@ -12,24 +14,27 @@ class CCFF_API AArenaGameMode : public ABaseInGameMode
 	GENERATED_BODY()
 	
 public:
-	AArenaGameMode(const FObjectInitializer& ObjectInitializer);
+	AArenaGameMode();
 
-	virtual void BeginPlay() override;
 	virtual void PreLogin(
 		const FString& Options,
 		const FString& Address,
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage)
 	override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	virtual void BeginPlay() override;
 
 	void StartArenaRound();
 	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
 
+	virtual void ResetSubsystem() override;
+
 	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
 
 #pragma region Arena
-	// TODO :: 업적 시스템(어시스트, 등등)
 
 public:
 	void UpdateArenaStats();
@@ -37,13 +42,12 @@ public:
 	void UpdateCountdown();
 
 	UFUNCTION()
-	void RespawnPlayer(AController* Controller);
+	void RespawnPlayer(APlayerController* Controller);
+	
+	EArenaSubMode SelectedArenaSubMode;
 
 	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Rules")
-	bool bIsDeathmatch = false;
 
 #pragma endregion
 
@@ -65,14 +69,15 @@ private:
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle LevelTransitionTimerHandle;
+	FTimerHandle ConditionCheckTimerHandle;
 
 	bool bIsStartedRound;
 
 #pragma region SpawnCharacter
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character")
-	TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+	TMap<FName, TSubclassOf<ABaseCharacter>> CharacterClasses;
 
 	UFUNCTION()
-	void SpawnPlayer(AController* NewPlayer);
+	void SpawnPlayer(APlayerController* NewPlayer);
 };

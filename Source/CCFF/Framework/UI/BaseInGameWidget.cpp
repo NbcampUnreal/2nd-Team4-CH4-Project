@@ -42,8 +42,17 @@ void UBaseInGameWidget::UpdateHealthBar(const float InPercentage)
 	if (ProfileWidget)
 	{
 		ProfileWidget->UpdateHealthBar(InPercentage);
-		UE_LOG(LogTemp,Log,TEXT("OnRep_CurrentHP: %0.1f"),InPercentage);
+		//UE_LOG(LogTemp,Log,TEXT("OnRep_CurrentHP: %0.1f"),InPercentage);
 	}
+}
+
+void UBaseInGameWidget::UpdateStockCount(const int32 InCount)
+{
+	if (ProfileWidget)
+	{
+		ProfileWidget->UpdateStockCount(InCount);
+	}
+	UE_LOG(LogTemp,Warning,TEXT("UBaseInGameWidget::UpdateStockCount: %d"),InCount);
 }
 
 void UBaseInGameWidget::UpdateSuperMeterBar(const float InPercentage)
@@ -61,6 +70,7 @@ void UBaseInGameWidget::UpdateBurstMeterBar(const float InPercentage)
 		SideBarWidget->UpdateBurstMeterBar(InPercentage);
 	}
 }
+
 
 void UBaseInGameWidget::InitializeHUDWidget(UStatusComponent* InStatusComponent)
 {

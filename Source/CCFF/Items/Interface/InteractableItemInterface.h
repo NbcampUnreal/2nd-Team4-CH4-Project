@@ -25,5 +25,4 @@ public:
 		const FHitResult& SweepResult) PURE_VIRTUAL(IInteractableItemInterface::OnItemOverlap, );
 
     virtual void Interact(AActor* Activator) PURE_VIRTUAL(IInteractableItemInterface::Interact, );
-	virtual FName GetItemType() const PURE_VIRTUAL(IInteractableItemInterface::GetItemType, return FName(););
 };

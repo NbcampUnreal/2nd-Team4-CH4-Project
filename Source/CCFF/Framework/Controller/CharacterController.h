@@ -44,16 +44,24 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
 
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
+	void ServerReturnToMainMenu();
+
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
 	void ServerSetCharacterID(FName InID);
+	UFUNCTION(Server, Reliable, Category = "Character")
+	void Server_SetPresetIndex(int32 InIndex);
+	void Server_SetPresetIndex_Implementation(int32 InIndex);
 
-	bool bIsPause;
 
 	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
 	void ClientSpectateCamera(ACameraActor* SpectatorCam);
+
+	UFUNCTION(BlueprintCallable, Category = "Arena|Death")
+	void NotifyPawnDeath();
 
 protected:
 	virtual void BeginPlay() override;
@@ -70,6 +78,9 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* PauseWidget;
+
+public:
+	bool bIsPause;
 #pragma endregion
 
 };

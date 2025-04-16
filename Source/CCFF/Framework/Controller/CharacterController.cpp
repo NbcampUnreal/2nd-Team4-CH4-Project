@@ -14,15 +14,15 @@
 #include "Camera/CameraActor.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h" 
 
 
 ACharacterController::ACharacterController()
 	: DefaultMappingContext(nullptr),
 	MoveAction(nullptr),
 	JumpAction(nullptr),
-	bIsPause(false),
-	PauseWidget(nullptr)
-
+	PauseWidget(nullptr),
+	bIsPause(false)
 {
 	AttackAction.SetNum(8);
 }
@@ -34,12 +34,15 @@ void ACharacterController::BeginPlay()
 	{
 		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
-			const FString Nick = CCFFGameInstance->GetNickname();
-			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *Nick);
-			ServerSetNickname(Nick);
+			const FString NickName = CCFFGameInstance->GetNickname();
+			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *NickName);
+			ServerSetNickname(NickName);
 
 			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
 			ServerSetCharacterID(SelectedCharacterID);
+			int32 SelectedPresetIndex = CCFFGameInstance->GetLobbyPresetIndex();
+			Server_SetPresetIndex(SelectedPresetIndex);
+			CCFFGameInstance->PlayBGMForCurrentMap();
 		}
 	}
 
@@ -58,6 +61,7 @@ void ACharacterController::TogglePause()
 	ABaseInGameHUD* MyInGameHUD = Cast<ABaseInGameHUD>(GetHUD());
 	if (IsValid(MyInGameHUD))
 	{
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++ [CharacterController] Valid MyBaseInGameHDU"));
 		UUserWidget* ToggleWidget = MyInGameHUD->GetTogglePauseWidget();
 		if (ToggleWidget != nullptr)
 		{
@@ -100,6 +104,16 @@ bool ACharacterController::ServerReturnToLobby_Validate()
 	return true;
 }
 
+void ACharacterController::ServerReturnToMainMenu_Implementation()
+{
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/MainMenuMap?Listen"));
+}
+
+bool ACharacterController::ServerReturnToMainMenu_Validate()
+{
+	return true;
+}
+
 void ACharacterController::ServerSetNickname_Implementation(const FString& InNickname)
 {
 	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
@@ -134,17 +148,96 @@ bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
 	return true;
 }
 
+void ACharacterController::Server_SetPresetIndex_Implementation(int32 InIndex)
+{
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	{
+		ArenaPlayerState->SetSelectedPresetIndex(InIndex);
+		UE_LOG(LogTemp, Log, TEXT("[Server_SetPresetIndex] SelectedPresetIndex = %d"), InIndex);
+	}
+}
+
+// TODO :: Fix Respawn SpectatorCam
+void ACharacterController::NotifyPawnDeath()
+{
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	if (!IsValid(ArenaPlayerState)) { return; }
+
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (!IsValid(ArenaGameMode)) { return; }
+
+	// Posses Spectator Camera
+	if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
+	{
+		if (IsValid(ArenaGameState))
+		{
+			ClientSpectateCamera(ArenaGameState->GetSpectatorCamera());
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Valid!!"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
+		}
+			
+	}
+
+
+	// Respawn
+	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)
+	{
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] DeathMatch Mode"));
+		FTimerHandle RespawnTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
+			{
+				ArenaGameMode->SpawnPlayer(this);
+			}, 5.0f, false);
+	}
+	else if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::Elimination)
+	{
+		if (ArenaPlayerState->MaxLives > 0)
+		{
+			ArenaPlayerState->MaxLives--;
+
+			UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] Elimination Mode, MaxLive is %d"), ArenaPlayerState->MaxLives);
+			FTimerHandle RespawnTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
+				{
+					ArenaGameMode->SpawnPlayer(this);
+				}, 5.0f, false);
+		}
+		else
+		{
+			if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
+			{
+				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+				UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++ Survival Time : %.2f"), SurvivalTime);
+			}
+		}
+	}
+}
+
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
-	if (!SpectatorCam)
+	if (!SpectatorCam) 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
-		return;
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++ [CharacterController] SpectatorCam is not Valid"));
+		return; 
 	}
 
 	UnPossess();
 	ChangeState(NAME_Spectating);
-	SetViewTargetWithBlend(SpectatorCam, 0.f);
 
-	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
+	//// timerhandle 0.12 seconds
+	//SetViewTargetWithBlend(SpectatorCam, 0.f);
+	FTimerHandle SpectateTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		SpectateTimerHandle,
+		[this, SpectatorCam]()
+		{
+			SetViewTargetWithBlend(SpectatorCam, 0.f);
+		},
+		0.5f,
+		false
+	);
 }

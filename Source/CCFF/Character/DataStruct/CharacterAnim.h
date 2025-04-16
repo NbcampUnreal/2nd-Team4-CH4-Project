@@ -12,7 +12,7 @@ struct FCharacterAnim :public FTableRowBase
 {
 	GENERATED_BODY();
 public:
-	FCharacterAnim(): HittedMontage(nullptr), GuardMontage(nullptr), DodgeMontage(nullptr), DeathMontage(nullptr), BurstMontage(nullptr) { AttackMontage.SetNum(8); }
+	FCharacterAnim(): HittedMontage(nullptr), GuardMontage(nullptr), DodgeMontage(nullptr), DeathMontage(nullptr), BurstMontage(nullptr) { AttackMontage.SetNum(14); }
 
 	// Attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
