@@ -375,7 +375,7 @@ void ABaseCharacter::ExecuteBufferedAction()
 	const float CurrentTime=GetWorld()->GetTimeSeconds();
 	const int32 InputAction=static_cast<int32>(InputBuffer.InputAttack);
 	//Execute Buffered Input Action
-	if (InputAction>=0&&InputAction<8&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
+	if (InputAction>=0&&InputAction<14&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
 	{
 		ExecuteActionByIndex(InputBuffer.InputState,InputAction);
 		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
@@ -389,18 +389,19 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		if (GetCharacterMovement()->IsFlying())
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		PlayActionMontage(ECharacterState::Hitted,0);
 		break;
 	case ECharacterState::Dead:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		PlayActionMontage(ECharacterState::Dead,0);
 	default:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
 	}
 }
@@ -412,8 +413,9 @@ void ABaseCharacter::OnRep_CurrentResistanceState()
 
 void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 Index)
 {
-	if ((CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)
-		||(InState==ECharacterState::Normal))
+	if ((CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)||
+		(CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()&&Index>7)||
+		(InState==ECharacterState::Normal))
 	{
 		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
 		ServerRPCAction(InState,GetWorld()->GetGameState()->GetServerWorldTimeSeconds(), Index);
@@ -435,11 +437,22 @@ void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 I
 
 void ABaseCharacter::Attack1(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,0);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,8);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,0);	
+	}
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,9);
+	}
+	else if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
 	{
 		ExecuteActionByIndex(ECharacterState::Attack,2);
 	}
@@ -452,12 +465,23 @@ void ABaseCharacter::Attack2(const FInputActionValue& Value)
 
 void ABaseCharacter::Attack4(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,3);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,10);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,3);
+	}
 }
 
 void ABaseCharacter::Attack5(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,11);
+	}
+	else if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
 	{
 		ExecuteActionByIndex(ECharacterState::Attack,5);
 	}
@@ -469,12 +493,26 @@ void ABaseCharacter::Attack5(const FInputActionValue& Value)
 
 void ABaseCharacter::Attack7(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,6);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,12);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,6);
+	}
 }
 
 void ABaseCharacter::Attack8(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,7);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,13);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,7);
+	}
 }
 
 void ABaseCharacter::Guard()
@@ -892,6 +930,8 @@ void ABaseCharacter::OnDeath()
 	CurrentCharacterState=ECharacterState::Dead;
 	//Set off Overlap event
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+	//Reset Combo Count
+	BattleComponent->ResetCombo();
 	//Raise KillCount of DamageCauser
 	if (LastDamageCauser)
 	{
@@ -908,11 +948,14 @@ void ABaseCharacter::OnDeath()
 	{
 		CharacterController->NotifyPawnDeath();
 	}
+
 	float MontageLength=Anim.DeathMontage->GetPlayLength();
 	FTimerHandle DestroyTimerHandle;
 	GetWorldTimerManager().SetTimer(
 		DestroyTimerHandle,
 		[this](){
+			UKismetSystemLibrary::PrintString(
+				this, FString::Printf(TEXT("+++++++++++++++++++++++++++++++ Destroy")), true, false, FLinearColor(1, 0, 0, 1), 60.0f);
 			Destroy();
 		},MontageLength,false);
 }

@@ -1,5 +1,6 @@
 #include "Framework/UI/Lobby/PreviewNameTagWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 void UPreviewNameTagWidget::SetPlayerName(const FString& NewName)
 {
@@ -7,4 +8,11 @@ void UPreviewNameTagWidget::SetPlayerName(const FString& NewName)
 	{
 		PlayerNameText->SetText(FText::FromString(NewName));
 	}
+}
+
+void UPreviewNameTagWidget::SetHostMarkVisible(bool bVisible)
+{
+	if (HostImage)
+	{
+		HostImage->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);	}
 }

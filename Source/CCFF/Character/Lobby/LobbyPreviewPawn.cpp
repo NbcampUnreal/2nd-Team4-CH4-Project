@@ -31,23 +31,40 @@ void ALobbyPreviewPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!bNameSet)
+	ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(LobbyPlayerState) == false)
+	{
+		return;
+	}
+
+
+	FString CurrentName = LobbyPlayerState->GetPlayerNickname();
+	if (CurrentName != LastNickname)
 	{
 		if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
 		{
-			if (ALobbyPlayerState* LPS = Cast<ALobbyPlayerState>(GetPlayerState()))
-			{
-				NameWidget->SetPlayerName(LPS->GetPlayerNickname());
-				bNameSet = true;
-			}
+			NameWidget->SetPlayerName(CurrentName);
+			LastNickname = CurrentName;
 		}
 	}
 
-	if (UPreviewReadyStatusWidget* StatusWidget = Cast<UPreviewReadyStatusWidget>(ReadyStatusWidget->GetUserWidgetObject()))
+	bool bCurrentReady = LobbyPlayerState->IsReady();
+	if (bCurrentReady != bLastIsReady)
 	{
-		if (ALobbyPlayerState* LPS = Cast<ALobbyPlayerState>(GetPlayerState()))
+		if (UPreviewReadyStatusWidget* StatusWidget = Cast<UPreviewReadyStatusWidget>(ReadyStatusWidget->GetUserWidgetObject()))
 		{
-			StatusWidget->SetReadyState(LPS->IsReady());
+			StatusWidget->SetReadyState(bCurrentReady);
+			bLastIsReady = bCurrentReady;
+		}
+	}
+
+	bool bCurrentHost = LobbyPlayerState->GetIsHost();
+	if (bCurrentHost != bLastIsHost)
+	{
+		if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
+		{
+			NameWidget->SetHostMarkVisible(bCurrentHost);
+			bLastIsHost = bCurrentHost;
 		}
 	}
 }
@@ -63,6 +80,7 @@ void ALobbyPreviewPawn::SetPlayerName(const FString& InName)
 	if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
 	{
 		NameWidget->SetPlayerName(InName);
+		LastNickname = InName;
 	}
 }
 
@@ -71,5 +89,15 @@ void ALobbyPreviewPawn::SetReadyState(bool bIsReady)
 	if (UPreviewReadyStatusWidget* StatusWidget = Cast<UPreviewReadyStatusWidget>(ReadyStatusWidget->GetUserWidgetObject()))
 	{
 		StatusWidget->SetReadyState(bIsReady);
+		bLastIsReady = bIsReady;
+	}
+}
+
+void ALobbyPreviewPawn::SetHostTagVisibility(bool bVisible)
+{
+	if (UPreviewNameTagWidget* NameWidget = Cast<UPreviewNameTagWidget>(NameTagWidget->GetUserWidgetObject()))
+	{
+		NameWidget->SetHostMarkVisible(bVisible);
+		bLastIsHost = bVisible;
 	}
 }

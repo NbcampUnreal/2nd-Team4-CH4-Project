@@ -13,8 +13,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerName(const FString& NewName);
 
+	UFUNCTION(BlueprintCallable)
+	void SetHostMarkVisible(bool bVisible);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* PlayerNameText;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* HostImage;
 
 };

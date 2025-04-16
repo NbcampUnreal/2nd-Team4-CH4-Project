@@ -18,7 +18,6 @@ void ATitleHUD::BeginPlay()
 	}
 
 	SwitchUI(ETitleUIState::ETITLE_PRESSSTART);
-
 }
 
 void ATitleHUD::NotifyAnyKeyPressed()
@@ -59,6 +58,17 @@ void ATitleHUD::SwitchUI(ETitleUIState UIState)
 			{
 				LoginWidget->OnLoginSuccess.AddDynamic(this, &ATitleHUD::HandleLoginSuccess);
 			}
+		}
+
+		if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+		{
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetHideCursorDuringCapture(false);
+			InputMode.SetWidgetToFocus(SubWidget->TakeWidget());
+
+			PlayerController->SetInputMode(InputMode);
+			PlayerController->SetShowMouseCursor(true);
 		}
 	}
 }

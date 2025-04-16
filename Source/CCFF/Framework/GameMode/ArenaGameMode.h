@@ -42,7 +42,7 @@ public:
 	UFUNCTION()
 	void RespawnPlayer(AController* Controller);
 	
-	EArenaSubMode CachedArenaSubMode;
+	EArenaSubMode SelectedArenaSubMode;
 
 	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;

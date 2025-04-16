@@ -67,7 +67,10 @@ private:
 #pragma region HostPlayer
 public:
 	FORCEINLINE bool GetIsHost() const { return bIsHost; }
-	FORCEINLINE void SetIsHost(bool bNewHost) { bIsHost = bNewHost; }
+	void SetIsHost(bool bNewHost);
+
+	UFUNCTION()
+	void OnRep_IsHost();
 
 protected:
 	UPROPERTY(Replicated, BlueprintReadOnly)
