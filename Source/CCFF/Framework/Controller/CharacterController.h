@@ -7,7 +7,7 @@
 #include "CharacterController.generated.h"
 
 /**
- *
+ * 
  */
 class UInputMappingContext;
 class UInputAction;
@@ -20,26 +20,20 @@ class CCFF_API ACharacterController : public APlayerController
 
 public:
 	ACharacterController();
-
+	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> MoveAction;
+	UInputAction* MoveAction;
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<UInputAction>> AttackAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> GuardAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> DodgeAction;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> BurstAction;
-
+	
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
@@ -47,14 +41,7 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
-	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
-	void ServerSetCharacterID(FName InID);
-
-	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
-	void ClientSpectateCamera(ACameraActor* SpectatorCam);
-
-	UFUNCTION(BlueprintCallable, Category = "Arena|Death")
-	void NotifyPawnDeath();
+	bool bIsPause;
 
 protected:
 	virtual void BeginPlay() override;
@@ -71,9 +58,6 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* PauseWidget;
-
-public:
-	bool bIsPause;
 #pragma endregion
 
 };

@@ -6,7 +6,6 @@
 #include "Framework/UI/ConfirmPopupWidget.h"
 #include "Framework/UI/CheckPopupWidget.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Framework/Application/SlateApplication.h"
 
 ULoginWidget::ULoginWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -17,10 +16,9 @@ void ULoginWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (IsValid(NicknameText) && !NicknameText->OnTextCommitted.IsAlreadyBound(this, &ULoginWidget::OnTextCommitted))
+	if (IsValid(NicknameText))
 	{
 		NicknameText.Get()->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
-		NicknameText->SetKeyboardFocus();
 	}
 
 	if (IsValid(LoginButton) && !LoginButton->OnClicked.IsAlreadyBound(this, &ULoginWidget::OnLoginButtonClicked))
@@ -32,20 +30,6 @@ void ULoginWidget::NativeConstruct()
 	{
 		ExitButton.Get()->OnClicked.AddDynamic(this, &ULoginWidget::OnExitButtonClicked);
 	}
-}
-
-FReply ULoginWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
-{
-	if (InKeyEvent.GetKey() == EKeys::Enter || InKeyEvent.GetKey() == EKeys::Virtual_Accept)
-	{
-		if (!NicknameText->HasKeyboardFocus())
-		{
-			NicknameText->SetKeyboardFocus();
-			return FReply::Handled();
-		}
-	}
-
-	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
 void ULoginWidget::OnLoginButtonClicked()
@@ -121,7 +105,7 @@ void ULoginWidget::HandleExitGameCanceled()
 		ExitGamePopup = nullptr;
 	}
 
-	NicknameText->SetKeyboardFocus();
+	SetKeyboardFocus();
 }
 
 void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
@@ -170,18 +154,5 @@ void ULoginWidget::ShowErrorPopup(const FString& Message)
 	{
 		ErrorPopup->SetMessage(FText::FromString(Message));
 		ErrorPopup->AddToViewport();
-
-		ErrorPopup->SetKeyboardFocus();
-
-		ErrorPopup->OnCheckPopupConfirmed.AddDynamic(this, &ULoginWidget::HandleErrorPopupClosed);
-	}
-}
-
-void ULoginWidget::HandleErrorPopupClosed()
-{
-	ErrorPopup = nullptr;
-	if (NicknameText)
-	{
-		NicknameText->SetKeyboardFocus();
 	}
 }

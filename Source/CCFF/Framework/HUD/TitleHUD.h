@@ -19,6 +19,7 @@ class CCFF_API ATitleHUD : public AHUD
 	GENERATED_BODY()
 	
 public:
+	ATitleHUD();
 	virtual void BeginPlay() override;
 
 	void NotifyAnyKeyPressed();
@@ -45,7 +46,4 @@ private:
 
 	UFUNCTION()
 	void HandleLoginSuccess();
-
-	ETitleUIState CurrentState = ETitleUIState::ETITLE_PRESSSTART;
-
 };

@@ -15,8 +15,7 @@ enum class ECharacterState : uint8
 	Grab		UMETA(DisplayName = "Grab"),
 	Grabbed		UMETA(DisplayName = "Grabbed"),
 	Burst		UMETA(DisplayName = "Burst"),
-	Super		UMETA(DisplayName = "Super"),
-	Dead		UMETA(DisplayName = "Dead")
+	Super		UMETA(DisplayName = "Super")
 };
 
 UENUM(BlueprintType)

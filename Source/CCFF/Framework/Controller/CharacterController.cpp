@@ -13,16 +13,14 @@
 #include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Camera/CameraActor.h"
 #include "Framework/GameState/ArenaGameState.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 
 ACharacterController::ACharacterController()
-	: DefaultMappingContext(nullptr),
-	MoveAction(nullptr),
-	JumpAction(nullptr),
-	PauseWidget(nullptr),
-	bIsPause(false)
-
+   : DefaultMappingContext(nullptr),
+     MoveAction(nullptr),
+     JumpAction(nullptr),
+	 PauseWidget(nullptr),
+	 bIsPause(false)
 {
 	AttackAction.SetNum(8);
 }
@@ -30,16 +28,14 @@ ACharacterController::ACharacterController()
 void ACharacterController::BeginPlay()
 {
 	Super::BeginPlay();
+
 	if (IsLocalController())
 	{
-		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
+		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
-			const FString NickName = CCFFGameInstance->GetNickname();
-			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *NickName);
-			ServerSetNickname(NickName);
-
-			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
-			ServerSetCharacterID(SelectedCharacterID);
+			const FString Nick = GI->GetNickname();
+			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *Nick);
+			ServerSetNickname(Nick);
 		}
 	}
 
@@ -67,7 +63,7 @@ void ACharacterController::TogglePause()
 				ToggleWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
-
+	
 	if (bIsPause)
 	{
 		FInputModeGameAndUI InputMode;
@@ -102,10 +98,10 @@ bool ACharacterController::ServerReturnToLobby_Validate()
 
 void ACharacterController::ServerSetNickname_Implementation(const FString& InNickname)
 {
-	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	if (AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>())
 	{
-		ArenaPlayerState->SetPlayerNickname(InNickname);
-		ArenaPlayerState->SetPlayerName(InNickname);
+		PS->SetPlayerNickname(InNickname);
+		PS->SetPlayerName(InNickname);
 
 		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
 	}
@@ -118,79 +114,4 @@ void ACharacterController::ServerSetNickname_Implementation(const FString& InNic
 bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
 {
 	return true;
-}
-
-void ACharacterController::ServerSetCharacterID_Implementation(FName InID)
-{
-	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
-	{
-		ArenaPlayerState->SetSelectedCharacterID(InID);
-		UE_LOG(LogTemp, Log, TEXT("[ServerSetCharacterID] SelectedCharacterID = %s"), *InID.ToString());
-	}
-}
-
-bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
-{
-	return true;
-}
-
-void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
-{
-	if (!SpectatorCam)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
-		return;
-	}
-
-	UnPossess();
-	ChangeState(NAME_Spectating);
-	SetViewTargetWithBlend(SpectatorCam, 0.f);
-
-	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
-}
-
-void ACharacterController::NotifyPawnDeath()
-{
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	if (!ArenaPlayerState)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: PlayerState not invaild"));
-		return;
-	}
-
-	if (ArenaPlayerState->MaxLives > 0)
-	{
-		ArenaPlayerState->MaxLives--;
-
-		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
-			{
-				if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-				{
-					ArenaGameMode->RespawnPlayer(this);
-				}
-			}, 3.0f, false);
-	}
-	else
-	{
-		if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
-		{
-			float CurrentRoundTime = ArenaGameState->GetRemainingTime();
-			float TotalRountTime = ArenaGameState->GetRoundStartTime();
-			ArenaPlayerState->SetSurvivalTime(TotalRountTime - CurrentRoundTime);
-			UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: Survivla time is %.2f"), CurrentRoundTime);
-		}
-
-		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			if (ACameraActor* SpectatorCam = ArenaGameMode->GetSpectatorCamera())
-			{
-				ClientSpectateCamera(SpectatorCam);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: SpectatorCamera not invaild"));
-			}
-		}
-	}
 }

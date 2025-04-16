@@ -7,26 +7,20 @@
 #include "Kismet/GameplayStatics.h"
 
 
-UTogglePauseWidget::UTogglePauseWidget(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer)
-{
-}
-
 void UTogglePauseWidget::NativeConstruct()
 {  
    Super::NativeConstruct();
 
-   if (IsFocusable())
-   {
-	   if (IsValid(BackButton))
-		   BackButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnBackButtonClicked);
+   if (IsValid(BackButton))
+	   BackButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnBackButtonClicked);
 
-	   if (IsValid(SettingButton))
-		   SettingButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnSettingButtonClicked);
+   if (IsValid(SettingButton))
+	   SettingButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnSettingButtonClicked);
 
-	   if (IsValid(LobbyButton))
-		   LobbyButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnLobbyButtonClicked);
-   }
+   if (IsValid(LobbyButton))
+	   LobbyButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnLobbyButtonClicked);
+
+   bIsFocusable = true;
 }
 
 void UTogglePauseWidget::OnBackButtonClicked()

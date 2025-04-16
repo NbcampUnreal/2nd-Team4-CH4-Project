@@ -186,16 +186,6 @@ USkeletalMesh* UCharacterCustomizationComponent::GetBaseMeshByCharacterID(FName 
     return nullptr;
 }
 
-UClass* UCharacterCustomizationComponent::GetAnimBlueprintByCharacterID(FName CharacterID) const
-{
-	if (UClass* const* FoundAnimBP = CharacterAnimBPMap.Find(CharacterID))
-	{
-		return *FoundAnimBP;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("[CustomizationComponent] No AnimBP found for CharacterID: %s"), *CharacterID.ToString());
-	return nullptr;
-}
-
 FPresetItemsIndex UCharacterCustomizationComponent::GetCurrentCustomItemsIndex() const
 {
 	FPresetItemsIndex PresetItemsIndex;

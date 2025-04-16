@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Framework/UI/BaseUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "BaseInGameWidget.generated.h"
 
 class UStatusComponent;
@@ -10,7 +10,7 @@ class USideBarWidget;
 class UTextBlock;
 
 UCLASS()
-class CCFF_API UBaseInGameWidget : public UBaseUserWidget
+class CCFF_API UBaseInGameWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

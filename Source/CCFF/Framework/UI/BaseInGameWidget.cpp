@@ -42,7 +42,7 @@ void UBaseInGameWidget::UpdateHealthBar(const float InPercentage)
 	if (ProfileWidget)
 	{
 		ProfileWidget->UpdateHealthBar(InPercentage);
-		//UE_LOG(LogTemp,Log,TEXT("OnRep_CurrentHP: %0.1f"),InPercentage);
+		UE_LOG(LogTemp,Log,TEXT("OnRep_CurrentHP: %0.1f"),InPercentage);
 	}
 }
 

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Framework/UI/BaseUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "PreviewNameTagWidget.generated.h"
 
 UCLASS()
-class CCFF_API UPreviewNameTagWidget : public UBaseUserWidget
+class CCFF_API UPreviewNameTagWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

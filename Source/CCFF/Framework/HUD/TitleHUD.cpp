@@ -4,6 +4,11 @@
 #include "Framework/UI/LoginWidget.h"
 #include "Kismet/GameplayStatics.h"
 
+ATitleHUD::ATitleHUD()
+	: TitleWidgetInstance(nullptr), SubWidget(nullptr)
+{
+}
+
 void ATitleHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -23,10 +28,9 @@ void ATitleHUD::BeginPlay()
 
 void ATitleHUD::NotifyAnyKeyPressed()
 {
-	if (CurrentState == ETitleUIState::ETITLE_PRESSSTART)
+	if (IsValid(SubWidget) == true)
 	{
 		SwitchUI(ETitleUIState::ETITLE_LOGIN);
-		CurrentState = ETitleUIState::ETITLE_LOGIN;
 	}
 }
 

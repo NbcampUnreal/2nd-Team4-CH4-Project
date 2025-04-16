@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Framework/HUD/TitleHUD.h"
 #include "TitlePlayerController.generated.h"
 
 UCLASS()
@@ -21,4 +22,6 @@ protected:
 	UFUNCTION()
 	void HandleAnyKey(FKey PressedKey);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<class ATitleHUD> TitleHUD;
 };

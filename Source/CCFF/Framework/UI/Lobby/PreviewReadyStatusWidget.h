@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Framework/UI/BaseUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "PreviewReadyStatusWidget.generated.h"
 
 UCLASS()
-class CCFF_API UPreviewReadyStatusWidget : public UBaseUserWidget
+class CCFF_API UPreviewReadyStatusWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	
