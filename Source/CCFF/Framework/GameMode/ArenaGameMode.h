@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Framework/GameMode/BaseInGameMode.h"
+#include <Framework/Data/ArenaSubModeType.h>
 #include "ArenaGameMode.generated.h"
+
 
 class ABaseCharacter;
 
@@ -12,7 +14,7 @@ class CCFF_API AArenaGameMode : public ABaseInGameMode
 	GENERATED_BODY()
 	
 public:
-	AArenaGameMode(const FObjectInitializer& ObjectInitializer);
+	AArenaGameMode();
 
 	virtual void BeginPlay() override;
 	virtual void PreLogin(
@@ -39,12 +41,11 @@ public:
 
 	UFUNCTION()
 	void RespawnPlayer(AController* Controller);
+	
+	EArenaSubMode CachedArenaSubMode;
 
 	UPROPERTY(EditDefaultsOnly, Category = "CCFF|Arena")
 	float CountdownTime;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Rules")
-	bool bIsDeathmatch = false;
 
 #pragma endregion
 
@@ -66,6 +67,7 @@ private:
 	FTimerHandle ArenaTimerHandle;
 	FTimerHandle CountdownTimerHandle;
 	FTimerHandle LevelTransitionTimerHandle;
+	FTimerHandle ConditionCheckTimerHandle;
 
 	bool bIsStartedRound;
 

@@ -22,7 +22,6 @@ ACharacterController::ACharacterController()
 	JumpAction(nullptr),
 	PauseWidget(nullptr),
 	bIsPause(false)
-
 {
 	AttackAction.SetNum(8);
 }
@@ -134,6 +133,80 @@ bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
 	return true;
 }
 
+
+// TODO :: Fix Respawn SpectatorCam
+void ACharacterController::NotifyPawnDeath()
+{
+	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
+	if (!ArenaPlayerState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: PlayerState not invaild"));
+		return;
+	}
+
+	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
+	if (!ArenaGameMode)
+	{
+		return;
+	}
+
+	if (ArenaGameMode->CachedArenaSubMode == EArenaSubMode::DeathMatch)
+	{
+		UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: DeathMatch mode - respawning without deducting lives."));
+
+		FTimerHandle RespawnTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
+			{
+				if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+				{
+					ArenaGameMode->RespawnPlayer(this);
+				}
+			}, 5.0f, false);
+	}
+	else if (ArenaGameMode->CachedArenaSubMode == EArenaSubMode::Elimination)
+	{
+		if (ArenaPlayerState->MaxLives > 0)
+		{
+			ArenaPlayerState->MaxLives--;
+
+			if (AArenaGameMode* InArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				if (ACameraActor* SpectatorCam = InArenaGameMode->GetSpectatorCamera())
+				{
+					ClientSpectateCamera(SpectatorCam);
+				}
+			}
+
+			FTimerHandle RespawnTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
+				{
+					if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+					{
+						ArenaGameMode->RespawnPlayer(this);
+					}
+				}, 5.0f, false);
+		}
+		else
+		{
+			if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
+			{
+				float CurrentRoundTime = ArenaGameState->GetRemainingTime();
+				float TotalRoundTime = ArenaGameState->GetRoundStartTime();
+				ArenaPlayerState->SetSurvivalTime(TotalRoundTime - CurrentRoundTime);
+				UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: Survival time recorded as %.2f"), CurrentRoundTime);
+			}
+
+			if (AArenaGameMode* InArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				if (ACameraActor* SpectatorCam = InArenaGameMode->GetSpectatorCamera())
+				{
+					ClientSpectateCamera(SpectatorCam);
+				}
+			}
+		}
+	}
+}
+
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
 	if (!SpectatorCam)
@@ -147,50 +220,4 @@ void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* Spe
 	SetViewTargetWithBlend(SpectatorCam, 0.f);
 
 	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
-}
-
-void ACharacterController::NotifyPawnDeath()
-{
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	if (!ArenaPlayerState)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: PlayerState not invaild"));
-		return;
-	}
-
-	if (ArenaPlayerState->MaxLives > 0)
-	{
-		ArenaPlayerState->MaxLives--;
-
-		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
-			{
-				if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-				{
-					ArenaGameMode->RespawnPlayer(this);
-				}
-			}, 3.0f, false);
-	}
-	else
-	{
-		if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
-		{
-			float CurrentRoundTime = ArenaGameState->GetRemainingTime();
-			float TotalRountTime = ArenaGameState->GetRoundStartTime();
-			ArenaPlayerState->SetSurvivalTime(TotalRountTime - CurrentRoundTime);
-			UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: Survivla time is %.2f"), CurrentRoundTime);
-		}
-
-		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			if (ACameraActor* SpectatorCam = ArenaGameMode->GetSpectatorCamera())
-			{
-				ClientSpectateCamera(SpectatorCam);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: SpectatorCamera not invaild"));
-			}
-		}
-	}
 }
