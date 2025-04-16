@@ -114,6 +114,7 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 		StatusComponent->OnCurrentHPChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateHealthBar);
 		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
 		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
+		StatusComponent->OnStockCountChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateStockCount);
 		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
 	}
 }
