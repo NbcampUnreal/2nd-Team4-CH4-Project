@@ -70,9 +70,8 @@ void AArenaGameMode::BeginPlay()
 		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 		ArenaGameState->SetArenaSubMode(SelectedArenaSubMode);
+		ArenaGameState->SetSpectatorCamera(SpectatorCamera);
 	}
-
-	
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
 }
@@ -109,12 +108,12 @@ void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
 	if (AArenaPlayerState* ArenaPlayerState = NewPlayer->GetPlayerState<AArenaPlayerState>())
 	{
 		SelectedID = ArenaPlayerState->GetSelectedCharacterID();
-		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] SelectedID: %s"), *SelectedID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] SelectedID: %s"), *SelectedID.ToString());
 	}
 
 	if (!CharacterClasses.Contains(SelectedID))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
 		return;
 	}
 	TSubclassOf<APawn> PawnClass = CharacterClasses[SelectedID];
@@ -143,7 +142,7 @@ void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
+		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
 	}
 }
 
@@ -202,13 +201,12 @@ void AArenaGameMode::CheckGameConditions()
 				if (APawn* Pawn = PlayerController->GetPawn())
 				{
 					AliveCount++;
-					UE_LOG(LogTemp, Log, TEXT("CheckGameConditions [Elimination]: AliveCount = %d"), AliveCount);
 				}
 				else
 				{
 					if (AArenaPlayerState * ArenaPlayerState = Cast<AArenaPlayerState>(PlayerController->PlayerState))
 					 {
-						if (ArenaPlayerState->MaxLives > 0)
+						if (ArenaPlayerState->MaxLives >= 0)
 						{
 							AliveCount++;
 						}
@@ -219,6 +217,7 @@ void AArenaGameMode::CheckGameConditions()
 
 		if (AliveCount <= 1)
 		{
+			UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++ [ArenaGameMode Only Alive ] : AliveCount = %d"), AliveCount);
 			EndRound();
 			return;
 		}
