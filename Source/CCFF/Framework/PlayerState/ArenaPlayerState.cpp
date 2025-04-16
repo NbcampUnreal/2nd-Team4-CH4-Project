@@ -21,4 +21,5 @@ void AArenaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AArenaPlayerState, MaxLives);
 	DOREPLIFETIME(AArenaPlayerState, KillCount);
 	DOREPLIFETIME(AArenaPlayerState, SelectedCharacterID);
+	DOREPLIFETIME(AArenaPlayerState, SelectedPresetIndex);
 }

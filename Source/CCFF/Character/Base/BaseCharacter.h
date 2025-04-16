@@ -60,6 +60,7 @@ public:
 	
 #pragma region GetFunction
 	FORCEINLINE FString GetCharacterType() const { return CharacterType; };
+	FORCEINLINE UStatusComponent* GetStatusComponent() const { return StatusComponent; };
 #pragma endregion
 	
 #pragma region Override
