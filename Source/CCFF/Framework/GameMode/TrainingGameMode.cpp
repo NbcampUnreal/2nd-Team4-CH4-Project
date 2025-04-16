@@ -14,6 +14,20 @@ ATrainingGameMode::ATrainingGameMode()
     GameStateClass = ATrainingGameState::StaticClass();
 }
 
+void ATrainingGameMode::PostLogin(APlayerController* NewPlayer)
+{
+    Super::PostLogin(NewPlayer);
+    if (NewPlayer)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   SpawnPlayer"));
+        SpawnPlayer(NewPlayer);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
+    }
+}
+
 void ATrainingGameMode::BeginPlay()
 {
     Super::BeginPlay();
@@ -23,56 +37,50 @@ void ATrainingGameMode::BeginPlay()
 		CCFFGameInstance->PlayBGMForCurrentMap();
 	}
 
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (PC)
-	{
-		SpawnPlayer(PC);
-	}
-
     RegisterTrainingBotDamageEvents();
 }
 
-void ATrainingGameMode::SpawnPlayer(AController* NewPlayer)
+void ATrainingGameMode::SpawnPlayer(APlayerController* NewPlayer)
 {
-	if (!NewPlayer) return;
+    if (!NewPlayer) return;
 
-	FName SelectedID = NAME_None;
-	SelectedID = "Cactus";
+    const FName SelectedID = "Cactus";
+    if (!CharacterClasses.Contains(SelectedID))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++ [SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
+        return;
+    }
 
+    TSubclassOf<ABaseCharacter> CharacterClass = CharacterClasses[SelectedID];
 
-	if (!CharacterClasses.Contains(SelectedID))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++[SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
-		return;
-	}
-	TSubclassOf<APawn> PawnClass = CharacterClasses[SelectedID];
+    AActor* StartSpot = ChoosePlayerStart(NewPlayer);
+    const FTransform StartTransform = StartSpot
+        ? StartSpot->GetActorTransform()
+        : FTransform::Identity;
 
-	AActor* StartSpot = ChoosePlayerStart(NewPlayer);
-	const FTransform StartTransform = StartSpot ? StartSpot->GetActorTransform() : FTransform::Identity;
-	const FVector SpawnLocation = StartTransform.GetLocation();
-	const float SpawnYaw = StartTransform.GetRotation().Rotator().Yaw;
+    FActorSpawnParameters Params;
+    Params.Owner = NewPlayer;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	const FRotator SpawnRotation(0.f, SpawnYaw, 0.f);
+    ABaseCharacter* NewCharacter = GetWorld()->SpawnActor<ABaseCharacter>(
+        CharacterClass,
+        StartTransform.GetLocation(),
+        StartTransform.GetRotation().Rotator(),
+        Params
+    );
 
-	FActorSpawnParameters Params;
-	Params.Owner = NewPlayer;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    if (!NewCharacter)
+    {
+        UE_LOG(LogTemp, Error, TEXT("+++++++++++++++++++++++ [SpawnPlayer] Spawn failed: %s"), *CharacterClass->GetName());
+        return;
+    }
 
-	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnLocation, SpawnRotation, Params);
-	if (NewPawn)
-	{
-		NewPlayer->Possess(NewPawn);
-
-		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
-		{
-			FRotator CR = PC->GetControlRotation();
-			PC->SetControlRotation(CR);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++[SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
-	}
+    // Possess
+    NewPlayer->Possess(NewCharacter);
+    if (ATrainingPlayerController* PC = Cast<ATrainingPlayerController>(NewPlayer))
+    {
+        PC->SetControlRotation(PC->GetControlRotation());
+    }
 }
 
 void ATrainingGameMode::RegisterTrainingBotDamageEvents()

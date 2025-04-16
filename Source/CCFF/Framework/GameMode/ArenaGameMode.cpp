@@ -13,6 +13,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Framework/Controller/CharacterController.h"
 #include "Items/Manager/ItemManager.h"
+#include "Character/Base/BaseCharacter.h"
 
 
 AArenaGameMode::AArenaGameMode()
@@ -40,6 +41,21 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 	}
 }
 
+void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	if (NewPlayer)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   SpawnPlayer"));
+		SpawnPlayer(NewPlayer);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
+	}
+}
+
+
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -49,6 +65,7 @@ void AArenaGameMode::BeginPlay()
 	{
 		SelectedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
 		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++++ Selected ArenaSubMode: %d"), (uint8)SelectedArenaSubMode);
+
 	}
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
@@ -78,14 +95,6 @@ void AArenaGameMode::BeginPlay()
 
 void AArenaGameMode::StartArenaRound()
 {
-	for (APlayerState* PlayerState : GameState->PlayerArray)
-	{
-		if (AController* PlayerController = Cast<AController>(PlayerState->GetOwner()))
-		{
-			SpawnPlayer(PlayerController);
-		}
-	}
-
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
@@ -100,49 +109,47 @@ void AArenaGameMode::StartArenaRound()
 	GetWorld()->GetTimerManager().SetTimer(ArenaTimerHandle, this, &AArenaGameMode::UpdateArenaStats, 1.0f, true);
 }
 
-void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
+void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 {
 	if (!NewPlayer) return;
 
-	FName SelectedID = NAME_None;
-	if (AArenaPlayerState* ArenaPlayerState = NewPlayer->GetPlayerState<AArenaPlayerState>())
-	{
-		SelectedID = ArenaPlayerState->GetSelectedCharacterID();
-		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] SelectedID: %s"), *SelectedID.ToString());
-	}
-
+	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
+	const FName SelectedID = CCFFGameInstance->GetSelectedCharacterID();
 	if (!CharacterClasses.Contains(SelectedID))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++ [SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
 		return;
 	}
-	TSubclassOf<APawn> PawnClass = CharacterClasses[SelectedID];
+
+	TSubclassOf<ABaseCharacter> CharacterClass = CharacterClasses[SelectedID];
 
 	AActor* StartSpot = ChoosePlayerStart(NewPlayer);
-	const FTransform StartTransform = StartSpot ? StartSpot->GetActorTransform() : FTransform::Identity;
-	const FVector SpawnLocation = StartTransform.GetLocation();
-	const float SpawnYaw = StartTransform.GetRotation().Rotator().Yaw;
-
-	const FRotator SpawnRotation(0.f, SpawnYaw, 0.f);
+	const FTransform StartTransform = StartSpot
+		? StartSpot->GetActorTransform()
+		: FTransform::Identity;
 
 	FActorSpawnParameters Params;
 	Params.Owner = NewPlayer;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnLocation, SpawnRotation, Params);
-	if (NewPawn)
-	{
-		NewPlayer->Possess(NewPawn);
+	ABaseCharacter* NewCharacter = GetWorld()->SpawnActor<ABaseCharacter>(
+		CharacterClass,
+		StartTransform.GetLocation(),
+		StartTransform.GetRotation().Rotator(),
+		Params
+	);
 
-		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
-		{
-			FRotator CR = PC->GetControlRotation();
-			PC->SetControlRotation(CR);
-		}
-	}
-	else
+	if (!NewCharacter)
 	{
-		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++++++++++++++++++ [ArenaGameMode SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
+		UE_LOG(LogTemp, Error, TEXT("+++++++++++++++++++++++ [SpawnPlayer] Spawn failed: %s"), *CharacterClass->GetName());
+		return;
+	}
+
+	// Possess
+	NewPlayer->Possess(NewCharacter);
+	if (ACharacterController* PC = Cast<ACharacterController>(NewPlayer))
+	{
+		PC->SetControlRotation(PC->GetControlRotation());
 	}
 }
 
@@ -329,7 +336,7 @@ void AArenaGameMode::UpdateCountdown()
 	ArenaGameState->CountdownTime = CountdownTime;
 }
 
-void AArenaGameMode::RespawnPlayer(AController* Controller)
+void AArenaGameMode::RespawnPlayer(APlayerController* Controller)
 {
 	if (!Controller)
 	{
@@ -339,11 +346,18 @@ void AArenaGameMode::RespawnPlayer(AController* Controller)
 
 	AActor* StartSpot = ChoosePlayerStart(Controller);
 	const FTransform SpawnTransform = StartSpot ? StartSpot->GetActorTransform() : FTransform::Identity;
-
-	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, SpawnTransform);
-	if (NewPawn)
+	
+	FName SelectedID = NAME_None;
+	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
+	if (IsValid(CCFFGameInstance))
 	{
-		Controller->Possess(NewPawn);
+		SelectedID = CCFFGameInstance->GetSelectedCharacterID();
+	}
+	TSubclassOf<ABaseCharacter> CharacterClass = CharacterClasses[SelectedID];
+	ABaseCharacter* NewCharacter = GetWorld()->SpawnActor<ABaseCharacter>(CharacterClass, SpawnTransform);
+	if (NewCharacter)
+	{
+		Controller->Possess(NewCharacter);
 		UE_LOG(LogTemp, Log, TEXT("RespawnPlayer: 플레이어 리스폰 성공"));
 	}
 	else
@@ -351,8 +365,8 @@ void AArenaGameMode::RespawnPlayer(AController* Controller)
 		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer: Pawn 스폰 실패"));
 	}
 
-	/*if (Controller)
-	{
-		SpawnPlayer(Controller);
-	}*/
+	//if (Controller)
+	//{
+	//	SpawnPlayer(Controller);
+	//}
 }
