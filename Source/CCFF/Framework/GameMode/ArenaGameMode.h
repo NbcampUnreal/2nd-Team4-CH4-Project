@@ -16,13 +16,15 @@ class CCFF_API AArenaGameMode : public ABaseInGameMode
 public:
 	AArenaGameMode();
 
-	virtual void BeginPlay() override;
 	virtual void PreLogin(
 		const FString& Options,
 		const FString& Address,
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage)
 	override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	virtual void BeginPlay() override;
 
 	void StartArenaRound();
 	virtual void EndRound() override;
@@ -40,7 +42,7 @@ public:
 	void UpdateCountdown();
 
 	UFUNCTION()
-	void RespawnPlayer(AController* Controller);
+	void RespawnPlayer(APlayerController* Controller);
 	
 	EArenaSubMode SelectedArenaSubMode;
 
@@ -74,8 +76,8 @@ private:
 #pragma region SpawnCharacter
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character")
-	TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+	TMap<FName, TSubclassOf<ABaseCharacter>> CharacterClasses;
 
 	UFUNCTION()
-	void SpawnPlayer(AController* NewPlayer);
+	void SpawnPlayer(APlayerController* NewPlayer);
 };
