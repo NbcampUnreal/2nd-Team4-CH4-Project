@@ -11,6 +11,7 @@ AArenaGameState::AArenaGameState()
 	, CurrentArenaSubMode(EArenaSubMode::Elimination)
 {
 	bReplicates = true;
+	SpectatorCamera = nullptr;
 }
 
 void AArenaGameState::InitializeGameState()
@@ -42,11 +43,12 @@ void AArenaGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AArenaGameState, RankingInfos);
 	DOREPLIFETIME(AArenaGameState, RoundStartTime);
 	DOREPLIFETIME(AArenaGameState, CurrentArenaSubMode);
+	DOREPLIFETIME(AArenaGameState, SpectatorCamera);
 }
 
 void AArenaGameState::OnRep_ArenaRoundProgress()
 {
-	UE_LOG(LogTemp, Log, TEXT("[ArenaGameState] ArenaRoundProgress changed to: %d"), static_cast<uint8>(ArenaRoundProgress));
+	//UE_LOG(LogTemp, Log, TEXT("[ArenaGameState] ArenaRoundProgress changed to: %d"), static_cast<uint8>(ArenaRoundProgress));
 }
 
 void AArenaGameState::OnRep_CountdownTime()

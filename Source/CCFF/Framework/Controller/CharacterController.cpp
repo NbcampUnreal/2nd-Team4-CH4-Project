@@ -60,6 +60,7 @@ void ACharacterController::TogglePause()
 	ABaseInGameHUD* MyInGameHUD = Cast<ABaseInGameHUD>(GetHUD());
 	if (IsValid(MyInGameHUD))
 	{
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++ [CharacterController] Valid MyBaseInGameHDU"));
 		UUserWidget* ToggleWidget = MyInGameHUD->GetTogglePauseWidget();
 		if (ToggleWidget != nullptr)
 		{
@@ -98,6 +99,16 @@ void ACharacterController::ServerReturnToLobby_Implementation()
 }
 
 bool ACharacterController::ServerReturnToLobby_Validate()
+{
+	return true;
+}
+
+void ACharacterController::ServerReturnToMainMenu_Implementation()
+{
+	GetWorld()->ServerTravel(TEXT("/Game/CCFF/Maps/MainMenuMap?Listen"));
+}
+
+bool ACharacterController::ServerReturnToMainMenu_Validate()
 {
 	return true;
 }
@@ -147,15 +158,25 @@ void ACharacterController::NotifyPawnDeath()
 	if (!IsValid(ArenaGameMode)) { return; }
 
 	// Posses Spectator Camera
-	if (IsValid(ArenaGameMode->GetSpectatorCamera()))
+	if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
 	{
-		ClientSpectateCamera(ArenaGameMode->GetSpectatorCamera());
+		if (IsValid(ArenaGameState))
+		{
+			ClientSpectateCamera(ArenaGameState->GetSpectatorCamera());
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Valid!!"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
+		}
+			
 	}
 
 
 	// Respawn
 	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)
 	{
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] DeathMatch Mode"));
 		FTimerHandle RespawnTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 			{
@@ -168,6 +189,7 @@ void ACharacterController::NotifyPawnDeath()
 		{
 			ArenaPlayerState->MaxLives--;
 
+			UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] Elimination Mode, MaxLive is %d"), ArenaPlayerState->MaxLives);
 			FTimerHandle RespawnTimerHandle;
 			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 				{
@@ -180,6 +202,7 @@ void ACharacterController::NotifyPawnDeath()
 			{
 				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
 				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
+				UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++ Survival Time : %.2f"), SurvivalTime);
 			}
 		}
 	}
@@ -187,7 +210,11 @@ void ACharacterController::NotifyPawnDeath()
 
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
-	if (!SpectatorCam) { return; }
+	if (!SpectatorCam) 
+	{
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++ [CharacterController] SpectatorCam is not Valid"));
+		return; 
+	}
 
 	UnPossess();
 	ChangeState(NAME_Spectating);
@@ -201,7 +228,7 @@ void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* Spe
 		{
 			SetViewTargetWithBlend(SpectatorCam, 0.f);
 		},
-		0.02f,
+		0.5f,
 		false
 	);
 }

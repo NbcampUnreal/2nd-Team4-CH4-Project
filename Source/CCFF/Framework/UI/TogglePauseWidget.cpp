@@ -38,6 +38,7 @@ void UTogglePauseWidget::OnBackButtonClicked()
 		if (TogglePauseWidget)
 		{
 			TogglePauseWidget->SetVisibility(ESlateVisibility::Collapsed);
+			UE_LOG(LogTemp, Log, TEXT("******************************  [TogglePauseWidget] Clicked Back Button"));
 		}
 	}
 
@@ -56,6 +57,7 @@ void UTogglePauseWidget::OnSettingButtonClicked()
 	if (MyHUD)
 	{
 		MyHUD->ShowSettingsWidget();
+		UE_LOG(LogTemp, Log, TEXT("******************************  [TogglePauseWidget] Clicked Setting Button"));
 	}
 }
 
@@ -76,7 +78,13 @@ void UTogglePauseWidget::OnLobbyButtonClicked()
 
 void UTogglePauseWidget::OnMoveLobbyConfirmed()
 {
-	UGameplayStatics::OpenLevel(this, FName(TEXT("MainMenuMap")));
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (ACharacterController* MyPlayerController = Cast<ACharacterController>(PC))
+		{
+			MyPlayerController->ServerReturnToMainMenu();
+		}
+	}
 }
 
 void UTogglePauseWidget::OnMoveLobbyCanceled()

@@ -24,7 +24,10 @@ public:
 protected:
 #pragma region Widget Binds
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = USTitleWidget, Meta = (AllowPrivateAccess, BindWidget))
-	TObjectPtr<class UEditableText> NicknameText;
+	class UEditableText* IDText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = USTitleWidget, Meta = (AllowPrivateAccess, BindWidget))
+	class UEditableText* PasswordText;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = USTitleWidget, Meta = (AllowPrivateAccess, BindWidget))
 	TObjectPtr<class UButton> LoginButton;
@@ -55,7 +58,7 @@ protected:
 	void OnExitButtonClicked();
 
 	UFUNCTION()
-	void OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod);
+	void HandlePasswordCommitted(const FText& Text, ETextCommit::Type CommitMethod);
 
 	UFUNCTION()
 	void HandleExitGameConfirmed();

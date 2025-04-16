@@ -44,6 +44,9 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
 
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
+	void ServerReturnToMainMenu();
+
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
