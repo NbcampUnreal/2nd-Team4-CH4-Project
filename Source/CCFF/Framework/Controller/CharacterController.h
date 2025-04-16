@@ -52,6 +52,10 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
 	void ServerSetCharacterID(FName InID);
+	UFUNCTION(Server, Reliable, Category = "Character")
+	void Server_SetPresetIndex(int32 InIndex);
+	void Server_SetPresetIndex_Implementation(int32 InIndex);
+
 
 	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
 	void ClientSpectateCamera(ACameraActor* SpectatorCam);

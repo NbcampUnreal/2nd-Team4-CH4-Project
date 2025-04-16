@@ -100,4 +100,13 @@ private:
 
 #pragma endregion
 
+#pragma region CUSTOMIZATION
+public:
+	FORCEINLINE void SetLobbyPresetIndex(int32 NewIndex) { LobbyPresetIndex = NewIndex; }
+	FORCEINLINE int32 GetLobbyPresetIndex() const { return LobbyPresetIndex; }
+
+private:
+	int32 LobbyPresetIndex = -1;
+
+#pragma endregion
 };

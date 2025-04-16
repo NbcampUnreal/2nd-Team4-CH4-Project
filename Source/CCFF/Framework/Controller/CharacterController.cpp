@@ -40,7 +40,8 @@ void ACharacterController::BeginPlay()
 
 			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
 			ServerSetCharacterID(SelectedCharacterID);
-
+			int32 SelectedPresetIndex = CCFFGameInstance->GetLobbyPresetIndex();
+			Server_SetPresetIndex(SelectedPresetIndex);
 			CCFFGameInstance->PlayBGMForCurrentMap();
 		}
 	}
@@ -147,6 +148,14 @@ bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
 	return true;
 }
 
+void ACharacterController::Server_SetPresetIndex_Implementation(int32 InIndex)
+{
+	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	{
+		ArenaPlayerState->SetSelectedPresetIndex(InIndex);
+		UE_LOG(LogTemp, Log, TEXT("[Server_SetPresetIndex] SelectedPresetIndex = %d"), InIndex);
+	}
+}
 
 // TODO :: Fix Respawn SpectatorCam
 void ACharacterController::NotifyPawnDeath()
