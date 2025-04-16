@@ -218,3 +218,17 @@ FPresetItemsIndex UCharacterCustomizationComponent::GetCurrentCustomItemsIndex()
 	}
 	return PresetItemsIndex;
 }
+
+void UCharacterCustomizationComponent::EquipPresetByIndex(int32 PresetIndex)
+{
+	UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
+	if (CustomizationManager)
+	{
+		FCustomizationPreset Preset = CustomizationManager->GetCustomizationPreset(GetCharacterID(), PresetIndex);
+		EquipPreset(Preset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CustomizationManager is null."));
+	}
+}
