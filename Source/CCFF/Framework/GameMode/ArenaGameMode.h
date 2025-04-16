@@ -26,10 +26,11 @@ public:
 	virtual void EndRound() override;
 	virtual void CheckGameConditions() override;
 
+	virtual void ResetSubsystem() override;
+
 	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
 
 #pragma region Arena
-	// TODO :: 업적 시스템(어시스트, 등등)
 
 public:
 	void UpdateArenaStats();
@@ -68,4 +69,11 @@ private:
 
 	bool bIsStartedRound;
 
+#pragma region SpawnCharacter
+public:
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+
+	UFUNCTION()
+	void SpawnPlayer(AController* NewPlayer);
 };

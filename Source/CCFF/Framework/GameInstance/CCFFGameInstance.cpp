@@ -1,7 +1,9 @@
 ﻿#include "Framework/GameInstance/CCFFGameInstance.h"
-#include "Kismet/GameplayStatics.h"
 #include "Framework/SaveGame/CCFFSaveGame.h"
 #include "Framework/HUD/MainMenuHUD.h"
+#include "Sound/SoundBase.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 const int32 UCCFFGameInstance::CurrentSaveVersion = 1;
 
@@ -127,4 +129,48 @@ void UCCFFGameInstance::SetServerIP(const FString& NewServerIP)
 {
 	ServerIP = NewServerIP;
 	SaveData();
+}
+
+void UCCFFGameInstance::PlayBGMForCurrentMap()
+{
+	if (IsRunningDedicatedServer()) return;
+
+	StopCurrentBGM();
+
+	const FString CleanMapName = GetCleanMapName();
+	const FName MapKey = FName(*CleanMapName);
+
+	if (USoundBase** FoundBGM = MapNameToBGMMap.Find(MapKey))
+	{
+		if (*FoundBGM)
+		{
+			CurrentBGMComponent = UGameplayStatics::SpawnSound2D(this, *FoundBGM);
+		}
+	}
+}
+
+
+void UCCFFGameInstance::StopCurrentBGM()
+{
+	if (CurrentBGMComponent)
+	{
+		CurrentBGMComponent->Stop();
+		CurrentBGMComponent = nullptr;
+	}
+}
+
+FString UCCFFGameInstance::GetCleanMapName() const
+{
+	FString FullMapName = GetWorld() ? GetWorld()->GetMapName() : TEXT("NULL");
+
+	if (FullMapName.StartsWith(TEXT("UEDPIE")))
+	{
+		int32 LastUnderscore = FullMapName.Find(TEXT("_"), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		if (LastUnderscore != INDEX_NONE)
+		{
+			return FullMapName.RightChop(LastUnderscore + 1);
+		}
+	}
+
+	return FullMapName;
 }

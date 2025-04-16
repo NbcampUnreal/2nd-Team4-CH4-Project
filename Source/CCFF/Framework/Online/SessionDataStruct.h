@@ -13,13 +13,14 @@ struct FSessionInfo
 	FString SessionName;
 
 	UPROPERTY(BlueprintReadWrite)
+	FString IPAddress;
+
+	UPROPERTY(BlueprintReadWrite)
 	int32 CurrentPlayers;
 
 	UPROPERTY(BlueprintReadWrite)
 	int32 MaxPlayers;
 
-	UPROPERTY(BlueprintReadWrite)
-	FString IPAddress;
 
 	FSessionInfo()
 		: SessionName(TEXT(""))

@@ -30,11 +30,13 @@ struct FBufferedInput
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
+	ECharacterState InputState;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
 	EAttackType InputAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buffer")
 	float BufferedTime;
-	FBufferedInput(): InputAttack(EAttackType::None), BufferedTime(0.f) {}
-	FBufferedInput(EAttackType InAction, const float InTime): InputAttack(InAction), BufferedTime(InTime) {}
+	FBufferedInput(): InputState(ECharacterState::Normal),InputAttack(EAttackType::None), BufferedTime(0.f) {}
+	FBufferedInput(ECharacterState InState, EAttackType InAction, const float InTime): InputState(InState), InputAttack(InAction), BufferedTime(InTime) {}
 };
 
 UCLASS()
@@ -46,6 +48,10 @@ public:
 	ABaseCharacter();
 
 public:
+#pragma region SetFunction
+	FORCEINLINE void SetResistanceState(const EResistanceState InState) { CurrentResistanceState=InState; }
+#pragma endregion 
+	
 #pragma region Widget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 	void SetHUDWidget(UUserWidget* HUDWidget);
@@ -86,17 +92,6 @@ protected:
 	UFUNCTION()
 	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
-	
-#pragma region Timer
-protected:
-	// === Timers ===
-	UPROPERTY()
-	FTimerHandle HitstunTimerHandle;
-	UPROPERTY()
-	FTimerHandle HitlagTimerHandle;
-	UPROPERTY()
-	FTimerHandle BlockstunTimerHandle;
-#pragma endregion
 
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
@@ -110,7 +105,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadBattleModifiers();
 #pragma endregion
-
+	
 #pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -126,14 +121,25 @@ protected:
 	void ServerRPCSetMaxWalkSpeed(const float Value);
 	
 #pragma endregion
+
+#pragma region UtilityActions
+	UFUNCTION()
+	void Guard();
+	UFUNCTION()
+	void StopGuard();
+	UFUNCTION()
+	void Dodge();
+	UFUNCTION()
+	void Burst();
+	UFUNCTION()
+	void PlayActionMontage(ECharacterState InState, const int32 Num);
+#pragma endregion
 	
 #pragma region AttackFunctions
 	UFUNCTION(Server,Reliable,WithValidation)
-	void ServerRPCAttack(const int32 Num, float InStartAttackTime);
+	void ServerRPCAction(ECharacterState InState, float InStartAttackTime, const int32 Num); //if not Attack action assign num=8
 	UFUNCTION(Client,Unreliable)
-	void ClientRPCPlayAttackMontage(const int32 Num, ABaseCharacter* InTargetCharacter);
-	UFUNCTION()
-	void PlayAttackMontage(const int32& Num);
+	void ClientRPCPlayActionMontage(ECharacterState InState, const int32 Num, ABaseCharacter* InTargetCharacter);
 	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
 	UFUNCTION()
@@ -151,16 +157,10 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentResistanceState();
 	UFUNCTION()
-	void ExecuteAttackByIndex(const int32 Index);
+	void ExecuteActionByIndex(ECharacterState InState, const int32 Index);
 	UFUNCTION()
 	void ExecuteBufferedAction();
-#pragma endregion
-
-#pragma region Buffer
-	UPROPERTY()
-	FBufferedInput InputBuffer;
-	UPROPERTY()
-	float BufferThreshold;
+	
 #pragma endregion
 	
 protected:
@@ -211,17 +211,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Combat/Reaction")
 	void OnDeath();
 
-	UFUNCTION()
-	void SwitchToSpectatorCamera();
 #pragma endregion
 
 protected:
-	void HandlePlayerStateOnDeath();
-	bool CanRespawn() const;
-	void HandleControllerOnDeath(bool bRespawn);
-	void DeactivatePawnCamera();
-	void TransitionToSpectator(ACharacterController* CC);
-
 	UFUNCTION()
 	void OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -248,6 +240,24 @@ protected:
 	TArray<UBoxComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
 	TArray<FHitBoxData> HitBoxList;
+#pragma endregion
+
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
+#pragma endregion
+	
+#pragma region Timer
+protected:
+	// === Timers ===
+	UPROPERTY()
+	FTimerHandle HitstunTimerHandle;
+	UPROPERTY()
+	FTimerHandle HitlagTimerHandle;
+	UPROPERTY()
+	FTimerHandle BlockstunTimerHandle;
 #pragma endregion
 	
 protected:
@@ -311,7 +321,9 @@ protected:
 	float LastMoveInputTime;
 	float DoubleTapThreshold;
 	uint8 bIsDoubleTab;
-	
+
+	UPROPERTY()
+	AActor* LastDamageCauser;
 #pragma endregion
 	
 	
