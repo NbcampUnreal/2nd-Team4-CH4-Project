@@ -62,6 +62,17 @@ void ULockerRoomWidget::NativeConstruct()
 		ClearButton->OnClicked.AddDynamic(this, &ULockerRoomWidget::OnClearButtonClicked);
 	}
 	
+	if (APlayerController* PlayerController = GetOwningPlayer())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		InputMode.SetWidgetToFocus(TakeWidget());
+
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->SetShowMouseCursor(true);
+	}
+
 	InitializeCustomizationManager();
 	InitializePreviewPawn();
 	BindToCharacterChangedEvent();
