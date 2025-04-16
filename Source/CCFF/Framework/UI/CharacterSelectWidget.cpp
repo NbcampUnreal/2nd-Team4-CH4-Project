@@ -1,5 +1,6 @@
 #include "Framework/UI/CharacterSelectWidget.h"
 #include "Components/Button.h"
+#include "Framework/Application/SlateApplication.h" 
 
 void UCharacterSelectWidget::NativeConstruct()
 {
@@ -44,4 +45,13 @@ void UCharacterSelectWidget::BroadcastSelection(int32 Index)
 
 	const FName SelectedID = CharacterIDList[Index];
 	OnCharacterSelected.ExecuteIfBound(SelectedID);
+
+	FSlateApplication::Get().ClearKeyboardFocus(EFocusCause::SetDirectly);
+
+	if (APlayerController* PlayerController = GetOwningPlayer())
+	{
+		FInputModeGameOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->SetShowMouseCursor(true);
+	}
 }
