@@ -60,14 +60,30 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	const int32 IndexToAssign = AssignedSlotIndices.Num();
-	AssignedSlotIndices.Add(NewPlayer, IndexToAssign);
+	int32 IndexToAssign = -1;
+	const int32 MaxSlots = PlayerSpawnSlots.Num();
 
-	if (!PlayerSpawnSlots.IsValidIndex(IndexToAssign))
+	for (int32 i = 0; i < MaxSlots; ++i)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[LobbyGameMode] PostLogin : Not enough slot positions!"));
-		return;
+		bool bSlotInUse = false;
+
+		for (const auto& Pair : AssignedSlotIndices)
+		{
+			if (Pair.Value == i)
+			{
+				bSlotInUse = true;
+				break;
+			}
+		}
+
+		if (!bSlotInUse)
+		{
+			IndexToAssign = i;
+			break;
+		}
 	}
+
+	AssignedSlotIndices.Add(NewPlayer, IndexToAssign);
 
 	FVector SpawnLocation = PlayerSpawnSlots[IndexToAssign]->GetActorLocation();
 	FRotator SpawnRotation = PlayerSpawnSlots[IndexToAssign]->GetActorRotation();
@@ -99,6 +115,17 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 void ALobbyGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
+
+	APlayerController* ExitingPlayerController = Cast<APlayerController>(Exiting);
+	if (ExitingPlayerController)
+	{
+		if (AssignedSlotIndices.Contains(ExitingPlayerController))
+		{
+			int32 FreedIndex = AssignedSlotIndices[ExitingPlayerController];
+			UE_LOG(LogTemp, Log, TEXT("[LobbyGameMode] Freed slot index %d for leaving player"), FreedIndex);
+			AssignedSlotIndices.Remove(ExitingPlayerController);
+		}
+	}
 
 	APlayerState* ExitingPlayerState = Exiting->GetPlayerState<APlayerState>();
 	if (!IsValid(ExitingPlayerState)) return;
