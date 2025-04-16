@@ -400,7 +400,7 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 {
 	switch (CurrentCharacterState)
 	{
-	case ECharacterState::Normal:
+	case ECharacterState::Normal:F
 		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
@@ -810,7 +810,7 @@ void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce)
 
 void ABaseCharacter::GuardCrush()
 {
-	CurrentCharacterState = ECharacterState::Hitted;
+	TakeHitstun(60);
 }
 
 
