@@ -139,7 +139,7 @@ void UGraphicSettingsWidget::ResetSettings_Implementation()
 	}
 	if (WindowModeComboBox)
 	{
-		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+		WindowModeComboBox->SetSelectedOption(TEXT("Windowed"));
 	}
 
 	ApplyPreviewSettings();
