@@ -74,5 +74,26 @@ void UItemInteractionComponent::HandleHealEffect(float HealPercent)
 void UItemInteractionComponent::HandleResistivityModifier(EResistanceState ResistanceState, float Duration)
 {
 	UE_LOG(LogTemp, Warning, TEXT("HandleResistivityModifier called with %s for %.2f seconds"), *UEnum::GetValueAsString(ResistanceState), Duration);
-	
+
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
+	{
+		// Set the Resistance State
+		Character->SetResistanceState(ResistanceState);
+
+		// Lamda: Set Timer to revert the Resistance state after Duration
+		FTimerDelegate TimerDel;
+		TimerDel.BindLambda([Character]()
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Reverting ResistanceState to Normal"));
+				Character->SetResistanceState(EResistanceState::Normal);
+			});
+
+		// If the timer is already active, clear it before setting a new one
+		if (GetWorld()->GetTimerManager().IsTimerActive(ResistivityResetTimer))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(ResistivityResetTimer);
+		}
+
+		GetWorld()->GetTimerManager().SetTimer(ResistivityResetTimer, TimerDel, Duration, false);
+	}
 }
