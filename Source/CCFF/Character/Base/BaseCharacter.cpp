@@ -110,12 +110,14 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 {
 	if (UBaseInGameWidget* MyHUD=Cast<UBaseInGameWidget>(HUDWidget))
 	{
-		MyHUD->InitializeHUDWidget(StatusComponent);
 		StatusComponent->OnCurrentHPChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateHealthBar);
 		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
 		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
 		StatusComponent->OnStockCountChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateStockCount);
 		UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
+		MyHUD->InitializeHUDWidget(StatusComponent);
+		UpdateStockCount();
+		UE_LOG(LogTemp,Display,TEXT("[SetHud] UpdateStockCount Called"));
 	}
 }
 
@@ -123,7 +125,12 @@ void ABaseCharacter::UpdateStockCount()
 {
 	if (AArenaPlayerState* ArenaPS=Cast<AArenaPlayerState>(GetPlayerState()))
 	{
+		UE_LOG(LogTemp,Warning,TEXT("[UpdateStockCount] SetCurrentStockCount UpdateStockCount Call (LocallyControlled: %d, HasAuthority: %d"),IsLocallyControlled(),HasAuthority());
 		StatusComponent->SetCurrentStockCount(ArenaPS->MaxLives);
+	}
+	else
+	{
+		UE_LOG(LogTemp,Display,TEXT("[UpdateStockCount] PlayerState is NULL"));
 	}
 }
 
@@ -159,9 +166,6 @@ void ABaseCharacter::BeginPlay()
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
-
-	//Update StockCount
-	UpdateStockCount();
 	
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
@@ -602,7 +606,7 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 	}
 	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
 	bIsDoubleTab=false;
-	UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
+	//UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
 }
 
 void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
@@ -962,7 +966,7 @@ void ABaseCharacter::OnDeath()
 			DamageCauserPS->SetKillCount(CurrentKillCount+1);
 		}
 	}
-
+	UpdateStockCount();
 	if (IsValid(Anim.DeathMontage))
 	{
 		//Montage end -> destroy actor
@@ -977,7 +981,6 @@ void ABaseCharacter::OnDeath()
 					CharacterController->NotifyPawnDeath();
 				}
 				//Update StockCount
-				UpdateStockCount();
 			},MontageLength,false);		
 	}
 }
