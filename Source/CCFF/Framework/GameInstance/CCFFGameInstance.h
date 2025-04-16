@@ -56,4 +56,25 @@ private:
 	UPROPERTY()
 	EArenaSubMode ArenaSubMode = EArenaSubMode::Elimination;
 
+
+#pragma region BGM
+public:
+	UFUNCTION()
+	void PlayBGMForCurrentMap();
+
+	UFUNCTION()
+	void StopCurrentBGM();
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TMap<FName, USoundBase*> MapNameToBGMMap;
+
+private:
+	UPROPERTY()
+	UAudioComponent* CurrentBGMComponent;
+
+	FString GetCleanMapName() const;
+
+#pragma endregion
+
 };

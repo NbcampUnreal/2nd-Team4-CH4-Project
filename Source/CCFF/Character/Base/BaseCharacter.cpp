@@ -122,11 +122,11 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Rotate Camera properly
-	// if (IsValid(CameraBoom))
-	// {
-	// 	const float CameraRotation=GetActorRotation().Yaw;
-	// 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
-	// }
+	 if (IsValid(CameraBoom))
+	 {
+	 	const float CameraRotation=GetActorRotation().Yaw;
+	 	CameraBoom->SetRelativeRotation((FRotator(-35, CameraRotation-180, 0)));
+	 }
 	// Binding Event Notify and End
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
@@ -279,6 +279,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Montage %s Ended. Interrupted: %d"), *Montage->GetName(), bInterrupted);
 	//CurrentCharacterState = ECharacterState::Normal;
 }
 
@@ -385,7 +386,6 @@ void ABaseCharacter::ExecuteBufferedAction()
 
 void ABaseCharacter::OnRep_CurrentCharacterState()
 {
-	UE_LOG(LogTemp,Warning,TEXT("CurState: %d"),CurrentCharacterState);
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
@@ -394,8 +394,11 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 		break;
 	case ECharacterState::Hitted:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
-		PlayHittedMontage();
+		PlayActionMontage(ECharacterState::Hitted,0);
 		break;
+	case ECharacterState::Dead:
+		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		PlayActionMontage(ECharacterState::Dead,0);
 	default:
 		GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
@@ -474,17 +477,6 @@ void ABaseCharacter::Attack8(const FInputActionValue& Value)
 	ExecuteActionByIndex(ECharacterState::Attack,7);
 }
 
-void ABaseCharacter::PlayHittedMontage()
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//둘다 유효
-	if (AnimInstance&&Anim.HittedMontage)
-	{
-		//몽타주 실행
-		AnimInstance->Montage_Play(Anim.HittedMontage);
-	}
-}
-
 void ABaseCharacter::Guard()
 {
 	UE_LOG(LogTemp,Warning,TEXT("Guard Start"));
@@ -532,8 +524,10 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		PlayMontage=Anim.BurstMontage;
 		break;
 	case ECharacterState::Dead:
-		UE_LOG(LogTemp,Warning,TEXT("Death called"));
 		PlayMontage=Anim.DeathMontage;
+		break;
+	case ECharacterState::Hitted:
+		PlayMontage=Anim.HittedMontage;
 		break;
 	default:
 		break;
@@ -541,12 +535,14 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 	//둘다 유효
 	if (AnimInstance&&PlayMontage)
 	{
+		UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s, PlayMontage: %s"),CurrentCharacterState,*GetName(),*PlayMontage->GetName());
+		AnimInstance->Montage_Stop(0.2f);
 		//몽타주 실행
 		AnimInstance->Montage_Play(PlayMontage);
 	}
 	else if (!PlayMontage&&InState==ECharacterState::Normal)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
+		//UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
@@ -632,8 +628,8 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
 	float NewHealth = FMath::Clamp(StatusComponent->GetCurrentHP() - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, StatusComponent->GetMaxHP());
-	StatusComponent->SetCurrentHP(NewHealth);
 	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
+	StatusComponent->SetCurrentHP(NewHealth);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
 	return ScaledDamage;
@@ -891,37 +887,34 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
+	UE_LOG(LogTemp,Warning,TEXT("Authority: %d, LocallyControlled: %d"),HasAuthority(),IsLocallyControlled());
+	//Set off Collision and change state to dead
+	CurrentCharacterState=ECharacterState::Dead;
+	//Set off Overlap event
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	//Raise KillCount of DamageCauser
-	ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
-	AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
-	if (IsValid(DamageCauserPS))
+	if (LastDamageCauser)
 	{
-		const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
-		DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		ACharacter* DamageCauserCharacter=Cast<ACharacter>(LastDamageCauser);
+		AArenaPlayerState* DamageCauserPS=Cast<AArenaPlayerState>(DamageCauserCharacter->GetPlayerState());
+		if (IsValid(DamageCauserPS))
+		{
+			const int32 CurrentKillCount=DamageCauserPS->GetKillCount();
+			DamageCauserPS->SetKillCount(CurrentKillCount+1);
+		}
 	}
-	//Play Dead Animation
-	UAnimInstance* AnimInstance=GetMesh()->GetAnimInstance();
-    if (IsValid(AnimInstance)&&Anim.DeathMontage)
-    {
-    	float DeathAnimLength=Anim.DeathMontage->GetPlayLength();
-    	UE_LOG(LogTemp,Warning,TEXT("OnDeath call Play Montage"));
-    	AnimInstance->Montage_Play(Anim.DeathMontage);
-    	FTimerHandle DestroyTimerHandle;
-    	//ClientRPCPlayActionMontage(ECharacterState::Dead,0,this);
-    	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
-    	{
-    		Destroy();
-    	},DeathAnimLength+3.0f,false);
-    }
-    else
-    {
-    	Destroy();
-    }
-
+	
 	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 	{
 		CharacterController->NotifyPawnDeath();
 	}
+	float MontageLength=Anim.DeathMontage->GetPlayLength();
+	FTimerHandle DestroyTimerHandle;
+	GetWorldTimerManager().SetTimer(
+		DestroyTimerHandle,
+		[this](){
+			Destroy();
+		},MontageLength,false);
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
@@ -997,7 +990,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 				const int32 n=Type->NumEnums();
 				AttackCollisions.SetNum(n-2);
 				HitBoxList.SetNum(n-2);
-				for (int32 i=0;i<n-1;i++)
+				for (int32 i=0;i<n-2;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
 					//UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);

@@ -92,17 +92,6 @@ protected:
 	UFUNCTION()
 	void DeactivateAttackCollision(const int32 Index) const;
 #pragma endregion 
-	
-#pragma region Timer
-protected:
-	// === Timers ===
-	UPROPERTY()
-	FTimerHandle HitstunTimerHandle;
-	UPROPERTY()
-	FTimerHandle HitlagTimerHandle;
-	UPROPERTY()
-	FTimerHandle BlockstunTimerHandle;
-#pragma endregion
 
 #pragma region DataPreLoad
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
@@ -116,7 +105,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "DataLoad")
 	void PreLoadBattleModifiers();
 #pragma endregion
-
+	
 #pragma region MoveFunction
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -152,8 +141,6 @@ protected:
 	UFUNCTION(Client,Unreliable)
 	void ClientRPCPlayActionMontage(ECharacterState InState, const int32 Num, ABaseCharacter* InTargetCharacter);
 	UFUNCTION()
-	void PlayHittedMontage();
-	UFUNCTION()
 	void Attack1(const FInputActionValue& Value);
 	UFUNCTION()
 	void Attack2(const FInputActionValue& Value);
@@ -174,13 +161,6 @@ protected:
 	UFUNCTION()
 	void ExecuteBufferedAction();
 	
-#pragma endregion
-
-#pragma region Buffer
-	UPROPERTY()
-	FBufferedInput InputBuffer;
-	UPROPERTY()
-	float BufferThreshold;
 #pragma endregion
 	
 protected:
@@ -260,6 +240,24 @@ protected:
 	TArray<UBoxComponent*> AttackCollisions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitBox/Data")
 	TArray<FHitBoxData> HitBoxList;
+#pragma endregion
+
+#pragma region Buffer
+	UPROPERTY()
+	FBufferedInput InputBuffer;
+	UPROPERTY()
+	float BufferThreshold;
+#pragma endregion
+	
+#pragma region Timer
+protected:
+	// === Timers ===
+	UPROPERTY()
+	FTimerHandle HitstunTimerHandle;
+	UPROPERTY()
+	FTimerHandle HitlagTimerHandle;
+	UPROPERTY()
+	FTimerHandle BlockstunTimerHandle;
 #pragma endregion
 	
 protected:

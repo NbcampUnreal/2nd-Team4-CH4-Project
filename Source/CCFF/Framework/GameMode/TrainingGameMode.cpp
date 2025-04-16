@@ -1,5 +1,6 @@
 #include "Framework/GameMode/TrainingGameMode.h"
 #include "Framework/GameState/TrainingGameState.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Character/Base/BaseCharacter.h"
 #include "Framework/Controller/TrainingPlayerController.h"
 #include "Engine/World.h"
@@ -16,6 +17,11 @@ ATrainingGameMode::ATrainingGameMode()
 void ATrainingGameMode::BeginPlay()
 {
     Super::BeginPlay();
+
+	if (UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>())
+	{
+		CCFFGameInstance->PlayBGMForCurrentMap();
+	}
 
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	if (PC)

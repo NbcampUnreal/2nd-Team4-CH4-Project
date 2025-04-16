@@ -12,4 +12,7 @@ class CCFF_API ATitleGameMode : public AGameModeBase
 public:
 	ATitleGameMode();
 	
+public:
+	virtual void BeginPlay() override;
+
 };
