@@ -207,8 +207,7 @@ void ALobbyGameMode::StartGame()
 	}
 
 	int32 RandomIndex = FMath::RandRange(0, AvailableMapPaths.Num() - 1);
-	//const FString& SelectedMap = AvailableMapPaths[RandomIndex];
-	const FString& SelectedMap = AvailableMapPaths[2];
+	const FString& SelectedMap = AvailableMapPaths[RandomIndex];
 	UE_LOG(LogTemp, Log, TEXT("[ALobbyGameMode] StartGame : All players ready. Starting game on map: %s"), *SelectedMap);
 
 	GetWorld()->ServerTravel(SelectedMap + TEXT("?listen"));
