@@ -11,8 +11,4 @@ void UPreviewReadyStatusWidget::SetReadyState(bool bIsReady)
 
 		ReadyStatusText->SetText(StatusText);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[UPreviewReadyStatusWidget] ReadyStatusText is NULL!"));
-	}
 }

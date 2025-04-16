@@ -11,7 +11,7 @@ class CCFF_API ATrainingGameMode : public ABaseInGameMode
 	GENERATED_BODY()
 
 public:
-    ATrainingGameMode(const FObjectInitializer& ObjectInitializer);
+    ATrainingGameMode();
 
     virtual void BeginPlay() override;
 

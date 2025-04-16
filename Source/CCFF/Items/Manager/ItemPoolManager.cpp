@@ -14,13 +14,12 @@ void UItemPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 
 void UItemPoolManager::InitializePool()
 {
-    if (!IsServer() || !GetWorld() || ItemPool.Num() > 0)
-        return;
+    if (!IsServer()) { return; }
 
     UE_LOG(LogTemp, Log, TEXT("ItemPoolManager: Initializing item pool."));
 
     static const FString DataTablePath = TEXT("/Game/CCFF/DataTables/ItemSpawnTable.ItemSpawnTable");
-    ItemDataTable = LoadObject<UDataTable>(nullptr, *DataTablePath);
+    ItemDataTable = LoadObject<UDataTable>(nullptr, *DataTablePath); //
     if (!ItemDataTable)
     {
         UE_LOG(LogTemp, Error, TEXT("ItemPoolManager: Failed to load ItemSpawnTable."));
@@ -64,14 +63,31 @@ void UItemPoolManager::InitializePool()
 
 ASpawnableItem* UItemPoolManager::GetRandomItemFromPool()
 {
-    if (ItemPool.Num() == 0) return nullptr;
+    UE_LOG(LogTemp, Log, TEXT("GetRandomItemFromPool() called"));
+
+    if (ItemPool.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ItemPool is empty"));
+        return nullptr;
+    }
 
     TArray<ASpawnableItem*> AvailableItems;
     for (ASpawnableItem* Item : ItemPool)
     {
-        if (Item && Item->IsHidden())
+        if (Item)
         {
-            AvailableItems.Add(Item);
+            UE_LOG(LogTemp, Verbose, TEXT("Checking Item: %s | Hidden: %s"),
+                *Item->GetName(),
+                Item->IsHidden() ? TEXT("true") : TEXT("false"));
+
+            if (Item->IsHidden())
+            {
+                AvailableItems.Add(Item);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Null item found in ItemPool"));
         }
     }
 
@@ -80,10 +96,12 @@ ASpawnableItem* UItemPoolManager::GetRandomItemFromPool()
         int32 RandomIndex = FMath::RandRange(0, AvailableItems.Num() - 1);
         ASpawnableItem* SelectedItem = AvailableItems[RandomIndex];
 
-        return SelectedItem;
+        UE_LOG(LogTemp, Log, TEXT("Selected item: %s"), *SelectedItem->GetName());
 
+        return SelectedItem;
     }
 
+    UE_LOG(LogTemp, Warning, TEXT("No hidden items available to select"));
     return nullptr;
 }
 
