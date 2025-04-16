@@ -15,27 +15,27 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE float GetTotalDamage() const { return TotalDamage; }
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetTotalDamage(float Damage) { TotalDamage = Damage; }
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE float GetSurvivalTime() const { return SurvivalTime; }
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetSurvivalTime(float Time) { SurvivalTime = Time; }
 	
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetPlayerNickname(const FString& InNickname) { PlayerNickname = InNickname; }
 	
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE int32 GetKillCount() const { return KillCount; }
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetKillCount(int Kill) { KillCount = Kill; }
 
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE FName GetSelectedCharacterID() const { return SelectedCharacterID; }
-	UFUNCTION(BlueprintCallable, Category = "PlayerStats")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetSelectedCharacterID(FName CharacterID) { SelectedCharacterID = CharacterID; }
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")

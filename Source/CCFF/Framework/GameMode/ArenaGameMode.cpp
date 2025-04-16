@@ -16,18 +16,89 @@
 
 
 AArenaGameMode::AArenaGameMode()
-	: CachedArenaSubMode(EArenaSubMode::Elimination)
+	: SelectedArenaSubMode(EArenaSubMode::Elimination)
 	, DamageWeight(0.4f)
 	, TimeWeight(0.2f)
 	, KillCountWeight(0.4f)
 {
-	PlayerControllerClass = ACharacterController::StaticClass();
 	GameStateClass = AArenaGameState::StaticClass();
+	PlayerControllerClass = ACharacterController::StaticClass();
 	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
 	RoundTime = 70.0f;  // Default
 	CountdownTime = 5.0f;
+}
+
+void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	if (bHasGameStarted)
+	{
+		ErrorMessage = TEXT("Server is already in-game. Please try again later.");
+	}
+}
+
+void AArenaGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
+	if (CCFFGameInstance)
+	{
+		SelectedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
+		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++++ Selected ArenaSubMode: %d"), (uint8)SelectedArenaSubMode);
+	}
+
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
+	if (IsValid(ArenaGameState))
+	{
+		TArray<AActor*> Found;
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpectatorCamera"), Found);
+		if (Found.Num() > 0)
+		{
+			SpectatorCamera = Cast<ACameraActor>(Found[0]);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ArenaGameMode: SpectatorCam not found"));
+		}
+
+		ArenaGameState->InitializeGameState();
+		ArenaGameState->SetCountdownTime(CountdownTime);
+		ArenaGameState->SetRoundStartTime(RoundTime);
+		ArenaGameState->SetRemainingTime(RoundTime);
+		ArenaGameState->SetArenaSubMode(SelectedArenaSubMode);
+	}
+
+	
+
+	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
+}
+
+void AArenaGameMode::StartArenaRound()
+{
+	for (APlayerState* PlayerState : GameState->PlayerArray)
+	{
+		if (AController* PlayerController = Cast<AController>(PlayerState->GetOwner()))
+		{
+			SpawnPlayer(PlayerController);
+		}
+	}
+
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
+	if (IsValid(ArenaGameState))
+	{
+		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
+		bHasGameStarted = true;
+	}
+
+	ResetSubsystem();
+
+	// CheckCondition every second
+	GetWorld()->GetTimerManager().SetTimer(ConditionCheckTimerHandle, this, &AArenaGameMode::CheckGameConditions, 1.0f, true);
+	GetWorld()->GetTimerManager().SetTimer(ArenaTimerHandle, this, &AArenaGameMode::UpdateArenaStats, 1.0f, true);
 }
 
 void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
@@ -38,12 +109,12 @@ void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
 	if (AArenaPlayerState* ArenaPlayerState = NewPlayer->GetPlayerState<AArenaPlayerState>())
 	{
 		SelectedID = ArenaPlayerState->GetSelectedCharacterID();
-		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++[SpawnPlayer] SelectedID: %s"), *SelectedID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] SelectedID: %s"), *SelectedID.ToString());
 	}
 
 	if (!CharacterClasses.Contains(SelectedID))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++[SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] '%s' no mapping"), *SelectedID.ToString());
 		return;
 	}
 	TSubclassOf<APawn> PawnClass = CharacterClasses[SelectedID];
@@ -72,77 +143,8 @@ void AArenaGameMode::SpawnPlayer(AController* NewPlayer)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++[SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
+		UE_LOG(LogTemp, Error, TEXT("++++++++++++++++++++++++++++++++++ [SpawnPlayer] Spawn Fail : %s"), *PawnClass->GetName());
 	}
-}
-
-
-void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
-{
-	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
-
-	if (bHasGameStarted)
-	{
-		ErrorMessage = TEXT("Server is already in-game. Please try again later.");
-	}
-}
-
-void AArenaGameMode::BeginPlay()
-{
-	Super::BeginPlay();
-
-	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
-	if (CCFFGameInstance)
-	{
-		CachedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
-		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++++ Cached ArenaSubMode: %d"), (uint8)CachedArenaSubMode);
-	}
-
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
-	if (IsValid(ArenaGameState))
-	{
-		ArenaGameState->InitializeGameState();
-		ArenaGameState->SetCountdownTime(CountdownTime);
-		ArenaGameState->SetRoundStartTime(RoundTime);
-		ArenaGameState->SetRemainingTime(RoundTime);
-		ArenaGameState->SetArenaSubMode(CachedArenaSubMode);
-	}
-
-	TArray<AActor*> Found;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpectatorCamera"), Found);
-	if (Found.Num() > 0)
-	{
-		SpectatorCamera = Cast<ACameraActor>(Found[0]);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ArenaGameMode: SpectatorCam not found"));
-	}
-
-	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
-}
-
-void AArenaGameMode::StartArenaRound()
-{
-	for (APlayerState* PlayerState : GameState->PlayerArray)
-	{
-		if (AController* PlayerController = Cast<AController>(PlayerState->GetOwner()))
-		{
-			SpawnPlayer(PlayerController);
-		}
-	}
-
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
-	if (IsValid(ArenaGameState))
-	{
-		ArenaGameState->SetRoundProgress(ERoundProgress::InProgress);
-		bHasGameStarted = true;
-	}
-
-	// CheckCondition every second
-	GetWorld()->GetTimerManager().SetTimer(ConditionCheckTimerHandle, this, &AArenaGameMode::CheckGameConditions, 1.0f, true);
-
-	GetWorld()->GetTimerManager().SetTimer(ArenaTimerHandle, this, &AArenaGameMode::UpdateArenaStats, 1.0f, true);
 }
 
 void AArenaGameMode::EndRound()
@@ -169,6 +171,7 @@ void AArenaGameMode::EndRound()
 			}
 		}
 	}
+
 	UpdatePlayerRating();
 } 
 
@@ -189,7 +192,7 @@ void AArenaGameMode::CheckGameConditions()
 		}
 	}
 
-	if (CachedArenaSubMode == EArenaSubMode::Elimination)
+	if (SelectedArenaSubMode == EArenaSubMode::Elimination)
 	{
 		int32 AliveCount = 0;
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -328,10 +331,28 @@ void AArenaGameMode::UpdateCountdown()
 
 void AArenaGameMode::RespawnPlayer(AController* Controller)
 {
-	if (Controller)
+	if (!Controller)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RespawnPlayer: Controller is invalid"));
+		return;
+	}
+
+	AActor* StartSpot = ChoosePlayerStart(Controller);
+	const FTransform SpawnTransform = StartSpot ? StartSpot->GetActorTransform() : FTransform::Identity;
+
+	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, SpawnTransform);
+	if (NewPawn)
+	{
+		Controller->Possess(NewPawn);
+		UE_LOG(LogTemp, Log, TEXT("RespawnPlayer: 플레이어 리스폰 성공"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer: Pawn 스폰 실패"));
+	}
+
+	/*if (Controller)
 	{
 		SpawnPlayer(Controller);
-	}
+	}*/
 }
-
-

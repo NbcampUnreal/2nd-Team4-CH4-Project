@@ -62,8 +62,6 @@ void ABaseInGameMode::EndRound()
 	{
 		BGameState->RoundProgress = ERoundProgress::Ended;
 	}
-
-	ResetSubsystem();
 }
 
 void ABaseInGameMode::CheckGameConditions()
