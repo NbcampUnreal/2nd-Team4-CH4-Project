@@ -14,34 +14,43 @@ void UArenaSubModeSelectorWidget::NativeConstruct()
 	{
 		EliminationButton->OnClicked.AddDynamic(this, &UArenaSubModeSelectorWidget::OnEliminationClicked);
 	}
+
+	CurrentSelectedMode = EArenaSubMode::Elimination;
+	UpdateSelectionUI();
 }
 
 void UArenaSubModeSelectorWidget::SetCurrentSelectedMode(EArenaSubMode NewMode)
 {
 	CurrentSelectedMode = NewMode;
-	UpdateSelectionVisuals();
+	UpdateSelectionUI();
 }
 
-void UArenaSubModeSelectorWidget::UpdateSelectionVisuals()
+void UArenaSubModeSelectorWidget::UpdateSelectionUI()
 {
 	if (DeathMatchButton)
 	{
 		const bool bSelected = (CurrentSelectedMode == EArenaSubMode::DeathMatch);
 
-		FLinearColor Color = DeathMatchButton->GetBackgroundColor();
-		Color.A = bSelected ? 0.0f : 1.0f;
+		FLinearColor OriginalColor = DeathMatchButton->GetBackgroundColor();
+		OriginalColor.A = bSelected ? SelectedValue : UnselectedValue;
 
-		DeathMatchButton->SetBackgroundColor(Color);
+		FLinearColor HSV = OriginalColor.LinearRGBToHSV();
+		HSV.B = bSelected ? SelectedValue : UnselectedValue;
+
+		DeathMatchButton->SetBackgroundColor(HSV.HSVToLinearRGB());
 	}
 
 	if (EliminationButton)
 	{
 		const bool bSelected = (CurrentSelectedMode == EArenaSubMode::Elimination);
 
-		FLinearColor Color = EliminationButton->GetBackgroundColor();
-		Color.A = bSelected ? 0.0f : 1.0f;
+		FLinearColor OriginalColor = EliminationButton->GetBackgroundColor();
+		OriginalColor.A = bSelected ? SelectedValue : UnselectedValue;
 
-		EliminationButton->SetBackgroundColor(Color);
+		FLinearColor HSV = OriginalColor.LinearRGBToHSV();
+		HSV.B = bSelected ? SelectedValue : UnselectedValue;
+
+		EliminationButton->SetBackgroundColor(HSV.HSVToLinearRGB());
 	}
 }
 

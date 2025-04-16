@@ -19,7 +19,7 @@ public:
 	void SetCurrentSelectedMode(EArenaSubMode NewMode);
 
 	UFUNCTION()
-	void UpdateSelectionVisuals();
+	void UpdateSelectionUI();
 
 	UPROPERTY()
 	FArenaSubModeSelectedDelegate OnSubModeSelected;
@@ -39,5 +39,8 @@ protected:
 
 	UPROPERTY()
 	EArenaSubMode CurrentSelectedMode;
+
+	const float SelectedValue = 1.0f;
+	const float UnselectedValue = 0.4f;
 
 };
