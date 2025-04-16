@@ -65,6 +65,18 @@ public:
 	void StopCurrentBGM();
 
 protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundMix* MasterSoundMix;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* MasterSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* BGMSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* SFXSoundClass;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TMap<FName, USoundBase*> MapNameToBGMMap;
 

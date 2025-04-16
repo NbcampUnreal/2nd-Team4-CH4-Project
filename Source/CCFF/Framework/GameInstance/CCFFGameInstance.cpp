@@ -292,37 +292,23 @@ bool UCCFFGameInstance::TryLogin(const FString& ID, const FString& InputPassword
 
 void UCCFFGameInstance::ApplyUserSettings(const FPlayerMetaData& Meta)
 {
-	// 1. 캐싱
 	PlayerMeta = Meta;
 
-	// 2. 오디오 적용
-	static USoundMix* Mix = LoadObject<USoundMix>(nullptr, TEXT("/Game/CCFF/Sounds/SoundMixes/MasterMix.MasterMix"));
-	if (!Mix) return;
-
-	auto ApplyAudioCategory = [&](const FAudioCategorySetting& Category, const FString& Path)
-		{
-			USoundClass* SoundClass = LoadObject<USoundClass>(nullptr, *Path);
-			if (!SoundClass) return;
-
-			const float Volume = Category.bMuted ? 0.0f : Category.Volume;
-			UGameplayStatics::SetSoundMixClassOverride(this, Mix, SoundClass, Volume, 1.0f, 0.0f, true);
-		};
-
-	ApplyAudioCategory(Meta.AudioSettings.Master, TEXT("/Game/CCFF/Sounds/SoundClasses/SC_Master.SC_Master"));
-	ApplyAudioCategory(Meta.AudioSettings.BGM, TEXT("/Game/CCFF/Sounds/SoundClasses/SC_BGM.SC_BGM"));
-	ApplyAudioCategory(Meta.AudioSettings.SFX, TEXT("/Game/CCFF/Sounds/SoundClasses/SC_SFX.SC_SFX"));
-
-	UGameplayStatics::ClearSoundMixModifiers(this);
-	UGameplayStatics::PushSoundMixModifier(this, Mix);
-
-	// 3. 그래픽 설정 적용
-	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+	if (!MasterSoundMix || !MasterSoundClass || !BGMSoundClass || !SFXSoundClass)
 	{
-		Settings->SetScreenResolution(Meta.Resolution);
-		Settings->SetFullscreenMode(Meta.WindowMode);
-		Settings->ApplySettings(false);
+		UE_LOG(LogTemp, Error, TEXT("SoundClass or Mix is NULL!"));
+		return;
 	}
 
-	// 4. SaveGame에 저장
-	UpdateAccountInSaveGame(Meta);
+	auto ApplyAudio = [&](const FAudioCategorySetting& Category, USoundClass* SoundClass)
+		{
+			const float Volume = Category.bMuted ? 0.0f : Category.Volume;
+			UGameplayStatics::SetSoundMixClassOverride(this, MasterSoundMix, SoundClass, Volume, 1.0f, 0.0f, true);
+		};
+
+	ApplyAudio(Meta.AudioSettings.Master, MasterSoundClass);
+	ApplyAudio(Meta.AudioSettings.BGM, BGMSoundClass);
+	ApplyAudio(Meta.AudioSettings.SFX, SFXSoundClass);
+
+	UGameplayStatics::PushSoundMixModifier(this, MasterSoundMix);
 }
