@@ -600,9 +600,9 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
-	//Reset Maxwalkspeed
 	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
-	
+	bIsDoubleTab=false;
+	UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
 }
 
 void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
