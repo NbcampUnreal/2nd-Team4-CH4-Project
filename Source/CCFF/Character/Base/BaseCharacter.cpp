@@ -390,7 +390,6 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	{
 	case ECharacterState::Normal:
 		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		if (GetCharacterMovement()->IsFlying())
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:

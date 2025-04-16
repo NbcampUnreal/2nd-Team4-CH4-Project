@@ -3,6 +3,7 @@
 
 #include "Framework/UI/Character/ProfileWidget.h"
 #include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 
 UProfileWidget::UProfileWidget(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
@@ -11,4 +12,10 @@ UProfileWidget::UProfileWidget(const FObjectInitializer& ObjectInitializer): Sup
 void UProfileWidget::UpdateHealthBar(const float InPercentage)
 {
 	HealthBar->SetPercent(InPercentage);
+}
+
+void UProfileWidget::UpdateStockCount(const int32 InCount)
+{
+	FText CountText=FText::AsNumber(InCount);
+	StockCount->SetText(CountText);
 }

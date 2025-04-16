@@ -8,6 +8,7 @@
 
 class UImage;
 class UProgressBar;
+class UTextBlock;
 /**
  * 
  */
@@ -22,8 +23,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	void UpdateHealthBar(const float InPercentage);
 	
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
+	void UpdateStockCount(const int32 InCount);
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<UProgressBar> HealthBar;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> StockCount;
 };
