@@ -41,5 +41,11 @@ enum class EAttackType : uint8
 	Attack6		UMETA(DisplayName="Attack6"),
 	Attack7		UMETA(DisplayName="Attack7"),
 	Attack8		UMETA(DisplayName="Attack8"),
+	Attack9		UMETA(DisplayName="Attack9"),
+	Attack10	UMETA(DisplayName="Attack10"),
+	Attack11	UMETA(DisplayName="Attack11"),
+	Attack12	UMETA(DisplayName="Attack12"),
+	Attack13	UMETA(DisplayName="Attack13"),
+	Attack14	UMETA(DisplayName="Attack14"),
 	None		UMETA(DisplayName = "None")
 };
