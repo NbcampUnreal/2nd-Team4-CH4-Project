@@ -415,6 +415,7 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	case ECharacterState::Dead:
 		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		PlayActionMontage(ECharacterState::Dead,0);
+		BattleComponent->ResetCombo();
 	default:
 		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
@@ -961,13 +962,6 @@ void ABaseCharacter::OnDeath()
 			DamageCauserPS->SetKillCount(CurrentKillCount+1);
 		}
 	}
-	
-	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
-	{
-		CharacterController->NotifyPawnDeath();
-	}
-	//Update StockCount
-	UpdateStockCount();
 
 	if (IsValid(Anim.DeathMontage))
 	{
@@ -978,6 +972,12 @@ void ABaseCharacter::OnDeath()
 			DestroyTimerHandle,
 			[this](){
 				Destroy();
+				if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+				{
+					CharacterController->NotifyPawnDeath();
+				}
+				//Update StockCount
+				UpdateStockCount();
 			},MontageLength,false);		
 	}
 }
