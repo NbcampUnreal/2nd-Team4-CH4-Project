@@ -34,8 +34,8 @@
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
-	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
+	BufferThreshold(0.5f),
 	//bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
@@ -46,7 +46,7 @@ ABaseCharacter::ABaseCharacter():
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
-		
+	
 	// Don't rotate when the controller rotates.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -110,11 +110,27 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 {
 	if (UBaseInGameWidget* MyHUD=Cast<UBaseInGameWidget>(HUDWidget))
 	{
-		MyHUD->InitializeHUDWidget(StatusComponent);
 		StatusComponent->OnCurrentHPChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateHealthBar);
 		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
 		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
-		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
+		StatusComponent->OnStockCountChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateStockCount);
+		UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
+		MyHUD->InitializeHUDWidget(StatusComponent);
+		UE_LOG(LogTemp,Display,TEXT("[SetHud] UpdateStockCount Called"));
+		UpdateStockCount();
+	}
+}
+
+void ABaseCharacter::UpdateStockCount()
+{
+	if (AArenaPlayerState* ArenaPS=Cast<AArenaPlayerState>(GetPlayerState()))
+	{
+		UE_LOG(LogTemp,Warning,TEXT("[UpdateStockCount] SetCurrentStockCount UpdateStockCount Call (LocallyControlled: %d, HasAuthority: %d"),IsLocallyControlled(),HasAuthority());
+		StatusComponent->SetCurrentStockCount(ArenaPS->MaxLives);
+	}
+	else
+	{
+		UE_LOG(LogTemp,Display,TEXT("[UpdateStockCount] PlayerState is NULL"));
 	}
 }
 
@@ -150,7 +166,7 @@ void ABaseCharacter::BeginPlay()
 	// FString CombinedString = FString::Printf(TEXT("%s::BeginPlay() %s [%s]"), *CharacterType , *UDamageHelper::GetNetModeString(this), *NetModeString);
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
-
+	
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
@@ -209,7 +225,10 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		FString NotifyNameString = NotifyName.ToString();
 		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
 		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
-		DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+		if (AttackNumber>=0&&AttackNumber<=13)
+		{
+			DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+		}
 		return;
 	}
 	// Server logic
@@ -224,7 +243,7 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
 		//UE_LOG(LogTemp, Log, TEXT("Parsed Attack Number: %d"), AttackNumber);	
 		// Activate Collision in proper location
-		if (AttackCollisions[AttackNumber])
+		if (AttackNumber>=0&&AttackNumber<14)
 		{
 			// Deactivate Collision
 			if (NotifyNameString.Contains(TEXT("End")))
@@ -254,7 +273,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	if (!HasAuthority()) return;
 	// Server Logic
 	// Except self
-	if (!OtherActor || OtherActor == this) return;
+	if (!OtherActor || OtherActor == this || CurrentActivatedCollision==-1) return;
 	UE_LOG(LogTemp,Warning,TEXT("Overlapped Actor: %s"),*OtherActor->GetName());
 	
 	float DamageAmount=BalanceStats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
@@ -279,18 +298,20 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Montage %s Ended. Interrupted: %d"), *Montage->GetName(), bInterrupted);
 	//CurrentCharacterState = ECharacterState::Normal;
 }
 
 void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 {
+	if (Index>=0&&Index<14) return;
 	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 
 void ABaseCharacter::ServerRPCAction_Implementation(ECharacterState InState, float InStartAttackTime, const int32 Num)
 {
-	UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d (State: %d) !!"),Num,InState);
+	UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d !!"),Num);
 	float MontagePlayTime=0.f;
 	ECharacterState TempState=ECharacterState::Normal;
 	
@@ -374,7 +395,7 @@ void ABaseCharacter::ExecuteBufferedAction()
 	const float CurrentTime=GetWorld()->GetTimeSeconds();
 	const int32 InputAction=static_cast<int32>(InputBuffer.InputAttack);
 	//Execute Buffered Input Action
-	if (InputAction>=0&&InputAction<8&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
+	if (InputAction>=0&&InputAction<14&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
 	{
 		ExecuteActionByIndex(InputBuffer.InputState,InputAction);
 		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
@@ -385,22 +406,22 @@ void ABaseCharacter::ExecuteBufferedAction()
 
 void ABaseCharacter::OnRep_CurrentCharacterState()
 {
-	UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s"),CurrentCharacterState,*GetName());
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		PlayActionMontage(ECharacterState::Hitted,0);
 		break;
 	case ECharacterState::Dead:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		PlayActionMontage(ECharacterState::Dead,0);
+		BattleComponent->ResetCombo();
 	default:
-		GetCharacterMovement()->SetMovementMode(MOVE_None);
+		// GetCharacterMovement()->SetMovementMode(MOVE_None);
 		break;
 	}
 }
@@ -412,8 +433,9 @@ void ABaseCharacter::OnRep_CurrentResistanceState()
 
 void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 Index)
 {
-	if ((CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)
-		||(InState==ECharacterState::Normal))
+	if ((CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)||
+		(CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()&&Index>7)||
+		(InState==ECharacterState::Normal))
 	{
 		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
 		ServerRPCAction(InState,GetWorld()->GetGameState()->GetServerWorldTimeSeconds(), Index);
@@ -435,11 +457,22 @@ void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 I
 
 void ABaseCharacter::Attack1(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,0);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,8);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,0);	
+	}
 }
 void ABaseCharacter::Attack2(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,9);
+	}
+	else if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
 	{
 		ExecuteActionByIndex(ECharacterState::Attack,2);
 	}
@@ -452,12 +485,23 @@ void ABaseCharacter::Attack2(const FInputActionValue& Value)
 
 void ABaseCharacter::Attack4(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,3);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,10);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,3);
+	}
 }
 
 void ABaseCharacter::Attack5(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,11);
+	}
+	else if (GetCharacterMovement()->MaxWalkSpeed==BalanceStats.MaxRunSpeed)
 	{
 		ExecuteActionByIndex(ECharacterState::Attack,5);
 	}
@@ -469,12 +513,26 @@ void ABaseCharacter::Attack5(const FInputActionValue& Value)
 
 void ABaseCharacter::Attack7(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,6);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,12);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,6);
+	}
 }
 
 void ABaseCharacter::Attack8(const FInputActionValue& Value)
 {
-	ExecuteActionByIndex(ECharacterState::Attack,7);
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,13);
+	}
+	else
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,7);
+	}
 }
 
 void ABaseCharacter::Guard()
@@ -524,30 +582,31 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		PlayMontage=Anim.BurstMontage;
 		break;
 	case ECharacterState::Dead:
-		UE_LOG(LogTemp,Warning,TEXT("Death called"));
 		PlayMontage=Anim.DeathMontage;
 		break;
 	case ECharacterState::Hitted:
 		PlayMontage=Anim.HittedMontage;
+		break;
 	default:
 		break;
 	}
-	
 	//둘다 유효
 	if (AnimInstance&&PlayMontage)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Montage: %s"),*GetNameSafe(PlayMontage));
-		//몽타주 실행
+		UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s, PlayMontage: %s"),CurrentCharacterState,*GetName(),*PlayMontage->GetName());
 		AnimInstance->Montage_Stop(0.2f);
+		//몽타주 실행
 		AnimInstance->Montage_Play(PlayMontage);
 	}
 	else if (!PlayMontage&&InState==ECharacterState::Normal)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
+		//UE_LOG(LogTemp,Warning,TEXT("Stop Montage"));
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
-	CurrentCharacterState = InState;
+	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
+	bIsDoubleTab=false;
+	//UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
 }
 
 void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
@@ -629,17 +688,16 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
 	float NewHealth = FMath::Clamp(StatusComponent->GetCurrentHP() - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, StatusComponent->GetMaxHP());
-	StatusComponent->SetCurrentHP(NewHealth);
 	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
+	StatusComponent->SetCurrentHP(NewHealth);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
 	return ScaledDamage;
 }
 
-void ABaseCharacter::
-TakeHitstun(int32 Hitstun)
+void ABaseCharacter::TakeHitstun(int32 Hitstun)
 {
-	if (Hitstun == 0||StatusComponent->GetCurrentHP()<=0)
+	if (Hitstun == 0)
 	{
 		return;
 	}
@@ -661,17 +719,13 @@ TakeHitstun(int32 Hitstun)
 
 void ABaseCharacter::EndHitstun()
 {
-	//UE_LOG(LogTemp,Warning,TEXT("EndHitstun, CurrentHP: %.1f, Name: %s, State: %d"),StatusComponent->GetCurrentHP(),*GetName(),CurrentCharacterState);
-	if (CurrentCharacterState!=ECharacterState::Dead)
-	{
-		CurrentCharacterState = ECharacterState::Normal;
-		BattleComponent->ResetCombo();	
-	}
+	CurrentCharacterState = ECharacterState::Normal;
+	BattleComponent->ResetCombo();
 }
 
 void ABaseCharacter::TakeHitlag(int32 Hitlag)
 {
-	if (Hitlag == 0||StatusComponent->GetCurrentHP()<=0)
+	if (Hitlag == 0)
 	{
 		return;
 	}
@@ -691,7 +745,6 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 
 void ABaseCharacter::EndHitlag()
 {
-	//UE_LOG(LogTemp,Warning,TEXT("EndHitlag, CurrentHP: %.1f, Name: %s"),StatusComponent->GetCurrentHP(),*GetName());
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->SetMovementMode(MOVE_Walking);
@@ -702,7 +755,7 @@ void ABaseCharacter::EndHitlag()
 
 void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector KnockbackAngle, float KnockbackForce)
 {
-	if (Hitlag == 0||StatusComponent->GetCurrentHP()<=0)
+	if (Hitlag == 0)
 	{
 		TakeKnockback(KnockbackAngle, KnockbackForce);
 		return;
@@ -748,8 +801,7 @@ void ABaseCharacter::TakeBlockstun(int32 Blockstun)
 
 void ABaseCharacter::EndBlockstun()
 {
-	//UE_LOG(LogTemp,Warning,TEXT("EndHitlag, CurrentHP: %.1f, Name: %s"),StatusComponent->GetCurrentHP(),*GetName());
-	if (CurrentCharacterState == ECharacterState::Blockstun&&CurrentCharacterState!=ECharacterState::Dead)
+	if (CurrentCharacterState == ECharacterState::Blockstun)
 	{
 		CurrentCharacterState = ECharacterState::Normal;
 	}
@@ -769,7 +821,7 @@ void ABaseCharacter::TakeKnockback(FVector KnockbackAngle, float KnockbackForce)
 
 void ABaseCharacter::GuardCrush()
 {
-	CurrentCharacterState = ECharacterState::Hitted;
+	TakeHitstun(60);
 }
 
 
@@ -846,7 +898,7 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	TakeHitstun(Hitstun);
 	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
 	float DealtDamage = TakeNormalDamage(Damage, HitData.MinimumDamage);
-	
+
 	Attacker->OnAttackHit(DealtDamage);
 	return;
 }
@@ -895,14 +947,14 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
+	//UE_LOG(LogTemp,Warning,TEXT("Authority: %d, LocallyControlled: %d"),HasAuthority(),IsLocallyControlled());
+	
 	//Set off Collision and change state to dead
 	CurrentCharacterState=ECharacterState::Dead;
-	OnRep_CurrentCharacterState();
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	AController* MyController = GetController();
-	HandlePlayerStateOnDeath();
-	bool bRespawn = CanRespawn();
-	HandleControllerOnDeath(bRespawn);
+	//Set off Overlap event
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+	//Reset Combo Count
+	BattleComponent->ResetCombo();
 	//Raise KillCount of DamageCauser
 	if (LastDamageCauser)
 	{
@@ -914,44 +966,22 @@ void ABaseCharacter::OnDeath()
 			DamageCauserPS->SetKillCount(CurrentKillCount+1);
 		}
 	}
-	
-	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-	if (bRespawn && ArenaGameMode && MyController)
+	UpdateStockCount();
+	if (IsValid(Anim.DeathMontage))
 	{
-		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [ArenaGameMode, MyController]()
-		{
-			if (ArenaGameMode && MyController)
-			{
-				if (ACharacterController* CC = Cast<ACharacterController>(MyController))
+		//Montage end -> destroy actor
+		float MontageLength=Anim.DeathMontage->GetPlayLength();
+		FTimerHandle DestroyTimerHandle;
+		GetWorldTimerManager().SetTimer(
+			DestroyTimerHandle,
+			[this](){
+				Destroy();
+				if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 				{
-					ArenaGameMode->RespawnPlayer(CC);
+					CharacterController->NotifyPawnDeath();
 				}
-			}
-		}, 1.5f, false);
-	}
-	//Destroy Actor
-	FTimerHandle DestroyTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
-	 {
-		 Destroy();
-	 },3.0f,false);
-}
-
-void ABaseCharacter::SwitchToSpectatorCamera()
-{
-	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-	{
-		AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-		if (GM && GM->SpectatorCamera)
-		{
-			CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
-			CC->ChangeState(NAME_Spectating);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("SwitchToSpectatorCamera: SpectatorCamera is null"));
-		}
+				//Update StockCount
+			},MontageLength,false);		
 	}
 }
 
@@ -1028,7 +1058,7 @@ void ABaseCharacter::PreLoadAttackCollisions()
 				const int32 n=Type->NumEnums();
 				AttackCollisions.SetNum(n-2);
 				HitBoxList.SetNum(n-2);
-				for (int32 i=0;i<n-1;i++)
+				for (int32 i=0;i<n-2;i++)
 				{
 					FString TypeName=Type->GetNameStringByIndex(i);
 					//UE_LOG(LogTemp,Warning,TEXT("Current RowName: %s, Current Index: %d"),*TypeName,i);
@@ -1113,82 +1143,6 @@ void ABaseCharacter::NotifyControllerChanged()
 	}
 }
 
-void ABaseCharacter::HandlePlayerStateOnDeath()
-{
-	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState());
-
-	if (ArenaPlayerState && ArenaGameState)
-	{
-		if (ArenaPlayerState->MaxLives <= 0)
-		{
-			float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
-			ArenaPlayerState->SetSurvivalTime(SurvivalTime);
-			UE_LOG(LogTemp, Log, TEXT("Player Die.. SurvivalTime si %.2f"), ArenaGameState->GetRoundStartTime());
-		}
-		else
-		{
-			ArenaPlayerState->MaxLives -= 1;
-			UE_LOG(LogTemp, Log, TEXT("Player Die.. Lives %d"), ArenaPlayerState->MaxLives);
-		}
-	}
-}
-
-bool ABaseCharacter::CanRespawn() const
-{
-	const AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	return (ArenaPlayerState && ArenaPlayerState->MaxLives > 0);
-}
-
-void ABaseCharacter::DeactivatePawnCamera()
-{
-	if (FollowCamera)
-	{
-		FollowCamera->Deactivate();
-		FollowCamera->SetActive(false);
-	}
-	if (CameraBoom)
-	{
-		CameraBoom->Deactivate();
-	}
-}
-
-void ABaseCharacter::TransitionToSpectator(ACharacterController* CC)
-{
-	AArenaGameMode* GM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-	if (GM && GM->SpectatorCamera)
-	{
-		CC->SetViewTargetWithBlend(GM->SpectatorCamera, 0.f);
-		CC->ChangeState(NAME_Spectating);
-
-		FTimerHandle ForceSwitchTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(ForceSwitchTimerHandle, [this, CC]()
-			{
-				AArenaGameMode* LocalGM = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-				if (LocalGM && LocalGM->SpectatorCamera)
-				{
-					CC->SetViewTargetWithBlend(LocalGM->SpectatorCamera, 0.f);
-					CC->ChangeState(NAME_Spectating);
-				}
-			}, 0.1f, false);
-	}
-}
-
-void ABaseCharacter::HandleControllerOnDeath(bool bRespawn)
-{
-	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
-	{
-		DisableInput(CC);
-		CC->UnPossess();
-		DeactivatePawnCamera();
-
-		if (!bRespawn)
-		{
-			TransitionToSpectator(CC);
-		}
-	}
-}
-
 void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -1200,7 +1154,11 @@ void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedCompone
 		{
 			UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
 			bIsDying = true;
-			OnDeath();
+			if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+			{
+				CharacterController->NotifyPawnDeath();
+				Destroy();
+			}
 		}
 	}
 }
