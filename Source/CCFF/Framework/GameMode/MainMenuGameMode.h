@@ -2,15 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "TitleGameMode.generated.h"
+#include "MainMenuGameMode.generated.h"
 
 UCLASS()
-class CCFF_API ATitleGameMode : public AGameModeBase
+class CCFF_API AMainMenuGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-
-public:
-	ATitleGameMode();
 	
 public:
 	virtual void BeginPlay() override;
