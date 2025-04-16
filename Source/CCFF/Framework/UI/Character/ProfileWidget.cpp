@@ -16,6 +16,7 @@ void UProfileWidget::UpdateHealthBar(const float InPercentage)
 
 void UProfileWidget::UpdateStockCount(const int32 InCount)
 {
-	FText CountText=FText::AsNumber(InCount);
+	FText CountText=FText::FromString(FString::FormatAsNumber(InCount));
 	StockCount->SetText(CountText);
+	UE_LOG(LogTemp, Display, TEXT("UProfileWidget::UpdateStockCount: %s"),*CountText.ToString());
 }

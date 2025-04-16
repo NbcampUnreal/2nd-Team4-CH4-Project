@@ -115,7 +115,7 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
 		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
 		StatusComponent->OnStockCountChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateStockCount);
-		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
+		UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
 	}
 }
 
@@ -221,7 +221,10 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		FString NotifyNameString = NotifyName.ToString();
 		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
 		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
-		DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+		if (AttackNumber>=0&&AttackNumber<=13)
+		{
+			DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+		}
 		return;
 	}
 	// Server logic
@@ -236,7 +239,7 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
 		//UE_LOG(LogTemp, Log, TEXT("Parsed Attack Number: %d"), AttackNumber);	
 		// Activate Collision in proper location
-		if (AttackCollisions[AttackNumber])
+		if (AttackNumber>=0&&AttackNumber<14)
 		{
 			// Deactivate Collision
 			if (NotifyNameString.Contains(TEXT("End")))
@@ -297,6 +300,7 @@ void ABaseCharacter::OnAttackEnded(UAnimMontage* Montage, bool bInterrupted)
 
 void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 {
+	if (Index>=0&&Index<14) return;
 	AttackCollisions[Index]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
@@ -400,7 +404,7 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 {
 	switch (CurrentCharacterState)
 	{
-	case ECharacterState::Normal:F
+	case ECharacterState::Normal:
 		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
@@ -595,7 +599,9 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
-	CurrentCharacterState = InState;
+	//Reset Maxwalkspeed
+	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
+	
 }
 
 void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)

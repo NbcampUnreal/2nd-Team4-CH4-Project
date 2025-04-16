@@ -52,6 +52,7 @@ void UBaseInGameWidget::UpdateStockCount(const int32 InCount)
 	{
 		ProfileWidget->UpdateStockCount(InCount);
 	}
+	UE_LOG(LogTemp,Warning,TEXT("UBaseInGameWidget::UpdateStockCount: %d"),InCount);
 }
 
 void UBaseInGameWidget::UpdateSuperMeterBar(const float InPercentage)

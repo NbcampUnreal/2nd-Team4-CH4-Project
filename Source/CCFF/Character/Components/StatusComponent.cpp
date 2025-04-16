@@ -72,7 +72,8 @@ void UStatusComponent::SetBlockMeter(const float InBlockMeter)
 void UStatusComponent::SetCurrentStockCount(const int32 InCount)
 {
 	CurrentStockCount = InCount;
-	UE_LOG(LogTemp,Warning,TEXT("UStatusComponent::SetCurrentStockCount"));
+	OnStockCountChanged.Broadcast(CurrentStockCount);
+	UE_LOG(LogTemp,Warning,TEXT("UStatusComponent::SetCurrentStockCount: %d"),InCount);
 }
 
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
