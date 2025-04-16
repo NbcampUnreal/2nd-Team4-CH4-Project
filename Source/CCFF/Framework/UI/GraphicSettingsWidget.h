@@ -40,8 +40,8 @@ private:
 	EWindowMode::Type CachedWindowMode;
 
 	// Default Value (Reset)
-	const FIntPoint DefaultResolution = FIntPoint(1920, 1080);
-	const EWindowMode::Type DefaultWindowMode = EWindowMode::WindowedFullscreen;
+	const FIntPoint DefaultResolution = FIntPoint(1280, 720);
+	const EWindowMode::Type DefaultWindowMode = EWindowMode::Windowed;
 
 	void InitializeWindowModeOptions();
 	void InitializeResolutionOptions();

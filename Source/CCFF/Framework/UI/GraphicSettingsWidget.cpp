@@ -34,7 +34,7 @@ void UGraphicSettingsWidget::InitializeWindowModeOptions()
 	WindowModeComboBox->AddOption(TEXT("Windowed"));
 	WindowModeComboBox->AddOption(TEXT("Borderless"));
 
-	WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+	WindowModeComboBox->SetSelectedOption(TEXT("Windowed"));
 	WindowModeComboBox->OnSelectionChanged.AddDynamic(this, &UGraphicSettingsWidget::OnWindowModeChanged);
 
 	SelectedWindowMode = DefaultWindowMode;
@@ -77,7 +77,8 @@ void UGraphicSettingsWidget::OnWindowModeChanged(FString SelectedItem, ESelectIn
 	}
 	else if (SelectedItem == "Borderless")
 	{
-		SelectedWindowMode = EWindowMode::Fullscreen;
+		// SelectedWindowMode = EWindowMode::Fullscreen;
+		SelectedWindowMode = EWindowMode::Windowed;
 	}
 
 	ApplyPreviewSettings();
@@ -138,7 +139,7 @@ void UGraphicSettingsWidget::ResetSettings_Implementation()
 	}
 	if (WindowModeComboBox)
 	{
-		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+		WindowModeComboBox->SetSelectedOption(TEXT("Windowed"));
 	}
 
 	ApplyPreviewSettings();
