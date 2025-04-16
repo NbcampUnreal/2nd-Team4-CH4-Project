@@ -22,7 +22,6 @@ public:
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage)
 	override;
-	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual void BeginPlay() override;
 

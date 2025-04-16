@@ -15,6 +15,7 @@
 #include "Framework/GameState/ArenaGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h" 
+#include "Framework/HUD/ArenaModeHUD.h"
 
 
 ACharacterController::ACharacterController()
@@ -122,6 +123,7 @@ void ACharacterController::ServerSetNickname_Implementation(const FString& InNic
 		ArenaPlayerState->SetPlayerName(InNickname);
 
 		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
+
 	}
 	else
 	{
@@ -140,6 +142,11 @@ void ACharacterController::ServerSetCharacterID_Implementation(FName InID)
 	{
 		ArenaPlayerState->SetSelectedCharacterID(InID);
 		UE_LOG(LogTemp, Log, TEXT("[ServerSetCharacterID] SelectedCharacterID = %s"), *InID.ToString());
+
+		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			ArenaGameMode->SpawnPlayer(this);
+		}
 	}
 }
 
@@ -180,7 +187,6 @@ void ACharacterController::NotifyPawnDeath()
 		}
 			
 	}
-
 
 	// Respawn
 	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)

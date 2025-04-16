@@ -40,7 +40,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> BurstAction;
 
-
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
 

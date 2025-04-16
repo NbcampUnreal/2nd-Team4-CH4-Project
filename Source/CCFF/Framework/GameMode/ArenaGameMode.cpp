@@ -42,19 +42,19 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 	}
 }
 
-void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-	if (NewPlayer)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   SpawnPlayer"));
-		SpawnPlayer(NewPlayer);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
-	}
-}
+//void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
+//{
+//	Super::PostLogin(NewPlayer);
+//	if (NewPlayer)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   SpawnPlayer"));
+//		SpawnPlayer(NewPlayer);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
+//	}
+//}
 
 
 void AArenaGameMode::BeginPlay()
@@ -307,19 +307,6 @@ void AArenaGameMode::UpdatePlayerRating()
 
 void AArenaGameMode::UpdateCountdown()
 {
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
-	{
-		if (APlayerController* PlayerController = It->Get())
-		{
-			if (PlayerController && SpectatorCamera)
-			{
-				PlayerController->UnPossess();
-				PlayerController->ChangeState(NAME_Spectating);
-				PlayerController->SetViewTargetWithBlend(SpectatorCamera, 0.f);
-			}
-		}
-	}
-
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (!IsValid(ArenaGameState))
 	{
@@ -338,39 +325,4 @@ void AArenaGameMode::UpdateCountdown()
 
 	CountdownTime -= 1.0f;
 	ArenaGameState->CountdownTime = CountdownTime;
-}
-
-void AArenaGameMode::RespawnPlayer(APlayerController* Controller)
-{
-	if (!Controller)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("RespawnPlayer: Controller is invalid"));
-		return;
-	}
-
-	AActor* StartSpot = ChoosePlayerStart(Controller);
-	const FTransform SpawnTransform = StartSpot ? StartSpot->GetActorTransform() : FTransform::Identity;
-	
-	FName SelectedID = NAME_None;
-	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
-	if (IsValid(CCFFGameInstance))
-	{
-		SelectedID = CCFFGameInstance->GetSelectedCharacterID();
-	}
-	TSubclassOf<ABaseCharacter> CharacterClass = CharacterClasses[SelectedID];
-	ABaseCharacter* NewCharacter = GetWorld()->SpawnActor<ABaseCharacter>(CharacterClass, SpawnTransform);
-	if (NewCharacter)
-	{
-		Controller->Possess(NewCharacter);
-		UE_LOG(LogTemp, Log, TEXT("RespawnPlayer: 플레이어 리스폰 성공"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer: Pawn 스폰 실패"));
-	}
-
-	//if (Controller)
-	//{
-	//	SpawnPlayer(Controller);
-	//}
 }

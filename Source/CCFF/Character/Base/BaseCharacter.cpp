@@ -976,12 +976,13 @@ void ABaseCharacter::OnDeath()
 			DestroyTimerHandle,
 			[this](){
 				Destroy();
-				if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
-				{
-					CharacterController->NotifyPawnDeath();
-				}
 				//Update StockCount
-			},MontageLength,false);		
+			},MontageLength,false);
+	}
+
+	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+	{
+		CharacterController->NotifyPawnDeath();
 	}
 }
 

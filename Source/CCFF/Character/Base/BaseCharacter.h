@@ -327,6 +327,9 @@ protected:
 	AActor* LastDamageCauser;
 #pragma endregion
 	
+	//public:
+	//	UFUNCTION(BlueprintCallable, Category = "Character|Life")
+	//	void HandleDeath();
 	
 };
 
