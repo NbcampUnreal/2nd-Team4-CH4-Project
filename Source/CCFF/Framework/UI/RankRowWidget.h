@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "Framework/UI/BaseUserWidget.h"
 #include "RankRowWidget.generated.h"
 
 class UTextBlock;
 UCLASS()
-class CCFF_API URankRowWidget : public UUserWidget
+class CCFF_API URankRowWidget : public UBaseUserWidget
 {
 	GENERATED_BODY()
 	

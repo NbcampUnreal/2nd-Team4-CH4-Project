@@ -15,6 +15,12 @@ public:
 
     virtual void BeginPlay() override;
 
+    UFUNCTION()
+    void SpawnPlayer(AController* NewPlayer);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Character")
+    TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+
 protected:
     UFUNCTION()
     void HandleBotDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);

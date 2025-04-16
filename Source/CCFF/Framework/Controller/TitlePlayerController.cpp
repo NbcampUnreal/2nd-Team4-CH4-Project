@@ -1,4 +1,5 @@
 #include "Framework/Controller/TitlePlayerController.h"
+#include "Framework/HUD/TitleHUD.h"
 #include "Kismet/GameplayStatics.h"
 
 void ATitlePlayerController::BeginPlay()
@@ -34,7 +35,6 @@ void ATitlePlayerController::SetupInputComponent()
 	if (InputComponent)
 	{
 		InputComponent->BindKey(EKeys::AnyKey, IE_Pressed, this, &ATitlePlayerController::HandleAnyKey);
-		PushInputComponent(InputComponent);
 	}
 }
 
