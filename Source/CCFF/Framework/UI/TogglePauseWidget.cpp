@@ -16,17 +16,16 @@ void UTogglePauseWidget::NativeConstruct()
 {  
    Super::NativeConstruct();
 
-   if (IsFocusable())
-   {
-	   if (IsValid(BackButton))
-		   BackButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnBackButtonClicked);
+   SetIsFocusable(true);
 
-	   if (IsValid(SettingButton))
-		   SettingButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnSettingButtonClicked);
+   if (IsValid(BackButton))
+	   BackButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnBackButtonClicked);
 
-	   if (IsValid(LobbyButton))
-		   LobbyButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnLobbyButtonClicked);
-   }
+   if (IsValid(SettingButton))
+	   SettingButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnSettingButtonClicked);
+
+   if (IsValid(LobbyButton))
+	   LobbyButton->OnClicked.AddDynamic(this, &UTogglePauseWidget::OnLobbyButtonClicked);
 }
 
 void UTogglePauseWidget::OnBackButtonClicked()
