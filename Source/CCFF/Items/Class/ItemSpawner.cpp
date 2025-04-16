@@ -24,6 +24,7 @@ void AItemSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 	ItemPoolManager = GetGameInstance()->GetSubsystem<UItemPoolManager>();
+	bIsItemActive = false;
 }
 
 void AItemSpawner::SpawnItem()
