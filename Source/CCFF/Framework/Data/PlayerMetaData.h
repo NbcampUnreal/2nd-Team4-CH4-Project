@@ -36,5 +36,5 @@ public:
 	FIntPoint Resolution = FIntPoint(1280, 720);
 
 	UPROPERTY(BlueprintReadWrite)
-	TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::Fullscreen;
+	TEnumAsByte<EWindowMode::Type> WindowMode = EWindowMode::Windowed;
 };
