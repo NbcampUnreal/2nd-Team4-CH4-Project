@@ -244,18 +244,15 @@ void ALobbyPlayerController::HandleHorizontalInput(const FInputActionValue& Valu
 void ALobbyPlayerController::HandleVerticalInput(const FInputActionValue& Value)
 {
 	float Direction = Value.Get<float>();
-	UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Received input value: %f"), Direction);
 
 	if (Direction > 0.1f)
 	{
 		int32 IndexDirection = 1;
-		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
 		Server_SwitchPresetIndex(IndexDirection);
 	}
 	else if (Direction < -0.1f)
 	{
 		int32 IndexDirection = -1;
-		UE_LOG(LogTemp, Log, TEXT("[HandleVerticalInput] Sending IndexDirection: %d to server"), IndexDirection);
 		Server_SwitchPresetIndex(IndexDirection);
 	}
 }
@@ -307,7 +304,6 @@ void ALobbyPlayerController::SetCustomizationPresets()
 			}
 		}
 	}
-
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SetCustomizationPresets called on server. Now Returning."));

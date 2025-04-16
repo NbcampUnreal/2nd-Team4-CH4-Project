@@ -20,7 +20,15 @@ void ULoginWidget::NativeConstruct()
 	if (IsValid(NicknameText) && !NicknameText->OnTextCommitted.IsAlreadyBound(this, &ULoginWidget::OnTextCommitted))
 	{
 		NicknameText.Get()->OnTextCommitted.AddDynamic(this, &ULoginWidget::OnTextCommitted);
-		NicknameText->SetKeyboardFocus();
+
+		FTimerHandle FocusTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(FocusTimerHandle, [this]()
+			{
+				if (NicknameText)
+				{
+					NicknameText->SetKeyboardFocus();
+				}
+			}, 0.1f, false);
 	}
 
 	if (IsValid(LoginButton) && !LoginButton->OnClicked.IsAlreadyBound(this, &ULoginWidget::OnLoginButtonClicked))
@@ -38,9 +46,20 @@ FReply ULoginWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEven
 {
 	if (InKeyEvent.GetKey() == EKeys::Enter || InKeyEvent.GetKey() == EKeys::Virtual_Accept)
 	{
-		if (!NicknameText->HasKeyboardFocus())
+		if (NicknameText)
 		{
-			NicknameText->SetKeyboardFocus();
+			const bool bHasFocus = NicknameText->HasKeyboardFocus();
+			const bool bHasText = !NicknameText->GetText().ToString().IsEmpty();
+
+			if (bHasFocus || bHasText)
+			{
+				OnLoginButtonClicked();
+			}
+			else
+			{
+				NicknameText->SetKeyboardFocus();
+			}
+
 			return FReply::Handled();
 		}
 	}
@@ -121,7 +140,10 @@ void ULoginWidget::HandleExitGameCanceled()
 		ExitGamePopup = nullptr;
 	}
 
-	NicknameText->SetKeyboardFocus();
+	if (NicknameText)
+	{
+		NicknameText->SetKeyboardFocus();
+	}
 }
 
 void ULoginWidget::OnTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
