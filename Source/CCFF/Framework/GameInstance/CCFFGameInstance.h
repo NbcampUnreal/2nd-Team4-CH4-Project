@@ -19,7 +19,6 @@ public:
 	virtual void Shutdown() override;
 
 	void SaveData();
-	void LoadData();
 
 	void StartFindSessions(APlayerController* OwnerPlayerController);
 
@@ -74,6 +73,18 @@ private:
 	UAudioComponent* CurrentBGMComponent;
 
 	FString GetCleanMapName() const;
+
+#pragma endregion
+
+
+#pragma region LOCAL_LOGIN_SYSTEM
+public:
+	void ApplyUserSettings(const FPlayerMetaData& Meta);
+	bool TryLogin(const FString& ID, const FString& InputPassword);
+
+private:
+	void ImportAccountsFromJSON();
+	bool UpdateAccountInSaveGame(const FPlayerMetaData& UpdatedMeta);
 
 #pragma endregion
 
