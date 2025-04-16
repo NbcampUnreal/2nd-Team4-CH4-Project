@@ -91,7 +91,41 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			if (ALobbyPlayerState* LobbyState = Cast<ALobbyPlayerState>(NewPlayerState))
 			{
 				LobbyState->SetIsHost(true);
-				UE_LOG(LogTemp, Log, TEXT("[LobbyGameMode] Player %s set as Host"), *LobbyState->GetPlayerNickname());
+			}
+		}
+	}
+}
+
+void ALobbyGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	APlayerState* ExitingPlayerState = Exiting->GetPlayerState<APlayerState>();
+	if (!IsValid(ExitingPlayerState)) return;
+
+	ALobbyPlayerState* ExitingLobbyState = Cast<ALobbyPlayerState>(ExitingPlayerState);
+	if (!IsValid(ExitingLobbyState)) return;
+
+	if (ExitingLobbyState->GetIsHost())
+	{
+		for (APlayerState* PlayerState : GameState->PlayerArray)
+		{
+			if (ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(PlayerState))
+			{
+				LobbyPlayerState->SetIsHost(false);
+			}
+		}
+
+		for (APlayerState* PlayerState : GameState->PlayerArray)
+		{
+			if (ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(PlayerState))
+			{
+				if (LobbyPlayerState != ExitingLobbyState)
+				{
+					LobbyPlayerState->SetIsHost(true);
+					UE_LOG(LogTemp, Log, TEXT("[LobbyGameMode] Host left. New host assigned: %s"), *LobbyPlayerState->GetPlayerNickname());
+					break;
+				}
 			}
 		}
 	}

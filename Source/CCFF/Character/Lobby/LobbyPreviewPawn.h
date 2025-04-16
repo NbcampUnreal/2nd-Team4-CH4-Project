@@ -22,6 +22,7 @@ protected:
 public:
 	void SetPlayerName(const FString& InName);
 	void SetReadyState(bool bIsReady);
+	void SetHostTagVisibility(bool bVisible);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "UI")
@@ -31,4 +32,8 @@ private:
 	TObjectPtr<UWidgetComponent> ReadyStatusWidget;
 
 	bool bNameSet = false;
+
+	FString LastNickname;
+	bool bLastIsHost = false;
+	bool bLastIsReady = false;
 };

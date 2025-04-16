@@ -278,7 +278,14 @@ void ALobbyPlayerController::OnRep_PlayerState()
 
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerState called. PlayerState is now valid."));
 
-	// Set Client's Customization Presets to Server PlayerState
+	if (ALobbyPlayerState* LobbyState = GetPlayerState<ALobbyPlayerState>())
+	{
+		if (ALobbyPreviewPawn* PreviewPawn = Cast<ALobbyPreviewPawn>(GetPawn()))
+		{
+			PreviewPawn->SetHostTagVisibility(LobbyState->GetIsHost());
+		}
+	}
+
 	SetCustomizationPresets();
 }
 
