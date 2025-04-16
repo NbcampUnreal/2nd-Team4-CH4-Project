@@ -3,6 +3,7 @@
 #include "Items/Class/SpawnableItem.h"
 #include "Character/Base/BaseCharacter.h"
 #include "Character/Components/StatusComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 UItemInteractionComponent::UItemInteractionComponent()
@@ -95,5 +96,33 @@ void UItemInteractionComponent::HandleResistivityModifier(EResistanceState Resis
 		}
 
 		GetWorld()->GetTimerManager().SetTimer(ResistivityResetTimer, TimerDel, Duration, false);
+	}
+}
+
+void UItemInteractionComponent::HandleSpeedModifier(float SpeedMultiplier, float Duration)
+{
+	UE_LOG(LogTemp, Warning, TEXT("HandleSpeedModifier called with %.2f for %.2f seconds"), SpeedMultiplier, Duration);
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
+	{
+		UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
+		if (MovementComponent)
+		{
+			if (GetWorld()->GetTimerManager().IsTimerActive(ResistivityResetTimer))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("SpeedModifier timer is already active. Ignoring new request."));
+				return;
+			}
+
+			MovementComponent->MaxWalkSpeed *= SpeedMultiplier;
+
+			FTimerDelegate TimerDel;
+			TimerDel.BindLambda([Character, MovementComponent, SpeedMultiplier]()
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Reverting SpeedMultiplier to 1.0"));
+					MovementComponent->MaxWalkSpeed /= SpeedMultiplier;
+				});
+
+			GetWorld()->GetTimerManager().SetTimer(ResistivityResetTimer, TimerDel, Duration, false);
+		}
 	}
 }

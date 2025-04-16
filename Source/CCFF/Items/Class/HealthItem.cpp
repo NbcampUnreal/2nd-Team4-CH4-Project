@@ -4,6 +4,7 @@
 
 AHealthItem::AHealthItem()
 {
+	PrimaryActorTick.bCanEverTick = false;
 	ItemType = EItemType::Healing;
 	HealPercentage = 0.3f; // Default value, can be overridden in the editor
 }

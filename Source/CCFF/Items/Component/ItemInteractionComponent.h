@@ -30,6 +30,7 @@ public:
 
 	void HandleHealEffect(float HealPercent);
 	void HandleResistivityModifier(EResistanceState ResistanceState, float Duration);
+	void HandleSpeedModifier(float SpeedMultiplier, float Duration);
 
 protected:
 	virtual void BeginPlay() override;

@@ -5,6 +5,7 @@
 
 AInvincibilityItem::AInvincibilityItem()
 {
+	PrimaryActorTick.bCanEverTick = false;
 	ItemType = EItemType::Resistivity;
 	EffectDuration = 5.0f; // Default value, can be overridden in the editor
 }
