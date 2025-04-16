@@ -8,9 +8,9 @@ void ABaseInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BaseInGameWidget = CreateAndAddWidget<UBaseInGameWidget>(BaseInGameWidgetClass, 0, ESlateVisibility::Visible);
-	TogglePauseWidget = CreateAndAddWidget<UTogglePauseWidget>(TogglePauseWidgetClass, 1, ESlateVisibility::Collapsed);
-	SettingsWidget = CreateAndAddWidget<USettingsWidget>(SettingsWidgetClass, 2, ESlateVisibility::Collapsed);
+	BaseInGameWidget = CreateAndAddWidget<UBaseInGameWidget>(BaseInGameWidgetClass, 2, ESlateVisibility::Visible);
+	TogglePauseWidget = CreateAndAddWidget<UTogglePauseWidget>(TogglePauseWidgetClass, 3, ESlateVisibility::Collapsed);
+	SettingsWidget = CreateAndAddWidget<USettingsWidget>(SettingsWidgetClass, 4, ESlateVisibility::Collapsed);
 }
 
 void ABaseInGameHUD::ShowTogglePauseWidget()

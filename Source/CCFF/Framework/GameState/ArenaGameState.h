@@ -60,6 +60,9 @@ public:
 	FORCEINLINE EArenaSubMode GetArenaSubMode() const { return CurrentArenaSubMode; }
 	FORCEINLINE void SetArenaSubMode(const EArenaSubMode NewMode) { CurrentArenaSubMode = NewMode; }
 
+	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
+	FORCEINLINE void SetSpectatorCamera(ACameraActor* Camera) { SpectatorCamera = Camera; }
+
 	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
 	void SetRankingInfos(const TArray<FArenaRankInfo>& Infos) { RankingInfos = Infos; }
 
@@ -95,4 +98,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
 	EArenaSubMode CurrentArenaSubMode;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
+	ACameraActor* SpectatorCamera;
 };
