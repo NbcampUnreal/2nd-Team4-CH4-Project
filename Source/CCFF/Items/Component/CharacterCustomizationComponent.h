@@ -26,6 +26,7 @@ public:
 
 	FPresetItemsIndex GetCurrentCustomItemsIndex() const;
 	void EquipPreset(FCustomizationPreset Preset);
+	void EquipPresetByIndex(int32 PresetIndex);
 	FORCEINLINE TMap<EItemSlot, UStaticMeshComponent*> GetEquippedItems() const { return EquippedItems; }
 
 	// Character base mesh accessor

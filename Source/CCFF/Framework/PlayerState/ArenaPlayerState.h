@@ -37,6 +37,7 @@ public:
 	FORCEINLINE FName GetSelectedCharacterID() const { return SelectedCharacterID; }
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetSelectedCharacterID(FName CharacterID) { SelectedCharacterID = CharacterID; }
+	FORCEINLINE int32 GetSelectedPresetIndex() const { return SelectedPresetIndex; }
 	FORCEINLINE void SetSelectedPresetIndex(int32 InIndex) { SelectedPresetIndex = InIndex; }
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void AddDamage(float Amount) { TotalDamage += Amount; }

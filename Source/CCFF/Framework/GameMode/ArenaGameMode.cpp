@@ -13,6 +13,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Framework/Controller/CharacterController.h"
 #include "Items/Manager/ItemManager.h"
+#include "Items/Component/CharacterCustomizationComponent.h"
 #include "Character/Base/BaseCharacter.h"
 
 
@@ -150,7 +151,15 @@ void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 	if (ACharacterController* PC = Cast<ACharacterController>(NewPlayer))
 	{
 		PC->SetControlRotation(PC->GetControlRotation());
-	}
+
+		UCharacterCustomizationComponent* CustomizationComponent = NewCharacter->FindComponentByClass<UCharacterCustomizationComponent>();
+		if (CustomizationComponent)
+		{
+			int32 PresetIndex = PC->GetPlayerState<AArenaPlayerState>()->GetSelectedPresetIndex();
+			UE_LOG(LogTemp, Log, TEXT("[GameMode] PresetIndex: %d"), PresetIndex);
+			CustomizationComponent->EquipPresetByIndex(PresetIndex);
+		}
+	}	
 }
 
 void AArenaGameMode::EndRound()
