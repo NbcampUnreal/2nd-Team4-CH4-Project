@@ -14,6 +14,7 @@
 #include "Camera/CameraActor.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h" 
 
 
 ACharacterController::ACharacterController()
@@ -39,6 +40,8 @@ void ACharacterController::BeginPlay()
 
 			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
 			ServerSetCharacterID(SelectedCharacterID);
+
+			CCFFGameInstance->PlayBGMForCurrentMap();
 		}
 	}
 
@@ -138,70 +141,45 @@ bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
 void ACharacterController::NotifyPawnDeath()
 {
 	AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>();
-	if (!ArenaPlayerState)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("NotifyPawnDeath: PlayerState not invaild"));
-		return;
-	}
+	if (!IsValid(ArenaPlayerState)) { return; }
 
 	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
-	if (!ArenaGameMode)
+	if (!IsValid(ArenaGameMode)) { return; }
+
+	// Posses Spectator Camera
+	if (IsValid(ArenaGameMode->GetSpectatorCamera()))
 	{
-		return;
+		ClientSpectateCamera(ArenaGameMode->GetSpectatorCamera());
 	}
 
-	if (ArenaGameMode->CachedArenaSubMode == EArenaSubMode::DeathMatch)
-	{
-		UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: DeathMatch mode - respawning without deducting lives."));
 
+	// Respawn
+	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)
+	{
 		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 			{
-				if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-				{
-					ArenaGameMode->RespawnPlayer(this);
-				}
+				ArenaGameMode->SpawnPlayer(this);
 			}, 5.0f, false);
 	}
-	else if (ArenaGameMode->CachedArenaSubMode == EArenaSubMode::Elimination)
+	else if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::Elimination)
 	{
 		if (ArenaPlayerState->MaxLives > 0)
 		{
 			ArenaPlayerState->MaxLives--;
 
-			if (AArenaGameMode* InArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-			{
-				if (ACameraActor* SpectatorCam = InArenaGameMode->GetSpectatorCamera())
-				{
-					ClientSpectateCamera(SpectatorCam);
-				}
-			}
-
 			FTimerHandle RespawnTimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this]()
+			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 				{
-					if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-					{
-						ArenaGameMode->RespawnPlayer(this);
-					}
+					ArenaGameMode->SpawnPlayer(this);
 				}, 5.0f, false);
 		}
 		else
 		{
 			if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
 			{
-				float CurrentRoundTime = ArenaGameState->GetRemainingTime();
-				float TotalRoundTime = ArenaGameState->GetRoundStartTime();
-				ArenaPlayerState->SetSurvivalTime(TotalRoundTime - CurrentRoundTime);
-				UE_LOG(LogTemp, Log, TEXT("NotifyPawnDeath: Survival time recorded as %.2f"), CurrentRoundTime);
-			}
-
-			if (AArenaGameMode* InArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
-			{
-				if (ACameraActor* SpectatorCam = InArenaGameMode->GetSpectatorCamera())
-				{
-					ClientSpectateCamera(SpectatorCam);
-				}
+				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
+				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
 			}
 		}
 	}
@@ -209,15 +187,21 @@ void ACharacterController::NotifyPawnDeath()
 
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
-	if (!SpectatorCam)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ClientSpectateCamera: SpectatorCam is null"));
-		return;
-	}
+	if (!SpectatorCam) { return; }
 
 	UnPossess();
 	ChangeState(NAME_Spectating);
-	SetViewTargetWithBlend(SpectatorCam, 0.f);
 
-	UE_LOG(LogTemp, Log, TEXT("ClientSpectateCamera: switched to SpectatorCamera"));
+	//// timerhandle 0.12 seconds
+	//SetViewTargetWithBlend(SpectatorCam, 0.f);
+	FTimerHandle SpectateTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		SpectateTimerHandle,
+		[this, SpectatorCam]()
+		{
+			SetViewTargetWithBlend(SpectatorCam, 0.f);
+		},
+		0.02f,
+		false
+	);
 }

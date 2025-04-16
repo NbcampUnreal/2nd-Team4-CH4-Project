@@ -11,7 +11,6 @@ AArenaGameState::AArenaGameState()
 	, CurrentArenaSubMode(EArenaSubMode::Elimination)
 {
 	bReplicates = true;
-
 }
 
 void AArenaGameState::InitializeGameState()

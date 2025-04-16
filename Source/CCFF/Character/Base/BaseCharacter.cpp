@@ -948,11 +948,14 @@ void ABaseCharacter::OnDeath()
 	{
 		CharacterController->NotifyPawnDeath();
 	}
+
 	float MontageLength=Anim.DeathMontage->GetPlayLength();
 	FTimerHandle DestroyTimerHandle;
 	GetWorldTimerManager().SetTimer(
 		DestroyTimerHandle,
 		[this](){
+			UKismetSystemLibrary::PrintString(
+				this, FString::Printf(TEXT("+++++++++++++++++++++++++++++++ Destroy")), true, false, FLinearColor(1, 0, 0, 1), 60.0f);
 			Destroy();
 		},MontageLength,false);
 }
