@@ -150,6 +150,7 @@ void AArenaGameMode::EndRound()
 {
 	Super::EndRound();
 
+	GetWorld()->GetTimerManager().ClearTimer(ConditionCheckTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(ArenaTimerHandle);
 	RoundTime = 0.0f;
 
