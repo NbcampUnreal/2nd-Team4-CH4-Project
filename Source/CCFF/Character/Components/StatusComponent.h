@@ -31,6 +31,7 @@ public:
 	FORCEINLINE float GetMaxSuperMeter() const { return SuperMeter; }
 	FORCEINLINE float GetMaxBlockMeter() const { return MaxBlockMeter; }
 	FORCEINLINE float GetBlockMeter() const { return BlockMeter; }
+	FORCEINLINE float GetCurrentStockCount() const { return CurrentStockCount; }
 #pragma endregion
 	
 #pragma region SetFunction
@@ -38,6 +39,7 @@ public:
 	void SetSuperMeter(const float InSuperMeter);
 	void SetBurstMeter(const float InBurstMeter);
 	void SetBlockMeter(const float InBlockMeter);
+	void SetCurrentStockCount(const int32 InCount);
 #pragma endregion
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
@@ -81,3 +83,4 @@ private:
 	int32 CurrentStockCount;
 
 };
+

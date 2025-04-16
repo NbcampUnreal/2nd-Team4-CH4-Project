@@ -21,7 +21,7 @@ UStatusComponent::UStatusComponent()
 	MaxBurstMeter=10000;
 	MaxBlockMeter=10000;
 	BlockMeter=10000;
-	CurrentStockCount=0;
+	CurrentStockCount=999;
 	//Set Replicate
 	SetIsReplicatedByDefault(true);
 }
@@ -67,6 +67,12 @@ void UStatusComponent::SetBlockMeter(const float InBlockMeter)
 	{
 		OnGuardCrush.Broadcast();
 	}
+}
+
+void UStatusComponent::SetCurrentStockCount(const int32 InCount)
+{
+	CurrentStockCount = InCount;
+	UE_LOG(LogTemp,Warning,TEXT("UStatusComponent::SetCurrentStockCount"));
 }
 
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

@@ -55,6 +55,7 @@ public:
 #pragma region Widget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 	void SetHUDWidget(UUserWidget* HUDWidget);
+	void UpdateStockCount();
 #pragma endregion
 	
 #pragma region GetFunction

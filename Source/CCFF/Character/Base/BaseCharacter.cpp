@@ -34,8 +34,8 @@
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
-	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
+	BufferThreshold(0.5f),
 	//bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
@@ -46,7 +46,7 @@ ABaseCharacter::ABaseCharacter():
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
-		
+	
 	// Don't rotate when the controller rotates.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -119,6 +119,14 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 	}
 }
 
+void ABaseCharacter::UpdateStockCount()
+{
+	if (AArenaPlayerState* ArenaPS=Cast<AArenaPlayerState>(GetPlayerState()))
+	{
+		StatusComponent->SetCurrentStockCount(ArenaPS->MaxLives);
+	}
+}
+
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -152,6 +160,9 @@ void ABaseCharacter::BeginPlay()
 	// UE_LOG(LogTemp,Warning,TEXT("bCanAttack: %d"),bCanAttack);
 	// UDamageHelper::MyPrintString(this, CombinedString, 10.f);
 
+	//Update StockCount
+	UpdateStockCount();
+	
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
@@ -255,7 +266,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	if (!HasAuthority()) return;
 	// Server Logic
 	// Except self
-	if (!OtherActor || OtherActor == this) return;
+	if (!OtherActor || OtherActor == this || CurrentActivatedCollision==-1) return;
 	UE_LOG(LogTemp,Warning,TEXT("Overlapped Actor: %s"),*OtherActor->GetName());
 	
 	float DamageAmount=BalanceStats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
@@ -925,7 +936,8 @@ void ABaseCharacter::Clash(ABaseCharacter* Attacker, FHitBoxData& HitData)
 
 void ABaseCharacter::OnDeath()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Authority: %d, LocallyControlled: %d"),HasAuthority(),IsLocallyControlled());
+	//UE_LOG(LogTemp,Warning,TEXT("Authority: %d, LocallyControlled: %d"),HasAuthority(),IsLocallyControlled());
+	
 	//Set off Collision and change state to dead
 	CurrentCharacterState=ECharacterState::Dead;
 	//Set off Overlap event
@@ -948,14 +960,20 @@ void ABaseCharacter::OnDeath()
 	{
 		CharacterController->NotifyPawnDeath();
 	}
+	//Update StockCount
+	UpdateStockCount();
 
-	float MontageLength=Anim.DeathMontage->GetPlayLength();
-	FTimerHandle DestroyTimerHandle;
-	GetWorldTimerManager().SetTimer(
-		DestroyTimerHandle,
-		[this](){
-			Destroy();
-		},MontageLength,false);
+	if (IsValid(Anim.DeathMontage))
+	{
+		//Montage end -> destroy actor
+		float MontageLength=Anim.DeathMontage->GetPlayLength();
+		FTimerHandle DestroyTimerHandle;
+		GetWorldTimerManager().SetTimer(
+			DestroyTimerHandle,
+			[this](){
+				Destroy();
+			},MontageLength,false);		
+	}
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
@@ -1130,6 +1148,7 @@ void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedCompone
 			if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 			{
 				CharacterController->NotifyPawnDeath();
+				Destroy();
 			}
 		}
 	}
