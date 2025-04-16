@@ -23,6 +23,21 @@ void UCCFFGameInstance::Init()
 	{
 		ImportAccountsFromJSON();
 	}
+
+	const FString SlotName = TEXT("LocalUserDatabase");
+	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (SaveGame)
+	{
+		for (const FPlayerMetaData& Meta : SaveGame->AllAccounts)
+		{
+			if (Meta.PlayerUniqueID == SaveGame->LastLoggedInNickname)
+			{
+				PlayerMeta = Meta;
+				ApplyUserSettings(Meta);
+				break;
+			}
+		}
+	}
 }
 
 void UCCFFGameInstance::Shutdown()
@@ -256,10 +271,17 @@ bool UCCFFGameInstance::TryLogin(const FString& ID, const FString& InputPassword
 	const FString SlotName = TEXT("LocalUserDatabase");
 	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
 
-	if (!SaveGame)
+	if (!SaveGame || SaveGame->AllAccounts.Num() == 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[TryLogin] SaveGame not found"));
-		return false;
+		UE_LOG(LogTemp, Warning, TEXT("[TryLogin] SaveGame not found or empty. Reimporting from JSON."));
+		ImportAccountsFromJSON();
+
+		SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+		if (!SaveGame || SaveGame->AllAccounts.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[TryLogin] Failed to recover SaveGame after reimport."));
+			return false;
+		}
 	}
 
 	// 입력된 비밀번호를 해시 처리
@@ -292,8 +314,10 @@ bool UCCFFGameInstance::TryLogin(const FString& ID, const FString& InputPassword
 
 void UCCFFGameInstance::ApplyUserSettings(const FPlayerMetaData& Meta)
 {
+	// 1. 캐싱
 	PlayerMeta = Meta;
 
+	// 2. 오디오 적용
 	if (!MasterSoundMix || !MasterSoundClass || !BGMSoundClass || !SFXSoundClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("SoundClass or Mix is NULL!"));
@@ -310,5 +334,17 @@ void UCCFFGameInstance::ApplyUserSettings(const FPlayerMetaData& Meta)
 	ApplyAudio(Meta.AudioSettings.BGM, BGMSoundClass);
 	ApplyAudio(Meta.AudioSettings.SFX, SFXSoundClass);
 
+	UGameplayStatics::ClearSoundMixModifiers(this);
 	UGameplayStatics::PushSoundMixModifier(this, MasterSoundMix);
+
+	// 3. 그래픽 설정 적용
+	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+	{
+		Settings->SetScreenResolution(Meta.Resolution);
+		Settings->SetFullscreenMode(Meta.WindowMode);
+		Settings->ApplySettings(false);
+	}
+
+	// 4. SaveGame에 저장
+	UpdateAccountInSaveGame(Meta);
 }
