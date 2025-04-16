@@ -1,4 +1,5 @@
 #include "Framework/GameMode/LobbyGameMode.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/GameState/LobbyGameState.h"
 #include "Framework/PlayerState/LobbyPlayerState.h"
 #include "Framework/Controller/LobbyPlayerController.h"
@@ -143,6 +144,12 @@ void ALobbyGameMode::StartGame()
 		{
 			PC->ClientTeardownCountdown();
 		}
+	}
+
+	UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>();
+	if (CCFFGameInstance)
+	{
+		CCFFGameInstance->SetArenaSubMode(LobbyGameState->ArenaSubMode);
 	}
 
 	int32 RandomIndex = FMath::RandRange(0, AvailableMapPaths.Num() - 1);

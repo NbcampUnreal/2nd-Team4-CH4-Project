@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Framework/UI/BaseUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "ArenaResultWidget.generated.h"
 
 class UVerticalBox;
@@ -10,7 +10,7 @@ class URankRowWidget;
 
 
 UCLASS()
-class CCFF_API UArenaResultWidget : public UBaseUserWidget
+class CCFF_API UArenaResultWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	

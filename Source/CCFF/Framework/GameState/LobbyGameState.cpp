@@ -145,6 +145,4 @@ void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALobbyGameState, bAllowStartGame);
 	DOREPLIFETIME(ALobbyGameState, RemainingCountdownTime);
-	DOREPLIFETIME(ALobbyGameState, ArenaSubMode);
-
 }
