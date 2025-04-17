@@ -815,7 +815,7 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 		if (Movement->MovementMode != MOVE_None)
 		{
 			StoredVelocity = Movement->Velocity;
-			Movement->DisableMovement();
+			Movement->StopMovementImmediately();
 		}
 	}
 	GetMesh()->bPauseAnims = true;
@@ -845,7 +845,7 @@ void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector Knockbac
 	{
 		if (Movement->MovementMode != MOVE_None)
 		{
-			Movement->DisableMovement();
+			Movement->StopMovementImmediately();
 		}
 	}
 	StoredKnockbackAngle = KnockbackAngle;
@@ -1017,7 +1017,7 @@ void ABaseCharacter::ReceiveGrabbed()
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
-		Movement->DisableMovement();
+		Movement->StopMovementImmediately();
 	}
 	CurrentResistanceState = EResistanceState::Normal;
 	CurrentCharacterState = ECharacterState::Grabbed;
