@@ -180,6 +180,11 @@ void ACharacterController::NotifyPawnDeath()
 		{
 			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
 		}
+
+		if (IsLocalController())
+		{
+			ClientSpectateCamera(SpectatorCam);
+		}
 	}
 
 	// Respawn
@@ -219,10 +224,13 @@ void ACharacterController::NotifyPawnDeath()
 
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
-	if (!SpectatorCam) 
+	UE_LOG(LogTemp, Warning,
+		TEXT("[ClientSpectateCamera] called on %s (NetMode=%d), Cam ptr=%p"),
+		*GetName(), (int)GetNetMode(), SpectatorCam);
+	if (!SpectatorCam)
 	{
-		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++ [CharacterController] SpectatorCam is not Valid"));
-		return; 
+		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++ [ClientSpectateCamera] SpectatorCam is nullptr"));
+		return;
 	}
 
 	DisableInput(this);
@@ -238,6 +246,6 @@ void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* Spe
 	GetWorld()->GetTimerManager().SetTimer(Handle, [this, SpectatorCam]()
 		{
 			SetViewTargetWithBlend(SpectatorCam, 0.f);
-		}, 0.5f, false);
+		}, 0.1f, false);
 }
 

@@ -77,6 +77,8 @@ public:
 	void OnRep_FinishCountdown();
 	UFUNCTION()
 	void OnRep_ArenaRemainingTime();
+	UFUNCTION()
+	void OnRep_SpectatorCamera();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -99,6 +101,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
 	EArenaSubMode CurrentArenaSubMode;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_SpectatorCamera, Category = "CCFF|State")
 	ACameraActor* SpectatorCamera;
 };
