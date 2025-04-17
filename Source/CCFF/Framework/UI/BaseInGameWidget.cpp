@@ -5,6 +5,7 @@
 #include "Framework/UI/Character/SideBarWidget.h"
 #include "Character/Components/StatusComponent.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 
 class ABaseCharacter;
@@ -84,3 +85,25 @@ void UBaseInGameWidget::InitializeHUDWidget(UStatusComponent* InStatusComponent)
 	UpdateSuperMeterBar(Percentage);
 }
 
+void UBaseInGameWidget::UpdateCharacterImage(FName CharacterID)
+{
+	if (!ProfileImage)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ProfileImage is null"));
+		return;
+	}
+
+	if (UMaterialInstance** FoundTexture = CharacterProfileMap.Find(CharacterID))
+	{
+		UMaterialInstance* Texture = *FoundTexture;
+		FSlateBrush NewBrush;
+		NewBrush.SetResourceObject(Texture);
+		ProfileImage->SetBrush(NewBrush);
+
+		UE_LOG(LogTemp, Log, TEXT("Updated Profile Image for ID: %s"), *CharacterID.ToString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No image found for ID: %s"), *CharacterID.ToString());
+	}
+}

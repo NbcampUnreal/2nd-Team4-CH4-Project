@@ -34,6 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	FORCEINLINE USettingsWidget* GetSettingsWidget() const { return SettingsWidget; }
 
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
+	void UpdateCharacterImageInWidget(FName CharacterID);
+
 	template<typename TWidget>
 	TWidget* CreateAndAddWidget(TSubclassOf<TWidget> WidgetClass, int32 ZOrder, ESlateVisibility InitialVisibility = ESlateVisibility::Collapsed)
 	{
