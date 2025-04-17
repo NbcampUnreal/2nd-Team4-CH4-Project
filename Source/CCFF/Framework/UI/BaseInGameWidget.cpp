@@ -26,7 +26,7 @@ void UBaseInGameWidget::NativeConstruct()
 	}
 }
 
-void UBaseInGameWidget::UpdateTimerText_Implementation(const float NewTime)
+void UBaseInGameWidget::UpdateTimerText(const float NewTime)
 {
 	int32 Minutes = FMath::FloorToInt(NewTime / 60.0f);
 	int32 Seconds = FMath::FloorToInt(NewTime) % 60;

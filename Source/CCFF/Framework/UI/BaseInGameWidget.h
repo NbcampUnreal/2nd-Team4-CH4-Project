@@ -17,9 +17,8 @@ class CCFF_API UBaseInGameWidget : public UBaseUserWidget
 public:
 	virtual void NativeConstruct() override;
 	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "CCFF|UI")
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	void UpdateTimerText(const float NewTime);
-	virtual void UpdateTimerText_Implementation(const float NewTime);
 
 	void UpdateHealthBar(const float InPercentage);
 	void UpdateStockCount(const int32 InCount);
