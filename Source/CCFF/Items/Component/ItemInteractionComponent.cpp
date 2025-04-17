@@ -78,26 +78,33 @@ void UItemInteractionComponent::HandleResistivityModifier(EResistanceState Resis
 
 	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
 	{
-		// Set the Resistance State
+		// 상태 설정
 		Character->SetResistanceState(ResistanceState);
 
-		// Lamda: Set Timer to revert the Resistance state after Duration
-		FTimerDelegate TimerDel;
-		TimerDel.BindLambda([Character]()
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Reverting ResistanceState to Normal"));
-				Character->SetResistanceState(EResistanceState::Normal);
-			});
+		// Weak 포인터로 캐릭터 안전 캡처
+		TWeakObjectPtr<ABaseCharacter> WeakCharacter = Character;
 
-		// If the timer is already active, clear it before setting a new one
+		// 기존 타이머가 있다면 제거
 		if (GetWorld()->GetTimerManager().IsTimerActive(ResistivityResetTimer))
 		{
 			GetWorld()->GetTimerManager().ClearTimer(ResistivityResetTimer);
 		}
 
+		// 람다: 일정 시간 후 상태 복구
+		FTimerDelegate TimerDel;
+		TimerDel.BindLambda([WeakCharacter]()
+			{
+				if (WeakCharacter.IsValid())
+				{
+					WeakCharacter->SetResistanceState(EResistanceState::Normal);
+					UE_LOG(LogTemp, Warning, TEXT("Reverting ResistanceState to Normal"));
+				}
+			});
+
 		GetWorld()->GetTimerManager().SetTimer(ResistivityResetTimer, TimerDel, Duration, false);
 	}
 }
+
 
 void UItemInteractionComponent::HandleSpeedModifier(float SpeedMultiplier, float Duration)
 {
@@ -113,16 +120,107 @@ void UItemInteractionComponent::HandleSpeedModifier(float SpeedMultiplier, float
 				return;
 			}
 
+			float OriginalSpeed = MovementComponent->MaxWalkSpeed;
 			MovementComponent->MaxWalkSpeed *= SpeedMultiplier;
 
+			TWeakObjectPtr<ABaseCharacter> WeakCharacter = Character;
+
 			FTimerDelegate TimerDel;
-			TimerDel.BindLambda([Character, MovementComponent, SpeedMultiplier]()
+			TimerDel.BindLambda([WeakCharacter, OriginalSpeed]()
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Reverting SpeedMultiplier to 1.0"));
-					MovementComponent->MaxWalkSpeed /= SpeedMultiplier;
+					if (WeakCharacter.IsValid())
+					{
+						if (UCharacterMovementComponent* MoveComp = WeakCharacter->GetCharacterMovement())
+						{
+							MoveComp->MaxWalkSpeed = OriginalSpeed;
+							UE_LOG(LogTemp, Warning, TEXT("Reverted MaxWalkSpeed to %.2f"), OriginalSpeed);
+						}
+					}
 				});
 
 			GetWorld()->GetTimerManager().SetTimer(ResistivityResetTimer, TimerDel, Duration, false);
 		}
+	}
+}
+
+
+void UItemInteractionComponent::HandleMeshShrink(float Scale, float Duration)
+{
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(TransformationTimer))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Transformation timer is already active. Ignoring new request."));
+			return;
+		}
+		FVector OriginalScale = Character->GetActorScale3D();
+		FVector NewScale = OriginalScale * Scale;
+		if (Character->HasAuthority())  // 서버에서만 처리
+		{
+			// 서버에서 크기 변경
+			Character->SetActorScale3D(NewScale);
+			// 모든 클라이언트에 크기 동기화
+			MulticastSetActorScale(NewScale);
+			// 일정 시간 후 원래 크기로 되돌리기
+			FTimerDelegate TimerDel;
+			TimerDel.BindLambda([this, Character, OriginalScale]()
+				{
+					if (Character->HasAuthority())
+					{
+						Character->SetActorScale3D(OriginalScale);
+						MulticastSetActorScale(OriginalScale); // 원래 크기로 동기화
+						UE_LOG(LogTemp, Warning, TEXT("Mesh Shrink effect reverted for %s"), *Character->GetName());
+					}
+				});
+			GetWorld()->GetTimerManager().SetTimer(TransformationTimer, TimerDel, Duration, false);
+		}
+	}
+}
+
+
+void UItemInteractionComponent::HandleMeshEnlarge(float Scale, float Duration)
+{
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(TransformationTimer))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Transformation timer is already active. Ignoring new request."));
+			return;
+		}
+
+		FVector OriginalScale = Character->GetActorScale3D();
+		FVector NewScale = OriginalScale * Scale;
+
+		if (Character->HasAuthority())  // 서버에서만 처리
+		{
+			// 서버에서 크기 변경
+			Character->SetActorScale3D(NewScale);
+
+			// 모든 클라이언트에 크기 동기화
+			MulticastSetActorScale(NewScale);
+
+			// 일정 시간 후 원래 크기로 되돌리기
+			FTimerDelegate TimerDel;
+			TimerDel.BindLambda([this, Character, OriginalScale]()
+				{
+					if (Character->HasAuthority())
+					{
+						Character->SetActorScale3D(OriginalScale);
+						MulticastSetActorScale(OriginalScale); // 원래 크기로 동기화
+						UE_LOG(LogTemp, Warning, TEXT("Mesh Enlarge effect reverted for %s"), *Character->GetName());
+					}
+				});
+
+			GetWorld()->GetTimerManager().SetTimer(TransformationTimer, TimerDel, Duration, false);
+		}
+	}
+}
+
+void UItemInteractionComponent::MulticastSetActorScale_Implementation(FVector NewScale)
+{
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner()))
+	{
+		// 모든 클라이언트에 대해 크기 적용
+		Character->SetActorScale3D(NewScale);
 	}
 }
