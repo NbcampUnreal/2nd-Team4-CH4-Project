@@ -31,8 +31,6 @@ public:
 
 	virtual void ResetSubsystem() override;
 
-	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
-
 #pragma region Arena
 
 public:
@@ -57,8 +55,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CCFF|Ranking")
 	float KillCountWeight;
 
-	UPROPERTY()
-	ACameraActor* SpectatorCamera = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category = "Spectator")
+	TSubclassOf<ACameraActor> SpectatorCameraClass;
 
 
 private:

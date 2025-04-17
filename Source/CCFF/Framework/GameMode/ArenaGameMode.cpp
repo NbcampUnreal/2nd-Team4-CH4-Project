@@ -2,19 +2,23 @@
 #include "Framework/GameState/ArenaGameState.h"
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/HUD/ArenaModeHUD.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Framework/HUD/BaseInGameHUD.h"
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/CountdownWidget.h"
-#include "Algo/Sort.h"
-#include "GameFramework/Pawn.h"
-#include "Framework/GameInstance/CCFFGameInstance.h"
-#include "Kismet/GameplayStatics.h"
-#include "Camera/CameraActor.h"
-#include "GameFramework/PlayerStart.h"
 #include "Framework/Controller/CharacterController.h"
+#include "Character/Base/BaseCharacter.h"
 #include "Items/Manager/ItemManager.h"
 #include "Items/Component/CharacterCustomizationComponent.h"
-#include "Character/Base/BaseCharacter.h"
+#include "Algo/Sort.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerStart.h"
+#include "Camera/CameraActor.h"
+#include "Engine/World.h"
+#include "Camera/CameraActor.h"
+
 
 AArenaGameMode::AArenaGameMode()
 	: SelectedArenaSubMode(EArenaSubMode::Elimination)
@@ -58,6 +62,62 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (!HasAuthority() || !SpectatorCameraClass)
+	{
+		return;
+	}
+
+	TArray<AActor*> FoundCameras;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SpectatorCameraClass, FoundCameras);
+
+	FTransform SpawnTransform = FTransform::Identity;
+	if (FoundCameras.Num() > 0)
+	{
+		// 첫 번째 인스턴스 사용
+		if (ACameraActor* LevelCam = Cast<ACameraActor>(FoundCameras[0]))
+		{
+			SpawnTransform = LevelCam->GetActorTransform();
+			// (선택) 원본 카메라 숨기거나 삭제
+			LevelCam->SetActorHiddenInGame(true);
+			// LevelCam->Destroy();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[ArenaGameMode] 레벨에 배치된 SpectatorCameraClass 인스턴스를 찾지 못했습니다."));
+		// 기본 좌표 fallback
+		const FVector DefaultLoc(-900.f, -1185.f, 10580.f);
+		const FRotator DefaultRot(0.f, -90.f, 0.f);
+		SpawnTransform = FTransform(DefaultRot, DefaultLoc);
+	}
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.bNoFail = true;
+
+	ACameraActor* SpectatorCamera = GetWorld()->SpawnActor<ACameraActor>(
+		SpectatorCameraClass,
+		SpawnTransform,
+		Params
+	);
+
+	if (IsValid(SpectatorCamera))
+	{
+		// 복제 설정
+		SpectatorCamera->SetReplicates(true);
+		SpectatorCamera->bAlwaysRelevant = true;
+		SpectatorCamera->bNetLoadOnClient = true;
+		SpectatorCamera->SetActorHiddenInGame(false);
+		SpectatorCamera->SetActorEnableCollision(false);  // 필요 시
+
+		// GameState 에 저장 (클라이언트가 접근할 수 있도록)
+		if (AArenaGameState* GS = GetWorld()->GetGameState<AArenaGameState>())
+		{
+			GS->SetSpectatorCamera(SpectatorCamera);
+		}
+	}
 
 	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
 	if (CCFFGameInstance)
@@ -70,23 +130,11 @@ void AArenaGameMode::BeginPlay()
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (IsValid(ArenaGameState))
 	{
-		TArray<AActor*> Found;
-		UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("SpectatorCamera"), Found);
-		if (Found.Num() > 0)
-		{
-			SpectatorCamera = Cast<ACameraActor>(Found[0]);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ArenaGameMode: SpectatorCam not found"));
-		}
-
 		ArenaGameState->InitializeGameState();
 		ArenaGameState->SetCountdownTime(CountdownTime);
 		ArenaGameState->SetRoundStartTime(RoundTime);
 		ArenaGameState->SetRemainingTime(RoundTime);
 		ArenaGameState->SetArenaSubMode(SelectedArenaSubMode);
-		ArenaGameState->SetSpectatorCamera(SpectatorCamera);
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &AArenaGameMode::UpdateCountdown, 1.0f, true);
@@ -152,7 +200,8 @@ void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 			UE_LOG(LogTemp, Log, TEXT("[GameMode] PresetIndex: %d"), PresetIndex);
 			CustomizationComponent->EquipPresetByIndex(PresetIndex);
 		}
-	}	
+	}
+
 }
 
 void AArenaGameMode::EndRound()
