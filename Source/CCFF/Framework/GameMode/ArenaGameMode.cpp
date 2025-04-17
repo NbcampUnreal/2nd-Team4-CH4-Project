@@ -16,7 +16,6 @@
 #include "Items/Component/CharacterCustomizationComponent.h"
 #include "Character/Base/BaseCharacter.h"
 
-
 AArenaGameMode::AArenaGameMode()
 	: SelectedArenaSubMode(EArenaSubMode::Elimination)
 	, DamageWeight(0.4f)
@@ -55,7 +54,6 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 //		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
 //	}
 //}
-
 
 void AArenaGameMode::BeginPlay()
 {
@@ -142,9 +140,9 @@ void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 	}
 
 	// Possess
-	NewPlayer->Possess(NewCharacter);
 	if (ACharacterController* PC = Cast<ACharacterController>(NewPlayer))
 	{
+		NewPlayer->Possess(NewCharacter);
 		PC->SetControlRotation(PC->GetControlRotation());
 
 		UCharacterCustomizationComponent* CustomizationComponent = NewCharacter->FindComponentByClass<UCharacterCustomizationComponent>();

@@ -1,6 +1,7 @@
 #include "Items/Component/CharacterCustomizationComponent.h"
 #include "Character/Base/BaseCharacter.h"
 #include "Character/Base/BasePreviewPawn.h"
+#include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DataTable.h"
@@ -77,6 +78,8 @@ void UCharacterCustomizationComponent::EquipItemByID(int32 ItemID, EItemSlot Slo
         UE_LOG(LogTemp, Warning, TEXT("Item ID %d not found in DataTable."), ItemID);
         return;
     }
+
+    UE_LOG(LogTemp, Log, TEXT("[EquipItemByID] Equipping item: %s"), *FoundItem->ItemName.ToString());
 
     EquipItem(*FoundItem);
 }
@@ -167,11 +170,16 @@ FName UCharacterCustomizationComponent::GetCharacterID() const
 
 void UCharacterCustomizationComponent::EquipPreset(FCustomizationPreset Preset)
 {
+    UE_LOG(LogTemp, Warning, TEXT("[EquipPreset] EquippedItems Count: %d"), Preset.EquippedItems.Num());
+
     for (const FEquippedItemData& Item : Preset.EquippedItems)
 	{
 		FName ItemID = Item.ItemID;
 		int32 ItemIDInt = FCString::Atoi(*ItemID.ToString());
 		EquipItemByID(ItemIDInt, Item.EquipSlot);
+
+        UE_LOG(LogTemp, Warning, TEXT("[EquipPreset] ItemID: %s, Slot: %s"), *Item.ItemID.ToString(), *UEnum::GetValueAsString(Item.EquipSlot));
+
 	}
 }
 
@@ -221,14 +229,45 @@ FPresetItemsIndex UCharacterCustomizationComponent::GetCurrentCustomItemsIndex()
 
 void UCharacterCustomizationComponent::EquipPresetByIndex(int32 PresetIndex)
 {
-	UCustomizationManager* CustomizationManager = Cast<UGameInstance>(GetOwner()->GetGameInstance())->GetSubsystem<UCustomizationManager>();
-	if (CustomizationManager)
+	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
+	if (!OwnerCharacter)
 	{
-		FCustomizationPreset Preset = CustomizationManager->GetCustomizationPreset(GetCharacterID(), PresetIndex);
-		EquipPreset(Preset);
+		UE_LOG(LogTemp, Warning, TEXT("[EquipPresetByIndex] Owner is not a character"));
+		return;
 	}
-	else
+
+	APlayerState* PS = OwnerCharacter->GetPlayerState();
+	if (!PS)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CustomizationManager is null."));
+		UE_LOG(LogTemp, Warning, TEXT("[EquipPresetByIndex] PlayerState is null"));
+		return;
+	}
+
+	AArenaPlayerState* ArenaPS = Cast<AArenaPlayerState>(PS);
+	if (!ArenaPS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[EquipPresetByIndex] PlayerState is not AArenaPlayerState"));
+		return;
+	}
+
+	FName CharacterID = ArenaPS->GetSelectedCharacterID();
+	const TArray<FCharacterCustomizationPreset>& Presets = ArenaPS->GetAllPresets();
+
+	for (const auto& CharPreset : Presets)
+	{
+		if (CharPreset.CharacterID == CharacterID)
+		{
+			for (const auto& Preset : CharPreset.Presets)
+			{
+				if (Preset.PresetIndex == PresetIndex)
+				{
+					UE_LOG(LogTemp, Log, TEXT("[EquipPresetByIndex] Found Preset for ID: %s, Index: %d, Items: %d"),
+						*CharacterID.ToString(), PresetIndex, Preset.EquippedItems.Num());
+
+					EquipPreset(Preset);
+					return;
+				}
+			}
+		}
 	}
 }

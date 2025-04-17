@@ -11,6 +11,16 @@ AArenaPlayerState::AArenaPlayerState()
 	bReplicates = true;
 }
 
+const TArray<FCharacterCustomizationPreset>& AArenaPlayerState::GetAllPresets() const
+{
+	return ClientCharacterCustomizationPresets;
+}
+
+void AArenaPlayerState::SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets)
+{
+	ClientCharacterCustomizationPresets = Presets;
+}
+
 void AArenaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -22,4 +32,6 @@ void AArenaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AArenaPlayerState, KillCount);
 	DOREPLIFETIME(AArenaPlayerState, SelectedCharacterID);
 	DOREPLIFETIME(AArenaPlayerState, SelectedPresetIndex);
+	DOREPLIFETIME(AArenaPlayerState, ClientCharacterCustomizationPresets);
+
 }

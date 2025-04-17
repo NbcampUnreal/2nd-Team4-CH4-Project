@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Items/Component/CharacterCustomizationComponent.h"
 #include "ArenaPlayerState.generated.h"
 
 
@@ -68,4 +69,14 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "CCFF|PlayerStats")
 	int32 SelectedPresetIndex;
+
+	UPROPERTY(Replicated)
+	TArray<FCharacterCustomizationPreset> ClientCharacterCustomizationPresets;
+
+	UFUNCTION(BlueprintCallable)
+	const TArray<FCharacterCustomizationPreset>& GetAllPresets() const;
+
+	UFUNCTION()
+	void SetCharacterCustomizationPresets(const TArray<FCharacterCustomizationPreset>& Presets);
+
 };
