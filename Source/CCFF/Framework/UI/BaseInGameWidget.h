@@ -35,4 +35,19 @@ protected:
 	TObjectPtr<UProfileWidget> ProfileWidget;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<USideBarWidget> SideBarWidget;
+
+#pragma region CHARACTER_PROFILE
+public:
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
+	void UpdateCharacterImage(FName CharacterID);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CCFF|UI")
+	TMap<FName, UMaterialInstance*> CharacterProfileMap;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BindWidgetOptional))
+	class UImage* ProfileImage;
+
+#pragma endregion
+
 };

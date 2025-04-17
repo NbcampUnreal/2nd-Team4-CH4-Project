@@ -27,6 +27,7 @@
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/Character/UW_HPWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -126,6 +127,11 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 		MyHUD->InitializeHUDWidget(StatusComponent);
 		UE_LOG(LogTemp,Display,TEXT("[SetHud] UpdateStockCount Called"));
 		UpdateStockCount();
+
+		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
+		{
+			MyHUD->UpdateCharacterImage(GI->GetSelectedCharacterID());
+		}
 	}
 }
 

@@ -37,3 +37,12 @@ void ABaseInGameHUD::HideSettingsWidget()
 	}
 }
 
+void ABaseInGameHUD::UpdateCharacterImageInWidget(FName CharacterID)
+{
+	if (BaseInGameWidget)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[ABaseInGameHUD] UpdateCharacterImageInWidget : Updated Profile Image for ID: %s"), *CharacterID.ToString());
+
+		BaseInGameWidget->UpdateCharacterImage(CharacterID);
+	}
+}

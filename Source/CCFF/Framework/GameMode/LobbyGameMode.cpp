@@ -203,6 +203,7 @@ void ALobbyGameMode::StartGame()
 		if (ALobbyPlayerController* PC = Cast<ALobbyPlayerController>(It->Get()))
 		{
 			PC->ClientTeardownCountdown();
+			PC->ShowLoadingWidget();
 		}
 	}
 
