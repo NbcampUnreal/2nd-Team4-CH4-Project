@@ -23,6 +23,7 @@
 #include "Framework/Controller/CharacterController.h"
 #include "Framework/GameMode/ArenaGameMode.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "Framework/HUD/ArenaModeHUD.h"
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/Character/UW_HPWidget.h"
@@ -32,6 +33,7 @@
 #include "Items/Component/ItemInteractionComponent.h"
 #include "Net/UnrealNetwork.h"
 
+class AArenaModeHUD;
 // Sets default values
 ABaseCharacter::ABaseCharacter():
 	CurrentActivatedCollision(-1),
@@ -170,6 +172,20 @@ void ABaseCharacter::BeginPlay()
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
+	}
+	//Bind Widget Update function to Delegate
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Called"));
+		if (CC->IsLocalController())
+		{
+			UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Controller Is Valid"));
+			if (AArenaModeHUD* AM = Cast<AArenaModeHUD>(CC->GetHUD()))
+			{
+				UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::SetHUD Called"));
+				SetHUDWidget(AM->GetBaseInGameWidget());
+			}
+		}
 	}
 }
 
@@ -1158,6 +1174,7 @@ void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedCompone
 			if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 			{
 				CharacterController->NotifyPawnDeath();
+				UpdateStockCount();
 				Destroy();
 			}
 		}
