@@ -31,11 +31,18 @@ public:
 	void HandleHealEffect(float HealPercent);
 	void HandleResistivityModifier(EResistanceState ResistanceState, float Duration);
 	void HandleSpeedModifier(float SpeedMultiplier, float Duration);
+	void HandleMeshShrink(float Scale, float Duration);
+	void HandleMeshEnlarge(float Scale, float Duration);
 
 protected:
 	virtual void BeginPlay() override;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetActorScale(FVector NewScale);
+	void MulticastSetActorScale_Implementation(FVector NewScale);
+
 private:
 	FTimerHandle ResistivityResetTimer;
+	FTimerHandle TransformationTimer;
 
 };

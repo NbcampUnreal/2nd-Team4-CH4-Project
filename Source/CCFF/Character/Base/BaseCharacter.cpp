@@ -267,7 +267,7 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 		// Particle, Effect
 		if (AttackNumber>=0&&AttackNumber<16)
 		{
-			DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
+			//DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
 		}
 		return;
 	}

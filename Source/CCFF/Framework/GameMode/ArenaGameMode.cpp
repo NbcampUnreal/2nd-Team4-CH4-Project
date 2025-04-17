@@ -31,7 +31,7 @@ AArenaGameMode::AArenaGameMode()
 	PlayerStateClass = AArenaPlayerState::StaticClass();
 
 	MyClassName = "ArenaMode";
-	RoundTime = 70.0f;  // Default
+	RoundTime = 120.0f;  // Default
 	CountdownTime = 5.0f;
 }
 
