@@ -43,13 +43,13 @@ void ABaseInGameMode::StartRound()
 		BGameState->RoundProgress = ERoundProgress::InProgress;
 	}
 
-	GetWorldTimerManager().SetTimer(
-		GameTimerHandle,
-		this,
-		&ABaseInGameMode::CheckGameConditions,
-		1.0f,
-		true
-	);
+	//GetWorldTimerManager().SetTimer(
+	//	GameTimerHandle,
+	//	this,
+	//	&ABaseInGameMode::CheckGameConditions,
+	//	1.0f,
+	//	true
+	//);
 }
 
 void ABaseInGameMode::EndRound()
@@ -62,8 +62,6 @@ void ABaseInGameMode::EndRound()
 	{
 		BGameState->RoundProgress = ERoundProgress::Ended;
 	}
-
-	ResetSubsystem();
 }
 
 void ABaseInGameMode::CheckGameConditions()

@@ -330,6 +330,23 @@ FName UCustomizationManager::GetCharacterID() const
 }
 
 
+FCustomizationPreset UCustomizationManager::GetCustomizationPreset(FName CharacterID, int32 PresetIndex) const
+{
+	const FCharacterCustomizationPreset* FoundCharacterPreset = CharacterCustomizationPresets.FindByPredicate(
+		[&](const FCharacterCustomizationPreset& CharPreset) {return CharPreset.CharacterID == CharacterID; });
+	if (FoundCharacterPreset)
+	{
+		const FCustomizationPreset* FoundPreset = FoundCharacterPreset->Presets.FindByPredicate(
+			[&](const FCustomizationPreset& Preset) {return Preset.PresetIndex == PresetIndex; });
+		if (FoundPreset)
+		{
+			return *FoundPreset;
+		}
+	}
+
+	return FCustomizationPreset();	
+}
+
 FName UCustomizationManager::GetItemName(int32 ItemID, EItemSlot Slot) const
 {
 	FString ItemName;

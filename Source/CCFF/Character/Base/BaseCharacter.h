@@ -55,10 +55,12 @@ public:
 #pragma region Widget
 	void SetHPWidget(UUW_HPWidget* InHPWidget);
 	void SetHUDWidget(UUserWidget* HUDWidget);
+	void UpdateStockCount();
 #pragma endregion
 	
 #pragma region GetFunction
 	FORCEINLINE FString GetCharacterType() const { return CharacterType; };
+	FORCEINLINE UStatusComponent* GetStatusComponent() const { return StatusComponent; };
 #pragma endregion
 	
 #pragma region Override
@@ -326,6 +328,9 @@ protected:
 	AActor* LastDamageCauser;
 #pragma endregion
 	
+	//public:
+	//	UFUNCTION(BlueprintCallable, Category = "Character|Life")
+	//	void HandleDeath();
 	
 };
 

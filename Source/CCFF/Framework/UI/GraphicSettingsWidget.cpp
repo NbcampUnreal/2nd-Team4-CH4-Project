@@ -1,4 +1,5 @@
 ﻿#include "Framework/UI/GraphicSettingsWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Components/ComboBoxString.h"
 #include "Components/Button.h"
 #include "GameFramework/GameUserSettings.h"
@@ -11,8 +12,14 @@ void UGraphicSettingsWidget::NativeConstruct()
 	InitializeWindowModeOptions();
 	InitializeResolutionOptions();
 
-	CachedResolution = SelectedResolution;
-	CachedWindowMode = SelectedWindowMode;
+	if (UCCFFGameInstance* CCFFGameInstance = GetWorld()->GetGameInstance<UCCFFGameInstance>())
+	{
+		SelectedResolution = CCFFGameInstance->GetPlayerMeta().Resolution;
+		SelectedWindowMode = CCFFGameInstance->GetPlayerMeta().WindowMode;
+
+		UpdateComboBoxSelections();
+		CacheCurrentSettings();
+	}
 }
 
 void UGraphicSettingsWidget::InitializeWindowModeOptions()
@@ -27,7 +34,7 @@ void UGraphicSettingsWidget::InitializeWindowModeOptions()
 	WindowModeComboBox->AddOption(TEXT("Windowed"));
 	WindowModeComboBox->AddOption(TEXT("Borderless"));
 
-	WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+	WindowModeComboBox->SetSelectedOption(TEXT("Windowed"));
 	WindowModeComboBox->OnSelectionChanged.AddDynamic(this, &UGraphicSettingsWidget::OnWindowModeChanged);
 
 	SelectedWindowMode = DefaultWindowMode;
@@ -70,7 +77,8 @@ void UGraphicSettingsWidget::OnWindowModeChanged(FString SelectedItem, ESelectIn
 	}
 	else if (SelectedItem == "Borderless")
 	{
-		SelectedWindowMode = EWindowMode::Fullscreen;
+		// SelectedWindowMode = EWindowMode::Fullscreen;
+		SelectedWindowMode = EWindowMode::Windowed;
 	}
 
 	ApplyPreviewSettings();
@@ -102,12 +110,22 @@ void UGraphicSettingsWidget::ApplyPreviewSettings()
 		Settings->SetScreenResolution(SelectedResolution);
 		Settings->SetFullscreenMode(SelectedWindowMode);
 		Settings->ApplySettings(false);
+
+		Settings->RequestResolutionChange(SelectedResolution.X, SelectedResolution.Y, SelectedWindowMode);
 	}
 }
 
 void UGraphicSettingsWidget::ApplySettings_Implementation()
 {
 	CacheCurrentSettings();
+
+	if (UCCFFGameInstance* CCFFGameInstance = GetWorld()->GetGameInstance<UCCFFGameInstance>())
+	{
+		FPlayerMetaData Meta = CCFFGameInstance->GetPlayerMeta();
+		Meta.Resolution = SelectedResolution;
+		Meta.WindowMode = SelectedWindowMode;
+		CCFFGameInstance->ApplyUserSettings(Meta);
+	}
 }
 
 void UGraphicSettingsWidget::ResetSettings_Implementation()
@@ -121,7 +139,7 @@ void UGraphicSettingsWidget::ResetSettings_Implementation()
 	}
 	if (WindowModeComboBox)
 	{
-		WindowModeComboBox->SetSelectedOption(TEXT("Borderless"));
+		WindowModeComboBox->SetSelectedOption(TEXT("Windowed"));
 	}
 
 	ApplyPreviewSettings();
@@ -150,16 +168,16 @@ void UGraphicSettingsWidget::UpdateComboBoxSelections()
 {
 	if (ResolutionComboBox)
 	{
-		FString ResText = FString::Printf(TEXT("%dx%d"), CachedResolution.X, CachedResolution.Y);
+		FString ResText = FString::Printf(TEXT("%dx%d"), SelectedResolution.X, SelectedResolution.Y);
 		ResolutionComboBox->SetSelectedOption(ResText);
 	}
 
 	if (WindowModeComboBox)
 	{
 		FString ModeText = TEXT("Windowed");
-		if (CachedWindowMode == EWindowMode::WindowedFullscreen)
+		if (SelectedWindowMode == EWindowMode::WindowedFullscreen)
 			ModeText = TEXT("Fullscreen");
-		else if (CachedWindowMode == EWindowMode::Fullscreen)
+		else if (SelectedWindowMode == EWindowMode::Fullscreen)
 			ModeText = TEXT("Borderless");
 
 		WindowModeComboBox->SetSelectedOption(ModeText);

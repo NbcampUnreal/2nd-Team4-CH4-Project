@@ -12,6 +12,16 @@ class AItemSpawner;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemReturnedToPool, ASpawnableItem*, Item);
 
+UENUM()
+enum class EItemType : uint8
+{
+	None				UMETA(DisplayName = "None"),
+	Healing				UMETA(DisplayName = "Healing"),
+	Resistivity			UMETA(DisplayName = "Resistivity"),
+	Speed			UMETA(DisplayName = "Speed"),
+	Transformation		UMETA(DisplayName = "Transformation")
+};
+
 UCLASS()
 class CCFF_API ASpawnableItem : public AActor, public IInteractableItemInterface
 {
@@ -21,17 +31,19 @@ class CCFF_API ASpawnableItem : public AActor, public IInteractableItemInterface
 public:	
 	ASpawnableItem();
 
+	UPROPERTY(Replicated)
+	AItemSpawner* OwningSpawner = nullptr;
 	UPROPERTY(BlueprintAssignable)
 	FOnItemReturnedToPool OnReturnedToPool;
 
+	FORCEINLINE EItemType GetItemType() const { return ItemType; }
 	virtual void Interact(AActor* Activator) override;
 	void OnInteract();
 	void ResetItem();
-	UPROPERTY()
-	AItemSpawner* OwningSpawner = nullptr;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FName ItemType;
+	EItemType ItemType = EItemType::None;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item|Component")
 	USceneComponent* Scene;
 	UPROPERTY(VisibleAnywhere, Category = "Item|Component")
@@ -50,9 +62,6 @@ protected:
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult) override;
-
-
-	virtual FName GetItemType() const override { return ItemType; };
 
 	virtual void BeginPlay() override;
 

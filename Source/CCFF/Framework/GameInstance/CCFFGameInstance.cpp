@@ -2,7 +2,10 @@
 #include "Framework/SaveGame/CCFFSaveGame.h"
 #include "Framework/HUD/MainMenuHUD.h"
 #include "Sound/SoundBase.h"
+#include "Sound/SoundClass.h"
+#include "Sound/SoundMix.h"
 #include "Components/AudioComponent.h"
+#include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 
 const int32 UCCFFGameInstance::CurrentSaveVersion = 1;
@@ -10,11 +13,30 @@ const int32 UCCFFGameInstance::CurrentSaveVersion = 1;
 void UCCFFGameInstance::Init()
 {
 	Super::Init();
-	LoadData();
 
 	if (GEngine)
 	{
 		GEngine->OnNetworkFailure().AddUObject(this, &UCCFFGameInstance::HandleNetworkFailure);
+	}
+
+	if (!UGameplayStatics::DoesSaveGameExist(TEXT("LocalUserDatabase"), 0))
+	{
+		ImportAccountsFromJSON();
+	}
+
+	const FString SlotName = TEXT("LocalUserDatabase");
+	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (SaveGame)
+	{
+		for (const FPlayerMetaData& Meta : SaveGame->AllAccounts)
+		{
+			if (Meta.PlayerUniqueID == SaveGame->LastLoggedInNickname)
+			{
+				PlayerMeta = Meta;
+				ApplyUserSettings(Meta);
+				break;
+			}
+		}
 	}
 }
 
@@ -39,34 +61,9 @@ void UCCFFGameInstance::SaveData()
 	if (SaveInstance)
 	{
 		SaveInstance->SaveVersion = CurrentSaveVersion;
-		SaveInstance->PlayerMeta = PlayerMeta;
-		SaveInstance->ServerIP = ServerIP;
+		SaveInstance->LastLoggedInNickname = PlayerMeta.PlayerUniqueID;
 
-		const FString SlotName = FString::Printf(TEXT("PlayerSaveSlot_%s"), *PlayerMeta.Nickname);
-		UGameplayStatics::SaveGameToSlot(SaveInstance , SlotName, 0);
-	}
-}
-
-void UCCFFGameInstance::LoadData()
-{
-	if (PlayerMeta.Nickname.IsEmpty())
-	{
-		return;
-	}
-
-	const FString SlotName = FString::Printf(TEXT("PlayerSaveSlot_%s"), *PlayerMeta.Nickname);
-	if (UGameplayStatics::DoesSaveGameExist(SlotName, 0))
-	{
-		UCCFFSaveGame* SaveInstance = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
-		if (SaveInstance)
-		{
-			int32 LoadedGameVersion = SaveInstance->PlayerMeta.SaveVersion;
-			if (LoadedGameVersion <= CurrentSaveVersion)
-			{
-				PlayerMeta = SaveInstance->PlayerMeta;
-				ServerIP = SaveInstance->ServerIP;
-			}
-		}
+		UGameplayStatics::SaveGameToSlot(SaveInstance, TEXT("LocalUserDatabase"), 0);
 	}
 }
 
@@ -173,4 +170,181 @@ FString UCCFFGameInstance::GetCleanMapName() const
 	}
 
 	return FullMapName;
+}
+
+void UCCFFGameInstance::ImportAccountsFromJSON()
+{
+	// 1. Load File Path
+	const FString FilePath = FPaths::ProjectSavedDir() + TEXT("Accounts/sample_accounts.json");
+	FString FileContent;
+
+	if (!FFileHelper::LoadFileToString(FileContent, *FilePath))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[AccountImport] Failed to load file: %s"), *FilePath);
+		return;
+	}
+
+	// 2. Parsing Json File (Cast to TJsonObject)
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContent);
+	TSharedPtr<FJsonObject> RootObject;
+
+	if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[AccountImport] Failed to parse JSON"));
+		return;
+	}
+
+	// Iterate through each account entry in the JSON root
+	TArray<FPlayerMetaData> AccountList;
+
+	for (const auto& Elem : RootObject->Values)
+	{
+		const FString& ID = Elem.Key;
+		const TSharedPtr<FJsonObject> AccountObj = Elem.Value->AsObject();
+		if (!AccountObj.IsValid()) continue;
+
+		// Create and fill FPlayerMetaData for each account
+		FPlayerMetaData Meta;
+		Meta.PlayerUniqueID = ID;
+
+		// Hash the password using MD5 for security
+		Meta.Password = FMD5::HashAnsiString(*AccountObj->GetStringField("Password"));
+		Meta.Nickname = AccountObj->GetStringField("Nickname");
+
+		// Parse Audio settings
+		if (TSharedPtr<FJsonObject> AudioObj = AccountObj->GetObjectField("AudioSettings"))
+		{
+			Meta.AudioSettings.Master.Volume = AudioObj->GetNumberField("Volume");
+		}
+
+		// Parse Screen Resolution
+		const TArray<TSharedPtr<FJsonValue>>* ResArray;
+		if (AccountObj->TryGetArrayField("Resolution", ResArray) && ResArray->Num() == 2)
+		{
+			Meta.Resolution.X = static_cast<int32>((*ResArray)[0]->AsNumber());
+			Meta.Resolution.Y = static_cast<int32>((*ResArray)[1]->AsNumber());
+		}
+
+		// Parse WindowMode from String
+		FString ModeStr = AccountObj->GetStringField("WindowMode").ToLower();
+		if (ModeStr == "fullscreen")
+			Meta.WindowMode = EWindowMode::WindowedFullscreen;
+		else if (ModeStr == "windowed")
+			Meta.WindowMode = EWindowMode::Windowed;
+		else if (ModeStr == "borderless")
+			Meta.WindowMode = EWindowMode::Fullscreen;
+
+		AccountList.Add(Meta);
+	}
+
+	// Save all parsed accounts SaveGame object
+	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::CreateSaveGameObject(UCCFFSaveGame::StaticClass()));
+	if (SaveGame)
+	{
+		SaveGame->AllAccounts = AccountList;
+
+		const bool bSaved = UGameplayStatics::SaveGameToSlot(SaveGame, TEXT("LocalUserDatabase"), 0);
+		UE_LOG(LogTemp, Log, TEXT("[AccountImport] Imported %d accounts, SaveGame result: %s"),
+			AccountList.Num(), bSaved ? TEXT("Success") : TEXT("Failed"));
+	}
+}
+
+bool UCCFFGameInstance::UpdateAccountInSaveGame(const FPlayerMetaData& UpdatedMeta)
+{
+	const FString SlotName = TEXT("LocalUserDatabase");
+	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (!SaveGame) return false;
+
+	for (FPlayerMetaData& Account : SaveGame->AllAccounts)
+	{
+		if (Account.PlayerUniqueID == UpdatedMeta.PlayerUniqueID)
+		{
+			Account = UpdatedMeta;
+			return UGameplayStatics::SaveGameToSlot(SaveGame, SlotName, 0);
+		}
+	}
+	return false;
+}
+
+bool UCCFFGameInstance::TryLogin(const FString& ID, const FString& InputPassword)
+{
+	const FString SlotName = TEXT("LocalUserDatabase");
+	UCCFFSaveGame* SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+
+	if (!SaveGame || SaveGame->AllAccounts.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[TryLogin] SaveGame not found or empty. Reimporting from JSON."));
+		ImportAccountsFromJSON();
+
+		SaveGame = Cast<UCCFFSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+		if (!SaveGame || SaveGame->AllAccounts.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[TryLogin] Failed to recover SaveGame after reimport."));
+			return false;
+		}
+	}
+
+	// 입력된 비밀번호를 해시 처리
+	const FString InputPasswordHash = FMD5::HashAnsiString(*InputPassword);
+
+	for (const FPlayerMetaData& Meta : SaveGame->AllAccounts)
+	{
+		if (Meta.PlayerUniqueID == ID)
+		{
+			// 비밀번호 해시 비교
+			if (Meta.Password == InputPasswordHash)
+			{
+				PlayerMeta = Meta;
+				ApplyUserSettings(Meta);
+
+				UE_LOG(LogTemp, Log, TEXT("[TryLogin] Login success: %s (%s)"), *ID, *Meta.Nickname);
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[TryLogin] Password mismatch for ID: %s"), *ID);
+				return false;
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[TryLogin] ID not found: %s"), *ID);
+	return false;
+}
+
+void UCCFFGameInstance::ApplyUserSettings(const FPlayerMetaData& Meta)
+{
+	// 1. 캐싱
+	PlayerMeta = Meta;
+
+	// 2. 오디오 적용
+	if (!MasterSoundMix || !MasterSoundClass || !BGMSoundClass || !SFXSoundClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SoundClass or Mix is NULL!"));
+		return;
+	}
+
+	auto ApplyAudio = [&](const FAudioCategorySetting& Category, USoundClass* SoundClass)
+		{
+			const float Volume = Category.bMuted ? 0.0f : Category.Volume;
+			UGameplayStatics::SetSoundMixClassOverride(this, MasterSoundMix, SoundClass, Volume, 1.0f, 0.0f, true);
+		};
+
+	ApplyAudio(Meta.AudioSettings.Master, MasterSoundClass);
+	ApplyAudio(Meta.AudioSettings.BGM, BGMSoundClass);
+	ApplyAudio(Meta.AudioSettings.SFX, SFXSoundClass);
+
+	UGameplayStatics::ClearSoundMixModifiers(this);
+	UGameplayStatics::PushSoundMixModifier(this, MasterSoundMix);
+
+	// 3. 그래픽 설정 적용
+	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+	{
+		Settings->SetScreenResolution(Meta.Resolution);
+		Settings->SetFullscreenMode(Meta.WindowMode);
+		Settings->ApplySettings(false);
+	}
+
+	// 4. SaveGame에 저장
+	UpdateAccountInSaveGame(Meta);
 }

@@ -19,7 +19,6 @@ public:
 	virtual void Shutdown() override;
 
 	void SaveData();
-	void LoadData();
 
 	void StartFindSessions(APlayerController* OwnerPlayerController);
 
@@ -66,6 +65,18 @@ public:
 	void StopCurrentBGM();
 
 protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundMix* MasterSoundMix;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* MasterSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* BGMSoundClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	class USoundClass* SFXSoundClass;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TMap<FName, USoundBase*> MapNameToBGMMap;
 
@@ -77,4 +88,25 @@ private:
 
 #pragma endregion
 
+
+#pragma region LOCAL_LOGIN_SYSTEM
+public:
+	void ApplyUserSettings(const FPlayerMetaData& Meta);
+	bool TryLogin(const FString& ID, const FString& InputPassword);
+
+private:
+	void ImportAccountsFromJSON();
+	bool UpdateAccountInSaveGame(const FPlayerMetaData& UpdatedMeta);
+
+#pragma endregion
+
+#pragma region CUSTOMIZATION
+public:
+	FORCEINLINE void SetLobbyPresetIndex(int32 NewIndex) { LobbyPresetIndex = NewIndex; }
+	FORCEINLINE int32 GetLobbyPresetIndex() const { return LobbyPresetIndex; }
+
+private:
+	int32 LobbyPresetIndex = -1;
+
+#pragma endregion
 };

@@ -1,4 +1,5 @@
 #include "Framework/UI/AudioSettingsWidget.h"
+#include "Framework/GameInstance/CCFFGameInstance.h"
 #include "Components/CheckBox.h"
 #include "Components/Slider.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,15 +19,25 @@ void UAudioSettingsWidget::NativeConstruct()
 	if (SFXSlider)		SFXSlider->OnValueChanged.AddDynamic(this, &UAudioSettingsWidget::OnSFXVolumeChanged);
 
 	// Initialize Default Values
-	CurrentSettings = DefaultSettings;
-	UpdateUIFromSettings(CurrentSettings);
-	CacheCurrentSettings();
+	if (UCCFFGameInstance* CCFFGameInstance = GetWorld()->GetGameInstance<UCCFFGameInstance>())
+	{
+		CurrentSettings = CCFFGameInstance->GetPlayerMeta().AudioSettings;
+		UpdateUIFromSettings(CurrentSettings);
+		CacheCurrentSettings();
+	}
 }
 
 void UAudioSettingsWidget::ApplySettings_Implementation()
 {
 	CacheCurrentSettings();
 	ApplyAudioToEngine();
+
+	if (UCCFFGameInstance* CCFFGameInstance = GetWorld()->GetGameInstance<UCCFFGameInstance>())
+	{
+		FPlayerMetaData Meta = CCFFGameInstance->GetPlayerMeta();
+		Meta.AudioSettings = CurrentSettings;
+		CCFFGameInstance->ApplyUserSettings(Meta);
+	}
 }
 
 void UAudioSettingsWidget::ResetSettings_Implementation()

@@ -22,6 +22,7 @@ public:
 	virtual void UpdateTimerText_Implementation(const float NewTime);
 
 	void UpdateHealthBar(const float InPercentage);
+	void UpdateStockCount(const int32 InCount);
 	void UpdateSuperMeterBar(const float InPercentage);
 	void UpdateBurstMeterBar(const float InPercentage);
 

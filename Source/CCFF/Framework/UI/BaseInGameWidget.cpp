@@ -46,6 +46,15 @@ void UBaseInGameWidget::UpdateHealthBar(const float InPercentage)
 	}
 }
 
+void UBaseInGameWidget::UpdateStockCount(const int32 InCount)
+{
+	if (ProfileWidget)
+	{
+		ProfileWidget->UpdateStockCount(InCount);
+	}
+	UE_LOG(LogTemp,Warning,TEXT("UBaseInGameWidget::UpdateStockCount: %d"),InCount);
+}
+
 void UBaseInGameWidget::UpdateSuperMeterBar(const float InPercentage)
 {
 	if (SideBarWidget)
@@ -61,6 +70,7 @@ void UBaseInGameWidget::UpdateBurstMeterBar(const float InPercentage)
 		SideBarWidget->UpdateBurstMeterBar(InPercentage);
 	}
 }
+
 
 void UBaseInGameWidget::InitializeHUDWidget(UStatusComponent* InStatusComponent)
 {

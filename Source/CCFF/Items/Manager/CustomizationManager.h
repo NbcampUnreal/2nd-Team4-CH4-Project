@@ -24,7 +24,7 @@ public:
 	FORCEINLINE FPresetItemsIndex GetAppliedPresetIndexes() const { return AppliedPresetIndexes; }
 
 	TArray<FCharacterCustomizationPreset> GetCharacterCustomizationPresets() const { return CharacterCustomizationPresets; }
-
+	FCustomizationPreset GetCustomizationPreset(FName CharacterID, int32 PresetIndex) const;
 	FName GetItemName(int32 ItemID, EItemSlot Slot) const;
 	FName GetCharacterID() const;
 	TSoftObjectPtr<UStaticMesh> GetItemMesh(int32 ItemID, EItemSlot Slot) const;

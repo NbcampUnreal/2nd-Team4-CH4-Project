@@ -45,6 +45,5 @@ private:
 	UItemManager* ItemManager;
 	FTimerHandle SpawnTimerHandle; // 타이머 핸들
 
-	bool bIsItemActive=false;
-
+	bool bIsItemActive;
 };

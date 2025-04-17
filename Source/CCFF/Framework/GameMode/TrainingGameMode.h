@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Framework/GameMode/BaseInGameMode.h"
+#include "Character/Base/BaseCharacter.h"
 #include "TrainingGameMode.generated.h"
 
 
@@ -13,13 +14,14 @@ class CCFF_API ATrainingGameMode : public ABaseInGameMode
 public:
     ATrainingGameMode();
 
+    virtual void PostLogin(APlayerController* NewPlayer) override;
     virtual void BeginPlay() override;
 
     UFUNCTION()
-    void SpawnPlayer(AController* NewPlayer);
+    void SpawnPlayer(APlayerController* NewPlayer);
 
     UPROPERTY(EditDefaultsOnly, Category = "Character")
-    TMap<FName, TSubclassOf<APawn>> CharacterClasses;
+    TMap<FName, TSubclassOf<ABaseCharacter>> CharacterClasses;
 
 protected:
     UFUNCTION()

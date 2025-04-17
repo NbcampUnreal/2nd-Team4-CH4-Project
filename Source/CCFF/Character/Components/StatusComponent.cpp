@@ -21,6 +21,7 @@ UStatusComponent::UStatusComponent()
 	MaxBurstMeter=10000;
 	MaxBlockMeter=10000;
 	BlockMeter=10000;
+	CurrentStockCount=999;
 	//Set Replicate
 	SetIsReplicatedByDefault(true);
 }
@@ -68,6 +69,13 @@ void UStatusComponent::SetBlockMeter(const float InBlockMeter)
 	}
 }
 
+void UStatusComponent::SetCurrentStockCount(const int32 InCount)
+{
+	CurrentStockCount = InCount;
+	OnStockCountChanged.Broadcast(CurrentStockCount);
+	UE_LOG(LogTemp,Warning,TEXT("UStatusComponent::SetCurrentStockCount: %d"),InCount);
+}
+
 void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -76,6 +84,7 @@ void UStatusComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME_CONDITION(ThisClass,SuperMeter,COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass,BurstMeter,COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass,BlockMeter,COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass,CurrentStockCount,COND_OwnerOnly);
 }
 
 void UStatusComponent::OnRep_CurrentHP()
@@ -97,4 +106,9 @@ void UStatusComponent::OnRep_SuperMeter()
 	float Percentage = FMath::Clamp(SuperMeter / MaxSuperMeter,0.f,1.f);
 	//UE_LOG(LogTemp,Log,TEXT("OnRep_SuperMeter: %0.1f"),Percentage);
 	OnSuperMeterChanged.Broadcast(Percentage);
+}
+
+void UStatusComponent::OnRep_StockCount()
+{
+	OnStockCountChanged.Broadcast(CurrentStockCount);
 }

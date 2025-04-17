@@ -46,19 +46,22 @@ public:
 	virtual void InitializeGameState() override;
 
 	FORCEINLINE ERoundProgress GetRoundProgress() const { return ArenaRoundProgress; }
-	void SetRoundProgress(ERoundProgress NewProgress);
+	void SetRoundProgress(const ERoundProgress NewProgress);
 
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
-	FORCEINLINE void SetCountdownTime(float Time) { CountdownTime = Time; }
+	FORCEINLINE void SetCountdownTime(const float Time) { CountdownTime = Time; }
 
 	FORCEINLINE float GetRemainingTime() const { return ArenaRemainingTime; }
-	FORCEINLINE void SetRemainingTime(float Time) { ArenaRemainingTime = Time; }
+	FORCEINLINE void SetRemainingTime(const float RemainingTime) { ArenaRemainingTime = RemainingTime; }
 
 	FORCEINLINE float GetRoundStartTime() { return RoundStartTime; }
-	FORCEINLINE void SetRoundStartTime(float Time) { RoundStartTime = Time; }
+	FORCEINLINE void SetRoundStartTime(const float StartTime) { RoundStartTime = StartTime; }
 
 	FORCEINLINE EArenaSubMode GetArenaSubMode() const { return CurrentArenaSubMode; }
-	FORCEINLINE void SetArenaSubMode(EArenaSubMode NewMode) { CurrentArenaSubMode = NewMode; }
+	FORCEINLINE void SetArenaSubMode(const EArenaSubMode NewMode) { CurrentArenaSubMode = NewMode; }
+
+	FORCEINLINE ACameraActor* GetSpectatorCamera() const { return SpectatorCamera; }
+	FORCEINLINE void SetSpectatorCamera(ACameraActor* Camera) { SpectatorCamera = Camera; }
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|Ranking")
 	void SetRankingInfos(const TArray<FArenaRankInfo>& Infos) { RankingInfos = Infos; }
@@ -96,4 +99,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
 	EArenaSubMode CurrentArenaSubMode;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "CCFF|State")
+	ACameraActor* SpectatorCamera;
 };

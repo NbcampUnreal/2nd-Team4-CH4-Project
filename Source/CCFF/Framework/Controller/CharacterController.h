@@ -40,15 +40,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> BurstAction;
 
-
 	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
 	void ServerReturnToLobby();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "CCFF|Flow")
+	void ServerReturnToMainMenu();
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Arena|Flow")
 	void ServerSetNickname(const FString& InNickname);
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Character")
 	void ServerSetCharacterID(FName InID);
+	UFUNCTION(Server, Reliable, Category = "Character")
+	void Server_SetPresetIndex(int32 InIndex);
+	void Server_SetPresetIndex_Implementation(int32 InIndex);
+
 
 	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
 	void ClientSpectateCamera(ACameraActor* SpectatorCam);

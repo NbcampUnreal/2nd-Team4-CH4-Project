@@ -23,6 +23,7 @@
 #include "Framework/Controller/CharacterController.h"
 #include "Framework/GameMode/ArenaGameMode.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "Framework/HUD/ArenaModeHUD.h"
 #include "Framework/PlayerState/ArenaPlayerState.h"
 #include "Framework/UI/BaseInGameWidget.h"
 #include "Framework/UI/Character/UW_HPWidget.h"
@@ -34,8 +35,8 @@
 
 // Sets default values
 ABaseCharacter::ABaseCharacter():
-	BufferThreshold(0.5f),
 	CurrentActivatedCollision(-1),
+	BufferThreshold(0.5f),
 	//bCanAttack(true),
 	LastAttackStartTime(0.f),
 	ServerDelay(0.f),
@@ -154,6 +155,20 @@ void ABaseCharacter::BeginPlay()
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &ABaseCharacter::OnPlayerOverlapRiver);
+	}
+	//Bind Widget Update function to Delegate
+	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
+	{
+		UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Called"));
+		if (CC->IsLocalController())
+		{
+			UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Controller Is Valid"));
+			if (AArenaModeHUD* AM = Cast<AArenaModeHUD>(CC->GetHUD()))
+			{
+				UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::SetHUD Called"));
+				SetHUDWidget(AM->GetBaseInGameWidget());
+			}
+		}
 	}
 }
 
@@ -389,7 +404,7 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:
@@ -583,7 +598,9 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		//Stop montage
 		AnimInstance->Montage_Stop(0.2f);
 	}
-	CurrentCharacterState = InState;
+	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
+	bIsDoubleTab=false;
+	//UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
 }
 
 void ABaseCharacter::ServerRPCSetMaxWalkSpeed_Implementation(const float Value)
@@ -942,18 +959,22 @@ void ABaseCharacter::OnDeath()
 			DamageCauserPS->SetKillCount(CurrentKillCount+1);
 		}
 	}
-	
-	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+	UpdateStockCount();
+	if (IsValid(Anim.DeathMontage))
 	{
-		CharacterController->NotifyPawnDeath();
+		//Montage end -> destroy actor
+		float MontageLength=Anim.DeathMontage->GetPlayLength();
+		FTimerHandle DestroyTimerHandle;
+		GetWorldTimerManager().SetTimer(
+			DestroyTimerHandle,
+			[this](){
+				if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+				{
+					CharacterController->NotifyPawnDeath();
+				}
+				Destroy();
+			},MontageLength,false);
 	}
-	float MontageLength=Anim.DeathMontage->GetPlayLength();
-	FTimerHandle DestroyTimerHandle;
-	GetWorldTimerManager().SetTimer(
-		DestroyTimerHandle,
-		[this](){
-			Destroy();
-		},MontageLength,false);
 }
 
 void ABaseCharacter::ModifyGuardMeter(float Amount)
@@ -1128,6 +1149,8 @@ void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedCompone
 			if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 			{
 				CharacterController->NotifyPawnDeath();
+				UpdateStockCount();
+				Destroy();
 			}
 		}
 	}

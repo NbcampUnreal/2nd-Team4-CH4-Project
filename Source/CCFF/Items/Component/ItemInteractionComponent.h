@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Character/Base/CharacterEnum.h"
 #include "ItemInteractionComponent.generated.h"
 
 class ASpawnableItem;
@@ -15,6 +16,8 @@ class CCFF_API UItemInteractionComponent : public UActorComponent
 public:	
 	UItemInteractionComponent();
 
+	UItemManager* ItemManager;
+
 	UFUNCTION(Server, Reliable)
 	void Server_InteractItem(ASpawnableItem* Item);
 	void Server_InteractItem_Implementation(ASpawnableItem* Item);
@@ -25,8 +28,14 @@ public:
 
 	void HandleInteractionEffects(ASpawnableItem* Item);
 
-	UItemManager* ItemManager;
+	void HandleHealEffect(float HealPercent);
+	void HandleResistivityModifier(EResistanceState ResistanceState, float Duration);
+	void HandleSpeedModifier(float SpeedMultiplier, float Duration);
 
 protected:
 	virtual void BeginPlay() override;
+
+private:
+	FTimerHandle ResistivityResetTimer;
+
 };
