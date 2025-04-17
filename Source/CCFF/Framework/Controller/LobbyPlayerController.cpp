@@ -184,7 +184,7 @@ void ALobbyPlayerController::UpdateCountdownWidget_Implementation(int32 NewTime)
 
 	if (CountdownWidgetInstance)
 	{
-		if (NewTime >= 0)
+		if (NewTime > 0)
 		{
 			CountdownWidgetInstance->SetCountdownText(FString::FromInt(NewTime));
 		}
@@ -377,6 +377,19 @@ void ALobbyPlayerController::RequestEquipPreset(FCustomizationPreset Preset)
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Server] CustomizationComponent not found on PreviewPawn."));
+	}
+}
+
+void ALobbyPlayerController::ShowLoadingWidget_Implementation()
+{
+	if (!LoadingWidget && LoadingWidgetClass)
+	{
+		LoadingWidget = CreateWidget<UUserWidget>(GetWorld(), LoadingWidgetClass);
+	}
+
+	if (LoadingWidget)
+	{
+		LoadingWidget->AddToViewport(100);
 	}
 }
 

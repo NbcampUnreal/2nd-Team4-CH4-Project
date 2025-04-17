@@ -97,8 +97,6 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	
-
 #pragma region CHARACTER_CUSTOMIZATION
 public:
 	FORCEINLINE int32 GetCurrentPresetIndex() const { return CurrentPresetIndex; }
@@ -128,4 +126,19 @@ public:
 	void ServerRequestChangeArenaSubMode(EArenaSubMode NewMode);
 
 #pragma endregion
+
+#pragma region LOADING_WIDGET
+public:
+	UFUNCTION(Client, Reliable)
+	void ShowLoadingWidget();
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> LoadingWidgetClass;
+
+	UPROPERTY()
+	class UUserWidget* LoadingWidget;
+
+#pragma endregion
+
 };
