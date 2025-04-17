@@ -145,15 +145,6 @@ void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 	NewPlayer->Possess(NewCharacter);
 	if (ACharacterController* PC = Cast<ACharacterController>(NewPlayer))
 	{
-		if (AArenaModeHUD* ArenaHUD=Cast<AArenaModeHUD>(PC->GetHUD()))
-		{
-			if (UBaseInGameWidget* InGameWidget=ArenaHUD->GetBaseInGameWidget())
-			{
-				UE_LOG(LogTemp,Warning,TEXT("[SpawnPlayer] SetHUDWidget Called"));
-				NewCharacter->SetHUDWidget(InGameWidget);
-				NewCharacter->GetStatusComponent()->SetCurrentStockCount(PS->MaxLives);
-			}
-		}
 		PC->SetControlRotation(PC->GetControlRotation());
 
 		UCharacterCustomizationComponent* CustomizationComponent = NewCharacter->FindComponentByClass<UCharacterCustomizationComponent>();

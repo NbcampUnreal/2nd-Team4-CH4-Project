@@ -39,9 +39,6 @@ public:
 	void UpdateArenaStats();
 	void UpdatePlayerRating();
 	void UpdateCountdown();
-
-	UFUNCTION()
-	void RespawnPlayer(APlayerController* Controller);
 	
 	EArenaSubMode SelectedArenaSubMode;
 
