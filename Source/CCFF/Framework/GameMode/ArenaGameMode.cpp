@@ -45,6 +45,17 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 	}
 }
 
+void AArenaGameMode::StartPlay()
+{
+	Super::StartPlay();
+
+	if (auto GI = GetGameInstance<UCCFFGameInstance>())
+	{
+		SelectedArenaSubMode = GI->GetArenaSubMode();
+		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++++++++++ [ArenaGameMode::StartPlay] SubMode=%d"), (uint8)SelectedArenaSubMode);
+	}
+}
+
 //void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
 //{
 //	Super::PostLogin(NewPlayer);
@@ -62,11 +73,29 @@ void AArenaGameMode::PreLogin(const FString& Options, const FString& Address, co
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("+++++++++++++++++++++++++++ [ArenaGameMode] GameInstance=%s, SpectatorCameraClass=%s"),
+		*GetGameInstance()->GetClass()->GetName(),
+		*GetNameSafe(SpectatorCameraClass));
 	
 	if (!HasAuthority() || !SpectatorCameraClass)
 	{
 		return;
 	}
+
+	/*if (UCCFFGameInstance* CCFFGI = GetGameInstance<UCCFFGameInstance>())
+	{
+		SelectedArenaSubMode = CCFFGI->GetArenaSubMode();
+		UE_LOG(LogTemp, Warning,
+			TEXT("+++++++++++++++++++++++++++ [ArenaGameMode] Loaded ArenaSubMode from GI: %d"),
+			(uint8)SelectedArenaSubMode);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("+++++++++++++++++++++++++++ [ArenaGameMode] Failed to cast GameInstance to CCFFGameInstance!"));
+	}*/
 
 	TArray<AActor*> FoundCameras;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SpectatorCameraClass, FoundCameras);
@@ -74,19 +103,15 @@ void AArenaGameMode::BeginPlay()
 	FTransform SpawnTransform = FTransform::Identity;
 	if (FoundCameras.Num() > 0)
 	{
-		// 첫 번째 인스턴스 사용
 		if (ACameraActor* LevelCam = Cast<ACameraActor>(FoundCameras[0]))
 		{
 			SpawnTransform = LevelCam->GetActorTransform();
-			// (선택) 원본 카메라 숨기거나 삭제
 			LevelCam->SetActorHiddenInGame(true);
-			// LevelCam->Destroy();
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[ArenaGameMode] 레벨에 배치된 SpectatorCameraClass 인스턴스를 찾지 못했습니다."));
-		// 기본 좌표 fallback
+		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++  [ArenaGameMode] Not Found Level SpectatorCameraClass Instance"));
 		const FVector DefaultLoc(-900.f, -1185.f, 10580.f);
 		const FRotator DefaultRot(0.f, -90.f, 0.f);
 		SpawnTransform = FTransform(DefaultRot, DefaultLoc);
@@ -105,26 +130,16 @@ void AArenaGameMode::BeginPlay()
 
 	if (IsValid(SpectatorCamera))
 	{
-		// 복제 설정
 		SpectatorCamera->SetReplicates(true);
 		SpectatorCamera->bAlwaysRelevant = true;
 		SpectatorCamera->bNetLoadOnClient = true;
 		SpectatorCamera->SetActorHiddenInGame(false);
-		SpectatorCamera->SetActorEnableCollision(false);  // 필요 시
+		SpectatorCamera->SetActorEnableCollision(false);
 
-		// GameState 에 저장 (클라이언트가 접근할 수 있도록)
 		if (AArenaGameState* GS = GetWorld()->GetGameState<AArenaGameState>())
 		{
 			GS->SetSpectatorCamera(SpectatorCamera);
 		}
-	}
-
-	UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance());
-	if (CCFFGameInstance)
-	{
-		SelectedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
-		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++++ Selected ArenaSubMode: %d"), (uint8)SelectedArenaSubMode);
-
 	}
 
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
@@ -240,7 +255,7 @@ void AArenaGameMode::CheckGameConditions()
 		return;
 	}
 
-	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
+	/*AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (ArenaGameState)
 	{
 		if (ArenaGameState->GetRemainingTime() <= 0.0f)
@@ -248,38 +263,45 @@ void AArenaGameMode::CheckGameConditions()
 			EndRound();
 			return;
 		}
+	}*/
+	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
+	if (!ArenaGameState) { return; }
+	const float RemainingTime = ArenaGameState->GetRemainingTime();
+
+	if (ArenaGameState->GetArenaSubMode() == EArenaSubMode::DeathMatch)
+	{
+		if (RemainingTime <= 0.0f)
+		{
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++ [ArenaGameMode] DeathMatch time-up: Ending round"));
+			EndRound();
+		}
+		return;
 	}
 
-	if (SelectedArenaSubMode == EArenaSubMode::Elimination)
+	if (ArenaGameState->GetArenaSubMode() == EArenaSubMode::Elimination)
 	{
-		int32 AliveCount = 0;
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		int32 PlayersWithLives = 0;
+		for (APlayerState* BasePS : ArenaGameState->PlayerArray)
 		{
-			if (APlayerController* PlayerController = It->Get())
+			if (AArenaPlayerState* PS = Cast<AArenaPlayerState>(BasePS))
 			{
-				if (APawn* Pawn = PlayerController->GetPawn())
+				if (PS->MaxLives >= 0)
 				{
-					AliveCount++;
-				}
-				else
-				{
-					if (AArenaPlayerState * ArenaPlayerState = Cast<AArenaPlayerState>(PlayerController->PlayerState))
-					 {
-						if (ArenaPlayerState->MaxLives >= 0)
-						{
-							AliveCount++;
-						}
-					 }
+					PlayersWithLives++;
 				}
 			}
 		}
 
-		if (AliveCount <= 1)
+		UE_LOG(LogTemp, Log,
+			TEXT("++++++++++++++++++++++++ [ArenaGameMode] Elimination Checking - PlayersWithLives : %d, RemainingTime: %.1f"),
+			PlayersWithLives, RemainingTime);
+
+		if (RemainingTime <= 0.0f || PlayersWithLives <= 1)
 		{
-			UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++ [ArenaGameMode Only Alive ] : AliveCount = %d"), AliveCount);
+			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++ [ArenaGameMode] Elimination Fininsh GameEnd Condition"));
 			EndRound();
-			return;
 		}
+		return;
 	}
 }
 
