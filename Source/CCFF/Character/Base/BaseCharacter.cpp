@@ -687,6 +687,7 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 	}
 	GetCharacterMovement()->MaxWalkSpeed=BalanceStats.MaxWalkSpeed;
 	bIsDoubleTab=false;
+	CurrentCharacterState=ECharacterState::Normal;
 	//UE_LOG(LogTemp,Warning,TEXT("CurWalkSpeed: %f, Character: %s"),GetCharacterMovement()->MaxWalkSpeed,*GetName());
 }
 
