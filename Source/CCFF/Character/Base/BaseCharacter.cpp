@@ -46,6 +46,9 @@ ABaseCharacter::ABaseCharacter():
 	bIsDoubleTab(false),
 	LastDamageCauser(nullptr)
 {
+	//Set Tick
+	PrimaryActorTick.bCanEverTick = true;
+	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 48.0f);
 	
@@ -192,13 +195,15 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	// // Client (Rotating Widget to focus camera)
-	// if (IsValid(HPWidgetComponent)==true&&HasAuthority()==false)
-	// {
-	// 	FVector WidgetCompLocation=HPWidgetComponent->GetComponentLocation();
-	// 	FVector LocalPlayerCameraLocation = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
-	// 	HPWidgetComponent->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(WidgetCompLocation, LocalPlayerCameraLocation));
-	// }
+	
+	//Burst Guage charge
+	if (HasAuthority())
+	{
+		const float ChargePerSecond=500.f;
+		const float ChargeAmount=ChargePerSecond*DeltaTime;
+		StatusComponent->AddBlockMeter(ChargeAmount);
+		StatusComponent->AddBurstMeter(ChargeAmount);
+	}
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)
@@ -234,32 +239,36 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 
 void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointNotifyPayload& Payload)
 {
+	// Determin the type of attack by name
+	FString NotifyNameString = NotifyName.ToString();
+	// Parsing number
+	int32 Index = NotifyNameString.Len() - 1;
+	FString NumberStr;
+	// 끝에서부터 숫자 추출
+	while (Index >= 0 && FChar::IsDigit(NotifyNameString[Index]))
+	{
+		NumberStr.InsertAt(0, NotifyNameString[Index]);
+		Index--;
+	}
+	int32 AttackNumber = FCString::Atoi(*NumberStr) - 1;
+	if (!AttackCollisions.IsValidIndex(AttackNumber)||!AttackCollisions[AttackNumber]) return;
 	if (!HasAuthority())
 	{
 		//Client logic
 		// Particle, Effect
-		FString NotifyNameString = NotifyName.ToString();
-		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
-		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
-		if (AttackNumber>=0&&AttackNumber<=13)
+		if (AttackNumber>=0&&AttackNumber<16)
 		{
 			DrawDebugBox(GetWorld(),AttackCollisions[AttackNumber]->GetComponentLocation(),AttackCollisions[AttackNumber]->GetScaledBoxExtent(),AttackCollisions[AttackNumber]->GetComponentQuat(),FColor::Red,false,2.0f);
 		}
 		return;
 	}
-	// Server logic
-	// Determin the type of attack by name
-	FString NotifyNameString = NotifyName.ToString();
 
 	if (!NotifyName.IsValid()||AttackCollisions.IsEmpty()) return;
 	// Hitbox 
 	if(NotifyNameString.Contains(TEXT("Hitbox")))
 	{
-		TCHAR LastChar = NotifyNameString[NotifyNameString.Len() - 1];
-		int32 AttackNumber = FCString::Atoi(&LastChar)-1;
-		//UE_LOG(LogTemp, Log, TEXT("Parsed Attack Number: %d"), AttackNumber);	
 		// Activate Collision in proper location
-		if (AttackNumber>=0&&AttackNumber<14)
+		if (AttackNumber>=0&&AttackNumber<16)
 		{
 			// Deactivate Collision
 			if (NotifyNameString.Contains(TEXT("End")))
@@ -271,7 +280,12 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 			else // Activate Collision
 			{
 				CurrentActivatedCollision=AttackNumber;
+				FVector OriginalLocation=GetActorLocation();
+				FVector Offset(0.1f,0.f,0.f);
+				SetActorLocation(OriginalLocation+Offset);
 				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+				AttackCollisions[AttackNumber]->UpdateOverlaps();
+				SetActorLocation(OriginalLocation);
 				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
 			}
 		}
@@ -280,6 +294,39 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 			UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
 		}
 		return;
+	}
+	if (NotifyNameString.Contains(TEXT("Invulnerable")))
+	{
+		if (NotifyNameString.Contains(TEXT("End")))
+		{
+			CurrentResistanceState=EResistanceState::Normal;
+		}
+		else
+		{
+			CurrentResistanceState=EResistanceState::Invulnerable;
+		}
+	}
+	if (NotifyNameString.Contains(TEXT("HyperArmor")))
+	{
+		if (NotifyNameString.Contains(TEXT("End")))
+		{
+			CurrentResistanceState=EResistanceState::Normal;
+		}
+		else
+		{
+			CurrentResistanceState=EResistanceState::HyperArmor;
+		}
+	}
+	if (NotifyNameString.Contains(TEXT("ProjectileInvulnerable")))
+	{
+		if (NotifyNameString.Contains(TEXT("End")))
+		{
+			CurrentResistanceState=EResistanceState::Normal;
+		}
+		else
+		{
+			CurrentResistanceState=EResistanceState::ProjectileInvulnerable;
+		}
 	}
 }
 
@@ -341,16 +388,15 @@ void ABaseCharacter::ServerRPCAction_Implementation(ECharacterState InState, flo
 		MontagePlayTime=Anim.DodgeMontage->GetPlayLength();
 		TempState=ECharacterState::Dodge;
 		break;
-	case ECharacterState::Burst:
-		MontagePlayTime=Anim.BurstMontage->GetPlayLength();
-		TempState=ECharacterState::Burst;
-		break;
 	case ECharacterState::Block:
 		TempState=ECharacterState::Block;
 	default:
 		break;
 	}
-	
+	if (Num==15) //Burst
+	{
+		StatusComponent->AddBurstMeter(-2500.f);
+	}
 	ServerDelay=GetWorld()->GetTimeSeconds()-InStartAttackTime;
 	// 0<=ServerDelay<=MontagePlayTime
 	ServerDelay=FMath::Clamp(ServerDelay,0.f,MontagePlayTime);
@@ -411,7 +457,7 @@ void ABaseCharacter::ExecuteBufferedAction()
 	const float CurrentTime=GetWorld()->GetTimeSeconds();
 	const int32 InputAction=static_cast<int32>(InputBuffer.InputAttack);
 	//Execute Buffered Input Action
-	if (InputAction>=0&&InputAction<14&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
+	if (InputAction>=0&&InputAction<15&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
 	{
 		ExecuteActionByIndex(InputBuffer.InputState,InputAction);
 		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
@@ -425,7 +471,7 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	switch (CurrentCharacterState)
 	{
 	case ECharacterState::Normal:
-		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:
@@ -442,17 +488,22 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 	}
 }
 
-void ABaseCharacter::OnRep_CurrentResistanceState()
-{
-	
-}
+// void ABaseCharacter::OnRep_CurrentResistanceState()
+// {
+// 	
+// }
 
 void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 Index)
 {
 	if ((CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()==false)||
-		(CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()&&Index>7)||
+		(CurrentCharacterState==ECharacterState::Normal&&GetCharacterMovement()->IsFalling()&&Index>7&&Index<14)||
+		(CurrentCharacterState==ECharacterState::Hitted&&Index==15)||
 		(InState==ECharacterState::Normal))
 	{
+		if (Index==15&&StatusComponent->GetBurstMeter()>=2500)
+		{
+			StatusComponent->AddBurstMeter(-2500);
+		}
 		//UE_LOG(LogTemp,Warning,TEXT("Attack1 Called !!"));
 		ServerRPCAction(InState,GetWorld()->GetGameState()->GetServerWorldTimeSeconds(), Index);
 		// Play Montage in Owning Client
@@ -529,7 +580,11 @@ void ABaseCharacter::Attack5(const FInputActionValue& Value)
 
 void ABaseCharacter::Attack7(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement()->IsFalling())
+	if (CurrentCharacterState==ECharacterState::Hitted)
+	{
+		ExecuteActionByIndex(ECharacterState::Attack,15);
+	}
+	else if (GetCharacterMovement()->IsFalling())
 	{
 		ExecuteActionByIndex(ECharacterState::Attack,12);
 	}
@@ -574,9 +629,9 @@ void ABaseCharacter::Dodge()
 	ExecuteActionByIndex(ECharacterState::Dodge,0);
 }
 
-void ABaseCharacter::Burst()
+void ABaseCharacter::Invincible()
 {
-	ExecuteActionByIndex(ECharacterState::Burst,0);
+	ExecuteActionByIndex(ECharacterState::Attack,14);
 }
 
 void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
@@ -593,9 +648,6 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 		break;
 	case ECharacterState::Dodge:
 		PlayMontage=Anim.DodgeMontage;
-		break;
-	case ECharacterState::Burst:
-		PlayMontage=Anim.BurstMontage;
 		break;
 	case ECharacterState::Dead:
 		PlayMontage=Anim.DeathMontage;
@@ -911,9 +963,11 @@ void ABaseCharacter::ReceiveNormalHit(ABaseCharacter* Attacker, FHitBoxData& Hit
 	}
 
 	CurrentResistanceState = EResistanceState::Normal;
+
+	OnRep_CurrentCharacterState();
+	float DealtDamage = TakeNormalDamage(Damage, HitData.MinimumDamage);
 	TakeHitstun(Hitstun);
 	TakeHitlagAndStoredKnockback(VictimHitlag, HitData.GetWorldKnockbackDirection(Attacker), HitData.KnockbackForce);
-	float DealtDamage = TakeNormalDamage(Damage, HitData.MinimumDamage);
 
 	Attacker->OnAttackHit(DealtDamage);
 	return;
@@ -1002,11 +1056,6 @@ void ABaseCharacter::OnDeath()
 	}
 }
 
-void ABaseCharacter::ModifyGuardMeter(float Amount)
-{
-	float NewBlockMeter=StatusComponent->GetBlockMeter() + Amount;
-	StatusComponent->SetBlockMeter(NewBlockMeter);
-}
 
 void ABaseCharacter::ModifySuperMeter(float Amount)
 {
@@ -1014,10 +1063,14 @@ void ABaseCharacter::ModifySuperMeter(float Amount)
 	StatusComponent->SetSuperMeter(NewSuperMeter);
 }
 
+void ABaseCharacter::ModifyGuardMeter(float Amount)
+{
+	StatusComponent->AddBlockMeter(Amount);
+}
+
 void ABaseCharacter::GainBurstMeter(float Amount)
 {
-	float NewBurstMeter = StatusComponent->GetBurstMeter()+Amount;
-	StatusComponent->SetBurstMeter(NewBurstMeter);
+	StatusComponent->AddBurstMeter(Amount);
 }
 
 void ABaseCharacter::PreLoadCharacterStats()
@@ -1134,7 +1187,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInputComponent->BindAction(MyController->GuardAction,ETriggerEvent::Started,this,&ABaseCharacter::Guard);
 			EnhancedInputComponent->BindAction(MyController->GuardAction,ETriggerEvent::Completed,this,&ABaseCharacter::StopGuard);
 			EnhancedInputComponent->BindAction(MyController->DodgeAction,ETriggerEvent::Triggered,this,&ABaseCharacter::Dodge);
-			EnhancedInputComponent->BindAction(MyController->BurstAction,ETriggerEvent::Triggered,this,&ABaseCharacter::Burst);
+			EnhancedInputComponent->BindAction(MyController->BurstAction,ETriggerEvent::Triggered,this,&ABaseCharacter::Invincible);
 		}
 	}
 	else

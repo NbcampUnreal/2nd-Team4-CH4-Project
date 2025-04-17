@@ -41,6 +41,11 @@ public:
 	void SetBlockMeter(const float InBlockMeter);
 	void SetCurrentStockCount(const int32 InCount);
 #pragma endregion
+
+#pragma region AddFunction
+	void AddBurstMeter(const float InAmount);
+	void AddBlockMeter(const float InAmount);
+#pragma endregion
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	

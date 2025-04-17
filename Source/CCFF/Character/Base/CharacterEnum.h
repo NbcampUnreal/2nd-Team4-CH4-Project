@@ -14,8 +14,6 @@ enum class ECharacterState : uint8
 	Attack		UMETA(DisplayName = "Attack"),
 	Grab		UMETA(DisplayName = "Grab"),
 	Grabbed		UMETA(DisplayName = "Grabbed"),
-	Burst		UMETA(DisplayName = "Burst"),
-	Super		UMETA(DisplayName = "Super"),
 	Dead		UMETA(DisplayName = "Dead")
 };
 
@@ -47,5 +45,7 @@ enum class EAttackType : uint8
 	Attack12	UMETA(DisplayName="Attack12"),
 	Attack13	UMETA(DisplayName="Attack13"),
 	Attack14	UMETA(DisplayName="Attack14"),
+	Attack15	UMETA(DisplayName="Attack15"),
+	Attack16	UMETA(DisplayName="Attack16"),
 	None		UMETA(DisplayName = "None")
 };
