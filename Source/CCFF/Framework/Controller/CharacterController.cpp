@@ -199,7 +199,7 @@ void ACharacterController::NotifyPawnDeath()
 	}
 	else if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::Elimination)
 	{
-		if (ArenaPlayerState->MaxLives > 0)
+		if (ArenaPlayerState->MaxLives >= 0)
 		{
 			ArenaPlayerState->MaxLives--;
 

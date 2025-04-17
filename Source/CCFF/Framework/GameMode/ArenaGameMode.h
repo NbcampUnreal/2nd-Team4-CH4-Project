@@ -22,7 +22,7 @@ public:
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage)
 	override;
-
+	virtual void StartPlay() override;
 	virtual void BeginPlay() override;
 
 	void StartArenaRound();
