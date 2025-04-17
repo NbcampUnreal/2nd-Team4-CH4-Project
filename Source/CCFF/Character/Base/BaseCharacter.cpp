@@ -123,9 +123,9 @@ void ABaseCharacter::SetHUDWidget(UUserWidget* HUDWidget)
 		StatusComponent->OnSuperMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateSuperMeterBar);
 		StatusComponent->OnBurstMeterChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateBurstMeterBar);
 		StatusComponent->OnStockCountChanged.AddUObject(MyHUD,&UBaseInGameWidget::UpdateStockCount);
-		UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
+		//UE_LOG(LogTemp,Display,TEXT("CharacterController SetHud Call"));
 		MyHUD->InitializeHUDWidget(StatusComponent);
-		UE_LOG(LogTemp,Display,TEXT("[SetHud] UpdateStockCount Called"));
+		//UE_LOG(LogTemp,Display,TEXT("[SetHud] UpdateStockCount Called"));
 		UpdateStockCount();
 
 		if (UCCFFGameInstance* GI = Cast<UCCFFGameInstance>(GetGameInstance()))
@@ -139,12 +139,12 @@ void ABaseCharacter::UpdateStockCount()
 {
 	if (AArenaPlayerState* ArenaPS=Cast<AArenaPlayerState>(GetPlayerState()))
 	{
-		UE_LOG(LogTemp,Warning,TEXT("[UpdateStockCount] SetCurrentStockCount UpdateStockCount Call (LocallyControlled: %d, HasAuthority: %d"),IsLocallyControlled(),HasAuthority());
+		//UE_LOG(LogTemp,Warning,TEXT("[UpdateStockCount] SetCurrentStockCount UpdateStockCount Call (LocallyControlled: %d, HasAuthority: %d"),IsLocallyControlled(),HasAuthority());
 		StatusComponent->SetCurrentStockCount(ArenaPS->MaxLives);
 	}
 	else
 	{
-		UE_LOG(LogTemp,Display,TEXT("[UpdateStockCount] PlayerState is NULL"));
+		//UE_LOG(LogTemp,Display,TEXT("[UpdateStockCount] PlayerState is NULL"));
 	}
 }
 
@@ -284,7 +284,7 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 			{
 				CurrentActivatedCollision=-1;
 				DeactivateAttackCollision(AttackNumber);
-				UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
+				//UE_LOG(LogTemp,Warning,TEXT("Deactivate Collision! (Index: %d)"),AttackNumber);
 			}
 			else // Activate Collision
 			{
@@ -299,12 +299,12 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 						OnAttackOverlap(AttackCollisions[AttackNumber], OtherActor, nullptr, 0, false, FHitResult());
 					}
 				}
-				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
+				//UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
+			//UE_LOG(LogTemp,Warning,TEXT("Activate Failed!"));
 		}
 		return;
 	}
@@ -350,7 +350,7 @@ void ABaseCharacter::OnAttackOverlap(UPrimitiveComponent* OverlappedComponent, A
 	// Server Logic
 	// Except self
 	if (!OtherActor || OtherActor == this || CurrentActivatedCollision==-1) return;
-	UE_LOG(LogTemp,Warning,TEXT("Overlapped Actor: %s"),*OtherActor->GetName());
+	//UE_LOG(LogTemp,Warning,TEXT("Overlapped Actor: %s"),*OtherActor->GetName());
 	
 	float DamageAmount=BalanceStats.DamageModifier*HitBoxList[CurrentActivatedCollision].Damage;
 	UDamageHelper::ApplyDamage(
@@ -387,7 +387,7 @@ void ABaseCharacter::DeactivateAttackCollision(const int32 Index) const
 
 void ABaseCharacter::ServerRPCAction_Implementation(ECharacterState InState, float InStartAttackTime, const int32 Num)
 {
-	UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d !!"),Num);
+	//UE_LOG(LogTemp,Warning,TEXT("ServerRPCAction Called with %d !!"),Num);
 	float MontagePlayTime=0.f;
 	ECharacterState TempState=ECharacterState::Normal;
 	
@@ -473,7 +473,7 @@ void ABaseCharacter::ExecuteBufferedAction()
 	if (InputAction>=0&&InputAction<15&&(CurrentTime-InputBuffer.BufferedTime<=BufferThreshold))
 	{
 		ExecuteActionByIndex(InputBuffer.InputState,InputAction);
-		UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
+		//UE_LOG(LogTemp,Warning,TEXT("Execute Buffered Input(Index: %d)"),InputAction);
 	}
 	// Clear Buffer
 	InputBuffer=FBufferedInput();
@@ -530,7 +530,7 @@ void ABaseCharacter::ExecuteActionByIndex(ECharacterState InState, const int32 I
 	}
 	else
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Buffered Action Type: %d, Buffered Input Index: %d"),InState,Index);
+		//UE_LOG(LogTemp,Warning,TEXT("Buffered Action Type: %d, Buffered Input Index: %d"),InState,Index);
 		InputBuffer=FBufferedInput(InState, static_cast<EAttackType>(Index),GetWorld()->GetTimeSeconds());
 	}
 }
@@ -621,7 +621,7 @@ void ABaseCharacter::Attack8(const FInputActionValue& Value)
 
 void ABaseCharacter::Guard()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Guard Start"));
+	//UE_LOG(LogTemp,Warning,TEXT("Guard Start"));
 	if (CurrentCharacterState!=ECharacterState::Block)
 	{
 		ExecuteActionByIndex(ECharacterState::Block,0);	
@@ -630,7 +630,7 @@ void ABaseCharacter::Guard()
 
 void ABaseCharacter::StopGuard()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Guard Stopped"));
+	//UE_LOG(LogTemp,Warning,TEXT("Guard Stopped"));
 	if (CurrentCharacterState==ECharacterState::Block)
 	{
 		ExecuteActionByIndex(ECharacterState::Normal,0);
@@ -674,7 +674,7 @@ void ABaseCharacter::PlayActionMontage(ECharacterState InState, const int32 Num)
 	//둘다 유효
 	if (AnimInstance&&PlayMontage)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s, PlayMontage: %s"),CurrentCharacterState,*GetName(),*PlayMontage->GetName());
+		//UE_LOG(LogTemp,Warning,TEXT("CurState: %d, Character: %s, PlayMontage: %s"),CurrentCharacterState,*GetName(),*PlayMontage->GetName());
 		AnimInstance->Montage_Stop(0.2f);
 		//몽타주 실행
 		AnimInstance->Montage_Play(PlayMontage);
@@ -769,7 +769,7 @@ float ABaseCharacter::TakeNormalDamage(float Damage, float MinimumDamage)
 {
 	float ScaledDamage = BattleComponent->ComboStaleDamage(Damage, MinimumDamage);
 	float NewHealth = FMath::Clamp(StatusComponent->GetCurrentHP() - ScaledDamage * BalanceStats.DamageTakenModifier, 0.0f, StatusComponent->GetMaxHP());
-	UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
+	//UE_LOG(LogTemp,Warning,TEXT("TakeDamage: %.1f"),ScaledDamage);
 	StatusComponent->SetCurrentHP(NewHealth);
 	ModifySuperMeter(BattleComponent->GetMeterGainFromDamageTaken(ScaledDamage));
 
@@ -815,7 +815,7 @@ void ABaseCharacter::TakeHitlag(int32 Hitlag)
 		if (Movement->MovementMode != MOVE_None)
 		{
 			StoredVelocity = Movement->Velocity;
-			Movement->DisableMovement();
+			Movement->StopMovementImmediately();
 		}
 	}
 	GetMesh()->bPauseAnims = true;
@@ -845,7 +845,7 @@ void ABaseCharacter::TakeHitlagAndStoredKnockback(int32 Hitlag, FVector Knockbac
 	{
 		if (Movement->MovementMode != MOVE_None)
 		{
-			Movement->DisableMovement();
+			Movement->StopMovementImmediately();
 		}
 	}
 	StoredKnockbackAngle = KnockbackAngle;
@@ -1017,7 +1017,7 @@ void ABaseCharacter::ReceiveGrabbed()
 	}
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
-		Movement->DisableMovement();
+		Movement->StopMovementImmediately();
 	}
 	CurrentResistanceState = EResistanceState::Normal;
 	CurrentCharacterState = ECharacterState::Grabbed;
@@ -1205,7 +1205,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		//UE_LOG(LogTemp, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
 
@@ -1235,7 +1235,7 @@ void ABaseCharacter::OnPlayerOverlapRiver(UPrimitiveComponent* OverlappedCompone
 	{
 		if (OtherActor->ActorHasTag(FName("River")))
 		{
-			UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
+			//UE_LOG(LogTemp, Log, TEXT("River collision (River overlap) detected with: %s"), *OtherActor->GetName());
 			bIsDying = true;
 			if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
 			{

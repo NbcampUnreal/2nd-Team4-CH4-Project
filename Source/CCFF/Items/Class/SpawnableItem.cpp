@@ -67,17 +67,6 @@ void ASpawnableItem::OnItemOverlap(
         bool bHasAuthority = HasAuthority();
         if (OwningSpawner == nullptr) { return; }
 
-        FString LogMsg = FString::Printf(TEXT("Overlap Detected: %s | LocallyControlled: %s | HasAuthority: %s"),
-            *OtherActor->GetName(),
-            bIsLocallyControlled ? TEXT("true") : TEXT("false"),
-            bHasAuthority ? TEXT("true") : TEXT("false"));
-
-        UE_LOG(LogTemp, Log, TEXT("%s"), *LogMsg);
-
-#if WITH_EDITOR
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, LogMsg);
-#endif
-
         if (bIsLocallyControlled && !bHasAuthority)
         {
             UItemInteractionComponent* InteractionComponent = OtherActor->FindComponentByClass<UItemInteractionComponent>();
@@ -85,10 +74,6 @@ void ASpawnableItem::OnItemOverlap(
             {
                 UE_LOG(LogTemp, Log, TEXT("Calling Server_InteractItem on %s"), *GetName());
 
-#if WITH_EDITOR
-                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow,
-                    FString::Printf(TEXT("Calling Server_InteractItem on %s"), *GetName()));
-#endif
                 InteractionComponent->Server_InteractItem(this);
             }
             else
@@ -106,12 +91,7 @@ void ASpawnableItem::OnItemOverlap(
 
 void ASpawnableItem::Interact(AActor* Activator)
 {
-#if WITH_EDITOR
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("Interact!")));
-#endif
-
-	// Item Interaction Logic Here
-    
+	// Item Interaction Logic Here    
 }
 
 void ASpawnableItem::OnInteract()
@@ -125,13 +105,11 @@ void ASpawnableItem::OnInteract()
     if (InteractSound)
     {
         UGameplayStatics::PlaySoundAtLocation(this, InteractSound, GetActorLocation());
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Interact Sound!")));
     }
 
     if (InteractParticle)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, InteractParticle, GetActorLocation());
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Printf(TEXT("Interact Particle!")));
     }
 }
 
