@@ -388,9 +388,8 @@ void ABaseCharacter::OnRep_CurrentCharacterState()
 {
 	switch (CurrentCharacterState)
 	{
-	case ECharacterState::Normal:F
-		//GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		if (GetCharacterMovement()->IsFlying())
+	case ECharacterState::Normal:
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		ExecuteBufferedAction();
 		break;
 	case ECharacterState::Hitted:
