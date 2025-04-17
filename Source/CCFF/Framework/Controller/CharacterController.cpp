@@ -168,13 +168,28 @@ void ACharacterController::NotifyPawnDeath()
 	AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode());
 	if (!IsValid(ArenaGameMode)) { return; }
 
+	UnPossess();
+	DisableInput(this);
+	FlushPressedKeys();
+	SetIgnoreMoveInput(true);
+	SetIgnoreLookInput(true);
+
 	// Posses Spectator Camera
 	if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
 	{
+		FTimerHandle SpectateHandle;
 		ACameraActor* SpectatorCam = ArenaGameState->GetSpectatorCamera();
 		if (IsValid(SpectatorCam))
 		{
-			ClientSpectateCamera(SpectatorCam);
+
+
+			GetWorld()->GetTimerManager().SetTimer(SpectateHandle, [this, SpectatorCam]()
+				{
+					FViewTargetTransitionParams Params;
+					Params.BlendTime = 0.f;
+					Cast<APlayerController>(this)
+						->ClientSetViewTarget(SpectatorCam, Params);
+				}, 0.2f, false);
 		}
 		else
 		{
@@ -183,7 +198,13 @@ void ACharacterController::NotifyPawnDeath()
 
 		if (IsLocalController())
 		{
-			ClientSpectateCamera(SpectatorCam);
+			GetWorld()->GetTimerManager().SetTimer(SpectateHandle, [this, SpectatorCam]()
+				{
+					FViewTargetTransitionParams Params;
+					Params.BlendTime = 0.f;
+					Cast<APlayerController>(this)
+						->ClientSetViewTarget(SpectatorCam, Params);
+				}, 0.2f, false);
 		}
 	}
 
@@ -220,30 +241,5 @@ void ACharacterController::NotifyPawnDeath()
 			}
 		}
 	}
-}
-
-void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
-{
-	//UE_LOG(LogTemp, Warning,TEXT("[ClientSpectateCamera] called on %s (NetMode=%d), Cam ptr=%p"),*GetName(), (int)GetNetMode(), SpectatorCam);
-	if (!SpectatorCam)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++ [ClientSpectateCamera] SpectatorCam is nullptr"));
-		return;
-	}
-
-	DisableInput(this);
-	FlushPressedKeys();
-	SetIgnoreMoveInput(true);
-	SetIgnoreLookInput(true);
-
-	UnPossess();
-	ChangeState(NAME_Spectating);
-	SetViewTargetWithBlend(SpectatorCam, 0.f);
-
-	FTimerHandle Handle;
-	GetWorld()->GetTimerManager().SetTimer(Handle, [this, SpectatorCam]()
-		{
-			SetViewTargetWithBlend(SpectatorCam, 0.f);
-		}, 0.1f, false);
 }
 

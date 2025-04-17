@@ -1056,17 +1056,17 @@ void ABaseCharacter::OnDeath()
 		//Montage end -> destroy actor
 		float MontageLength=Anim.DeathMontage->GetPlayLength();
 		FTimerHandle DestroyTimerHandle;
+
 		GetWorldTimerManager().SetTimer(
 			DestroyTimerHandle,
 			[this](){
+				if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
+				{
+					CharacterController->NotifyPawnDeath();
+				}
 				Destroy();
 				//Update StockCount
 			},MontageLength,false);
-	}
-
-	if (ACharacterController* CharacterController = Cast<ACharacterController>(GetController()))
-	{
-		CharacterController->NotifyPawnDeath();
 	}
 }
 

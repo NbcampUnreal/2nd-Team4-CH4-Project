@@ -54,9 +54,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_ReadyToSpawn(FName SelectedID, int32 PresetIndex, const TArray<FCharacterCustomizationPreset>& Presets);
 
-	UFUNCTION(Client, Reliable, Category = "Arena|Flow")
-	void ClientSpectateCamera(ACameraActor* SpectatorCam);
-
 	UFUNCTION(BlueprintCallable, Category = "Arena|Death")
 	void NotifyPawnDeath();
 

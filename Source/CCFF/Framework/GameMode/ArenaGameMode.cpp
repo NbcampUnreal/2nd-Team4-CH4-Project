@@ -56,20 +56,6 @@ void AArenaGameMode::StartPlay()
 	}
 }
 
-//void AArenaGameMode::PostLogin(APlayerController* NewPlayer)
-//{
-//	Super::PostLogin(NewPlayer);
-//	if (NewPlayer)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   SpawnPlayer"));
-//		SpawnPlayer(NewPlayer);
-//	}
-//	else
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++   No PlayerContoller"));
-//	}
-//}
-
 void AArenaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -83,19 +69,6 @@ void AArenaGameMode::BeginPlay()
 	{
 		return;
 	}
-
-	/*if (UCCFFGameInstance* CCFFGI = GetGameInstance<UCCFFGameInstance>())
-	{
-		SelectedArenaSubMode = CCFFGI->GetArenaSubMode();
-		UE_LOG(LogTemp, Warning,
-			TEXT("+++++++++++++++++++++++++++ [ArenaGameMode] Loaded ArenaSubMode from GI: %d"),
-			(uint8)SelectedArenaSubMode);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("+++++++++++++++++++++++++++ [ArenaGameMode] Failed to cast GameInstance to CCFFGameInstance!"));
-	}*/
 
 	TArray<AActor*> FoundCameras;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), SpectatorCameraClass, FoundCameras);
@@ -173,6 +146,12 @@ void AArenaGameMode::StartArenaRound()
 
 void AArenaGameMode::SpawnPlayer(APlayerController* NewPlayer)
 {
+	if (APawn* OldPawn = NewPlayer->GetPawn())
+	{
+		NewPlayer->UnPossess();
+		OldPawn->Destroy();
+	}
+
 	AArenaPlayerState* PS = NewPlayer->GetPlayerState<AArenaPlayerState>();
 	if (!PS) return;
 
