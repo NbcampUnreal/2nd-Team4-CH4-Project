@@ -132,7 +132,7 @@ protected:
 	UFUNCTION()
 	void Dodge();
 	UFUNCTION()
-	void Burst();
+	void Invincible();
 	UFUNCTION()
 	void PlayActionMontage(ECharacterState InState, const int32 Num);
 #pragma endregion
@@ -156,8 +156,8 @@ protected:
 	void Attack8(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnRep_CurrentCharacterState();
-	UFUNCTION()
-	void OnRep_CurrentResistanceState();
+	// UFUNCTION()
+	// void OnRep_CurrentResistanceState();
 	UFUNCTION()
 	void ExecuteActionByIndex(ECharacterState InState, const int32 Index);
 	UFUNCTION()
@@ -290,10 +290,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
 	FString CharacterType;
 	//Character State
-	UPROPERTY(ReplicatedUsing=OnRep_CurrentCharacterState)
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentCharacterState,VisibleAnywhere)
 	ECharacterState CurrentCharacterState;
 	//Character Resistance State
-	UPROPERTY(ReplicatedUsing=OnRep_CurrentResistanceState)
+	UPROPERTY(Replicated,VisibleAnywhere)
 	EResistanceState CurrentResistanceState;
 	//Character Stats struct
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = "true"))

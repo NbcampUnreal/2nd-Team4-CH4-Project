@@ -38,17 +38,6 @@ void UStatusComponent::SetCurrentHP(float InCurrentHP)
 	OnCurrentHPChanged.Broadcast(Percentage);
 }
 
-void UStatusComponent::SetBurstMeter(float InBurstMeter)
-{
-	BurstMeter = InBurstMeter;
-	if (BurstMeter <= KINDA_SMALL_NUMBER)
-	{
-		BurstMeter = 0.f;
-	}
-	float Percentage = FMath::Clamp(BurstMeter / MaxBurstMeter,0.f,1.f);
-	OnBurstMeterChanged.Broadcast(Percentage);
-}
-
 void UStatusComponent::SetSuperMeter(float InSuperMeter)
 {
 	SuperMeter = InSuperMeter;
@@ -60,9 +49,40 @@ void UStatusComponent::SetSuperMeter(float InSuperMeter)
 	OnSuperMeterChanged.Broadcast(Percentage);
 }
 
+void UStatusComponent::SetBurstMeter(const float InBurstMeter)
+{
+	BurstMeter = InBurstMeter;
+	if (BurstMeter <= KINDA_SMALL_NUMBER)
+	{
+		BurstMeter = 0.f;
+	}
+	float Percentage = FMath::Clamp(BurstMeter / MaxBurstMeter,0.f,1.f);
+	OnBurstMeterChanged.Broadcast(Percentage);
+}
+
 void UStatusComponent::SetBlockMeter(const float InBlockMeter)
 {
-	BlockMeter=InBlockMeter;
+	BlockMeter = InBlockMeter;
+	if (BlockMeter <= KINDA_SMALL_NUMBER)
+	{
+		OnGuardCrush.Broadcast();
+	}
+}
+
+void UStatusComponent::AddBurstMeter(const float InAmount)
+{
+	BurstMeter=FMath::Clamp(BurstMeter + InAmount,0.f,MaxBurstMeter);
+	if (BurstMeter <= KINDA_SMALL_NUMBER)
+	{
+		BurstMeter = 0.f;
+	}
+	float Percentage = FMath::Clamp(BurstMeter / MaxBurstMeter,0.f,1.f);
+	OnBurstMeterChanged.Broadcast(Percentage);
+}
+
+void UStatusComponent::AddBlockMeter(const float InAmount)
+{
+	BlockMeter=FMath::Clamp(BlockMeter + InAmount,0.f,MaxBlockMeter);
 	if (BlockMeter <= 0.0f)
 	{
 		OnGuardCrush.Broadcast();
