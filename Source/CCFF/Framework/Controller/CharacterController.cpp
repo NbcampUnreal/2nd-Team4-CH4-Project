@@ -37,7 +37,7 @@ void ACharacterController::BeginPlay()
 		if (UCCFFGameInstance* CCFFGameInstance = Cast<UCCFFGameInstance>(GetGameInstance()))
 		{
 			const FString NickName = CCFFGameInstance->GetNickname();
-			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *NickName);
+			//UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *NickName);
 			ServerSetNickname(NickName);
 			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
 			int32 SelectedPresetIndex = CCFFGameInstance->GetLobbyPresetIndex();
@@ -68,7 +68,7 @@ void ACharacterController::TogglePause()
 	ABaseInGameHUD* MyInGameHUD = Cast<ABaseInGameHUD>(GetHUD());
 	if (IsValid(MyInGameHUD))
 	{
-		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++ [CharacterController] Valid MyBaseInGameHDU"));
+		//UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++ [CharacterController] Valid MyBaseInGameHDU"));
 		UUserWidget* ToggleWidget = MyInGameHUD->GetTogglePauseWidget();
 		if (ToggleWidget != nullptr)
 		{
@@ -128,12 +128,12 @@ void ACharacterController::ServerSetNickname_Implementation(const FString& InNic
 		ArenaPlayerState->SetPlayerNickname(InNickname);
 		ArenaPlayerState->SetPlayerName(InNickname);
 
-		UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
+		//UE_LOG(LogTemp, Log, TEXT("ServerSetNickname: Received Nickname = '%s'"), *InNickname);
 
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ServerSetNickname: PlayerState invalid"));
+		//UE_LOG(LogTemp, Warning, TEXT("ServerSetNickname: PlayerState invalid"));
 	}
 }
 
@@ -178,7 +178,7 @@ void ACharacterController::NotifyPawnDeath()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
+			//UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
 		}
 
 		if (IsLocalController())
@@ -190,7 +190,7 @@ void ACharacterController::NotifyPawnDeath()
 	// Respawn
 	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)
 	{
-		UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] DeathMatch Mode"));
+		//UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] DeathMatch Mode"));
 		FTimerHandle RespawnTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 			{
@@ -203,7 +203,7 @@ void ACharacterController::NotifyPawnDeath()
 		{
 			ArenaPlayerState->MaxLives--;
 
-			UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] Elimination Mode, MaxLive is %d"), ArenaPlayerState->MaxLives);
+			//UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] Elimination Mode, MaxLive is %d"), ArenaPlayerState->MaxLives);
 			FTimerHandle RespawnTimerHandle;
 			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
 				{
@@ -216,7 +216,7 @@ void ACharacterController::NotifyPawnDeath()
 			{
 				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
 				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
-				UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++ Survival Time : %.2f"), SurvivalTime);
+				//UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++ Survival Time : %.2f"), SurvivalTime);
 			}
 		}
 	}
@@ -224,12 +224,10 @@ void ACharacterController::NotifyPawnDeath()
 
 void ACharacterController::ClientSpectateCamera_Implementation(ACameraActor* SpectatorCam)
 {
-	UE_LOG(LogTemp, Warning,
-		TEXT("[ClientSpectateCamera] called on %s (NetMode=%d), Cam ptr=%p"),
-		*GetName(), (int)GetNetMode(), SpectatorCam);
+	//UE_LOG(LogTemp, Warning,TEXT("[ClientSpectateCamera] called on %s (NetMode=%d), Cam ptr=%p"),*GetName(), (int)GetNetMode(), SpectatorCam);
 	if (!SpectatorCam)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++ [ClientSpectateCamera] SpectatorCam is nullptr"));
+		//UE_LOG(LogTemp, Warning, TEXT("++++++++++++++++++++++++++++++++ [ClientSpectateCamera] SpectatorCam is nullptr"));
 		return;
 	}
 

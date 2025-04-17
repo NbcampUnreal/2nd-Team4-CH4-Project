@@ -53,7 +53,7 @@ void UBaseInGameWidget::UpdateStockCount(const int32 InCount)
 	{
 		ProfileWidget->UpdateStockCount(InCount);
 	}
-	UE_LOG(LogTemp,Warning,TEXT("UBaseInGameWidget::UpdateStockCount: %d"),InCount);
+	//UE_LOG(LogTemp,Warning,TEXT("UBaseInGameWidget::UpdateStockCount: %d"),InCount);
 }
 
 void UBaseInGameWidget::UpdateSuperMeterBar(const float InPercentage)
@@ -89,7 +89,7 @@ void UBaseInGameWidget::UpdateCharacterImage(FName CharacterID)
 {
 	if (!ProfileImage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ProfileImage is null"));
+		//UE_LOG(LogTemp, Warning, TEXT("ProfileImage is null"));
 		return;
 	}
 
@@ -100,10 +100,10 @@ void UBaseInGameWidget::UpdateCharacterImage(FName CharacterID)
 		NewBrush.SetResourceObject(Texture);
 		ProfileImage->SetBrush(NewBrush);
 
-		UE_LOG(LogTemp, Log, TEXT("Updated Profile Image for ID: %s"), *CharacterID.ToString());
+		//UE_LOG(LogTemp, Log, TEXT("Updated Profile Image for ID: %s"), *CharacterID.ToString());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No image found for ID: %s"), *CharacterID.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("No image found for ID: %s"), *CharacterID.ToString());
 	}
 }
