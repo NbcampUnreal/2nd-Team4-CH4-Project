@@ -14,6 +14,7 @@
 #include "Camera/CameraActor.h"
 #include "Framework/GameState/ArenaGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Items/Manager/CustomizationManager.h"
 #include "TimerManager.h" 
 #include "Framework/HUD/ArenaModeHUD.h"
 
@@ -38,11 +39,16 @@ void ACharacterController::BeginPlay()
 			const FString NickName = CCFFGameInstance->GetNickname();
 			UE_LOG(LogTemp, Log, TEXT("Client BeginPlay: Sending Nickname = '%s'"), *NickName);
 			ServerSetNickname(NickName);
-
 			FName SelectedCharacterID = CCFFGameInstance->GetSelectedCharacterID();
-			ServerSetCharacterID(SelectedCharacterID);
 			int32 SelectedPresetIndex = CCFFGameInstance->GetLobbyPresetIndex();
-			Server_SetPresetIndex(SelectedPresetIndex);
+
+			UCustomizationManager* CustomizationManager = GetGameInstance()->GetSubsystem<UCustomizationManager>();
+			if (CustomizationManager)
+			{
+				const auto Presets = CustomizationManager->GetCharacterCustomizationPresets();
+				Server_ReadyToSpawn(SelectedCharacterID, SelectedPresetIndex, Presets);
+			}
+
 			CCFFGameInstance->PlayBGMForCurrentMap();
 		}
 	}
@@ -136,31 +142,18 @@ bool ACharacterController::ServerSetNickname_Validate(const FString& InNickname)
 	return true;
 }
 
-void ACharacterController::ServerSetCharacterID_Implementation(FName InID)
+void ACharacterController::Server_ReadyToSpawn_Implementation(FName SelectedID, int32 PresetIndex, const TArray<FCharacterCustomizationPreset>& Presets)
 {
-	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
+	if (AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>())
 	{
-		ArenaPlayerState->SetSelectedCharacterID(InID);
-		UE_LOG(LogTemp, Log, TEXT("[ServerSetCharacterID] SelectedCharacterID = %s"), *InID.ToString());
+		PS->SetSelectedCharacterID(SelectedID);
+		PS->SetSelectedPresetIndex(PresetIndex);
+		PS->SetCharacterCustomizationPresets(Presets);
 
-		if (AArenaGameMode* ArenaGameMode = Cast<AArenaGameMode>(GetWorld()->GetAuthGameMode()))
+		if (AArenaGameMode* GM = GetWorld()->GetAuthGameMode<AArenaGameMode>())
 		{
-			ArenaGameMode->SpawnPlayer(this);
+			GM->SpawnPlayer(this);
 		}
-	}
-}
-
-bool ACharacterController::ServerSetCharacterID_Validate(FName InID)
-{
-	return true;
-}
-
-void ACharacterController::Server_SetPresetIndex_Implementation(int32 InIndex)
-{
-	if (AArenaPlayerState* ArenaPlayerState = GetPlayerState<AArenaPlayerState>())
-	{
-		ArenaPlayerState->SetSelectedPresetIndex(InIndex);
-		UE_LOG(LogTemp, Log, TEXT("[Server_SetPresetIndex] SelectedPresetIndex = %d"), InIndex);
 	}
 }
 

@@ -31,6 +31,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Items/Component/ItemInteractionComponent.h"
+#include "Items/Component/CharacterCustomizationComponent.h"
 #include "Net/UnrealNetwork.h"
 
 class AArenaModeHUD;
@@ -99,6 +100,8 @@ ABaseCharacter::ABaseCharacter():
 	CurrentResistanceState=EResistanceState::Normal;
 	
 	ItemInteractionComponent = CreateDefaultSubobject<UItemInteractionComponent>(TEXT("ItemInteractionComponent"));
+	CustomizationComponent = CreateDefaultSubobject<UCharacterCustomizationComponent>(TEXT("CustomizationComponent"));
+
 }
 
 void ABaseCharacter::SetHPWidget(UUW_HPWidget* InHPWidget)

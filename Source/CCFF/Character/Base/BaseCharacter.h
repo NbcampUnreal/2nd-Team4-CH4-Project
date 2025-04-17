@@ -278,6 +278,10 @@ protected:
 	TObjectPtr<UHPWidgetComponent> HPWidgetComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStatusComponent> StatusComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UCharacterCustomizationComponent* CustomizationComponent;
+
 #pragma endregion
 
 protected:
