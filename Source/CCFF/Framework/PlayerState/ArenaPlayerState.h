@@ -34,7 +34,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetKillCount(int Kill) { KillCount = Kill; }
 
-	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
+	UFUNCTION(BlueprintPure, Category = "CCFF|PlayerStats")
 	FORCEINLINE FName GetSelectedCharacterID() const { return SelectedCharacterID; }
 	UFUNCTION(BlueprintCallable, Category = "CCFF|PlayerStats")
 	FORCEINLINE void SetSelectedCharacterID(FName CharacterID) { SelectedCharacterID = CharacterID; }

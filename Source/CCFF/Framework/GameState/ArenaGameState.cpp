@@ -146,3 +146,7 @@ void AArenaGameState::OnRep_ArenaRemainingTime()
 		}
 	}
 }
+
+void AArenaGameState::OnRep_SpectatorCamera()
+{
+}
