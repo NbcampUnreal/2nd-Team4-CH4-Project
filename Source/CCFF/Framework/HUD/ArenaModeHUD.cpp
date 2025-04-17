@@ -2,6 +2,8 @@
 #include "Framework/UI/CountdownWidget.h"
 #include "Framework/UI/ArenaResultWidget.h"
 #include "Framework/GameState/ArenaGameState.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 void AArenaModeHUD::BeginPlay()
 {
@@ -27,6 +29,12 @@ void AArenaModeHUD::HideCountdownWidget()
 	}
 }
 
+void AArenaModeHUD::UpdateCountdownText(const FString& InText)
+{
+	if (CountdownWidget)
+		CountdownWidget->SetCountdownText(InText);
+}
+
 void AArenaModeHUD::ShowArenaResultWidget()
 {
 	if (IsValid(ResultWidget))
@@ -38,6 +46,16 @@ void AArenaModeHUD::ShowArenaResultWidget()
 		}
 
 		ResultWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		PC->bShowMouseCursor = true;
+
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(ResultWidget->TakeWidget());
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(InputMode);
 	}
 }
 

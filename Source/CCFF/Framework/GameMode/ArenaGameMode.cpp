@@ -49,9 +49,9 @@ void AArenaGameMode::StartPlay()
 {
 	Super::StartPlay();
 
-	if (auto GI = GetGameInstance<UCCFFGameInstance>())
+	if (UCCFFGameInstance* CCFFGameInstance = GetGameInstance<UCCFFGameInstance>())
 	{
-		SelectedArenaSubMode = GI->GetArenaSubMode();
+		SelectedArenaSubMode = CCFFGameInstance->GetArenaSubMode();
 		UE_LOG(LogTemp, Warning, TEXT("+++++++++++++++++++++++++++++++++ [ArenaGameMode::StartPlay] SubMode=%d"), (uint8)SelectedArenaSubMode);
 	}
 }
@@ -204,22 +204,25 @@ void AArenaGameMode::EndRound()
 
 	GetWorld()->GetTimerManager().ClearTimer(ConditionCheckTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(ArenaTimerHandle);
-	RoundTime = 0.0f;
-
+	
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
-	if (IsValid(ArenaGameState))
-	{
-		ArenaGameState->SetRemainingTime(RoundTime);
-		ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
-		
-		float Initial = ArenaGameState->GetRoundStartTime();
+	if (!ArenaGameState) return;
 
-		for (APlayerState* BasePlayerState : GameState->PlayerArray)
+	float StartTime = ArenaGameState->GetRoundStartTime();
+	float Remaining = ArenaGameState->GetRemainingTime();
+	float ElapsedTime = StartTime - Remaining;
+
+	RoundTime = 0.0f;
+	ArenaGameState->SetRemainingTime(RoundTime);
+	ArenaGameState->SetRoundProgress(ERoundProgress::Ended);
+
+	for (APlayerState* BasePS : ArenaGameState->PlayerArray)
+	{
+		if (AArenaPlayerState* ArenaPlayerState = Cast<AArenaPlayerState>(BasePS))
 		{
-			AArenaPlayerState* ArenaPlayerState = Cast<AArenaPlayerState>(BasePlayerState);
-			if (ArenaPlayerState && ArenaPlayerState->GetSurvivalTime() <= 0.0f)
+			if (ArenaPlayerState->GetSurvivalTime() <= 0.0f)
 			{
-				ArenaPlayerState->SetSurvivalTime(Initial);
+				ArenaPlayerState->SetSurvivalTime(ElapsedTime);
 			}
 		}
 	}
@@ -234,29 +237,16 @@ void AArenaGameMode::CheckGameConditions()
 		return;
 	}
 
-	/*AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
-	if (ArenaGameState)
-	{
-		if (ArenaGameState->GetRemainingTime() <= 0.0f)
-		{
-			EndRound();
-			return;
-		}
-	}*/
 	AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GameState);
 	if (!ArenaGameState) { return; }
 	const float RemainingTime = ArenaGameState->GetRemainingTime();
 
-	if (ArenaGameState->GetArenaSubMode() == EArenaSubMode::DeathMatch)
+	if (RemainingTime <= 0.0f)
 	{
-		if (RemainingTime <= 0.0f)
-		{
-			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++ [ArenaGameMode] DeathMatch time-up: Ending round"));
-			EndRound();
-		}
+		EndRound();
 		return;
 	}
-
+	
 	if (ArenaGameState->GetArenaSubMode() == EArenaSubMode::Elimination)
 	{
 		int32 PlayersWithLives = 0;
@@ -264,23 +254,18 @@ void AArenaGameMode::CheckGameConditions()
 		{
 			if (AArenaPlayerState* PS = Cast<AArenaPlayerState>(BasePS))
 			{
-				if (PS->MaxLives >= 0)
+				if (PS->MaxLives >= 1)
 				{
 					PlayersWithLives++;
 				}
 			}
 		}
 
-		UE_LOG(LogTemp, Log,
-			TEXT("++++++++++++++++++++++++ [ArenaGameMode] Elimination Checking - PlayersWithLives : %d, RemainingTime: %.1f"),
-			PlayersWithLives, RemainingTime);
-
-		if (RemainingTime <= 0.0f || PlayersWithLives <= 1)
+		if (PlayersWithLives <= 1)
 		{
-			UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++ [ArenaGameMode] Elimination Fininsh GameEnd Condition"));
 			EndRound();
+			return;
 		}
-		return;
 	}
 }
 

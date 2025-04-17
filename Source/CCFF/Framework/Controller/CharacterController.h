@@ -77,4 +77,14 @@ public:
 	bool bIsPause;
 #pragma endregion
 
+	UFUNCTION(Client, Reliable)
+	void ClientStartRespawnCountdown();
+
+	UFUNCTION(Client, Reliable)
+	void ClientShowDieMessage();
+
+	void UpdateRespawnCountdown();
+
+	int32 RespawnCountdownValue;
+	FTimerHandle RespawnCountdownTimerHandle;
 };

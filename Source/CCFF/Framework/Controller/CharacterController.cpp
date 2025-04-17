@@ -17,6 +17,7 @@
 #include "Items/Manager/CustomizationManager.h"
 #include "TimerManager.h" 
 #include "Framework/HUD/ArenaModeHUD.h"
+#include "Framework/UI/CountdownWidget.h"
 
 
 ACharacterController::ACharacterController()
@@ -157,7 +158,7 @@ void ACharacterController::Server_ReadyToSpawn_Implementation(FName SelectedID, 
 	}
 }
 
-// TODO :: Fix Respawn SpectatorCam
+
 void ACharacterController::NotifyPawnDeath()
 {
 	if (!HasAuthority()) { return; }
@@ -174,6 +175,8 @@ void ACharacterController::NotifyPawnDeath()
 	SetIgnoreMoveInput(true);
 	SetIgnoreLookInput(true);
 
+	ArenaPlayerState->MaxLives--;
+
 	// Posses Spectator Camera
 	if (AArenaGameState* ArenaGameState = Cast<AArenaGameState>(GetWorld()->GetGameState()))
 	{
@@ -181,8 +184,6 @@ void ACharacterController::NotifyPawnDeath()
 		ACameraActor* SpectatorCam = ArenaGameState->GetSpectatorCamera();
 		if (IsValid(SpectatorCam))
 		{
-
-
 			GetWorld()->GetTimerManager().SetTimer(SpectateHandle, [this, SpectatorCam]()
 				{
 					FViewTargetTransitionParams Params;
@@ -190,10 +191,6 @@ void ACharacterController::NotifyPawnDeath()
 					Cast<APlayerController>(this)
 						->ClientSetViewTarget(SpectatorCam, Params);
 				}, 0.2f, false);
-		}
-		else
-		{
-			//UE_LOG(LogTemp, Log, TEXT("++++++++++++++++ [CharacterController] SpectatorCamera is Not! Valid!!"));
 		}
 
 		if (IsLocalController())
@@ -209,27 +206,38 @@ void ACharacterController::NotifyPawnDeath()
 	}
 
 	// Respawn
+	AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>();
+	const bool bHasLives = PS && PS->MaxLives > 0;
+
 	if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::DeathMatch)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] DeathMatch Mode"));
+		ClientStartRespawnCountdown();
 		FTimerHandle RespawnTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
+		GetWorld()->GetTimerManager().SetTimer(
+			RespawnTimerHandle,
+			[this, ArenaGameMode]()
 			{
 				ArenaGameMode->SpawnPlayer(this);
-			}, 5.0f, false);
+			},
+			5.0f,
+			false
+		);
 	}
 	else if (ArenaGameMode->SelectedArenaSubMode == EArenaSubMode::Elimination)
 	{
-		if (ArenaPlayerState->MaxLives >= 0)
+		if (bHasLives)
 		{
-			ArenaPlayerState->MaxLives--;
-
-			//UE_LOG(LogTemp, Log, TEXT("+++++++++++++++++++++++++++++++ [CharacterController] Elimination Mode, MaxLive is %d"), ArenaPlayerState->MaxLives);
+			ClientStartRespawnCountdown();
 			FTimerHandle RespawnTimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, [this, ArenaGameMode]()
+			GetWorld()->GetTimerManager().SetTimer(
+				RespawnTimerHandle,
+				[this, ArenaGameMode]()
 				{
 					ArenaGameMode->SpawnPlayer(this);
-				}, 5.0f, false);
+				},
+				5.0f,
+				false
+			);
 		}
 		else
 		{
@@ -237,9 +245,85 @@ void ACharacterController::NotifyPawnDeath()
 			{
 				float SurvivalTime = ArenaGameState->GetRoundStartTime() - ArenaGameState->GetRemainingTime();
 				ArenaPlayerState->SetSurvivalTime(SurvivalTime);
-				//UE_LOG(LogTemp, Log, TEXT("++++++++++++++++++++++++++++++++++++++++ Survival Time : %.2f"), SurvivalTime);
+				ClientShowDieMessage();
 			}
 		}
 	}
 }
+
+void ACharacterController::ClientStartRespawnCountdown_Implementation()
+{
+	if (!IsLocalController())
+		return;
+
+	if (AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(GetHUD()))
+	{
+		RespawnCountdownValue = 5;
+		ArenaModeHUD->ShowCountdownWidget();
+		ArenaModeHUD->UpdateCountdownText(FString::FromInt(RespawnCountdownValue));
+
+		GetWorld()->GetTimerManager().SetTimer(
+			RespawnCountdownTimerHandle,
+			this,
+			&ACharacterController::UpdateRespawnCountdown,
+			1.0f,
+			true
+		);
+	}
+}
+
+void ACharacterController::ClientShowDieMessage_Implementation()
+{
+	if (!IsLocalController()) return;
+
+	if (AArenaModeHUD* HUD = Cast<AArenaModeHUD>(GetHUD()))
+	{
+		HUD->ShowCountdownWidget();
+		HUD->UpdateCountdownText(TEXT("DIE!"));
+
+		FTimerHandle HideHandle;
+		GetWorldTimerManager().SetTimer(HideHandle, [HUD]()
+			{
+				HUD->HideCountdownWidget();
+			}, 2.0f, false);
+	}
+}
+
+void ACharacterController::UpdateRespawnCountdown()
+{
+	AArenaModeHUD* ArenaModeHUD = Cast<AArenaModeHUD>(GetHUD());
+	if (!ArenaModeHUD)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(RespawnCountdownTimerHandle);
+		return;
+	}
+
+	RespawnCountdownValue--;
+
+	if (RespawnCountdownValue > 0)
+	{
+		ArenaModeHUD->UpdateCountdownText(FString::FromInt(RespawnCountdownValue));
+	}
+	else
+	{
+		AArenaPlayerState* PS = GetPlayerState<AArenaPlayerState>();
+		bool bHasLives = PS && PS->MaxLives > 0;
+
+		ArenaModeHUD->UpdateCountdownText(TEXT("RESPAWN!"));
+
+		GetWorld()->GetTimerManager().ClearTimer(RespawnCountdownTimerHandle);
+
+		FTimerHandle HideHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			HideHandle,
+			[ArenaModeHUD]()
+			{
+				ArenaModeHUD->HideCountdownWidget();
+			},
+			1.0f,
+			false
+		);
+	}
+}
+
 

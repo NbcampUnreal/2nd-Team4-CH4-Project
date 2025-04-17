@@ -27,6 +27,9 @@ public:
 	void HideArenaResultWidget();
 
 	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
+	void UpdateCountdownText(const FString& InText);
+
+	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	FORCEINLINE UCountdownWidget* GetCountdownWidget() const { return CountdownWidget; }
 	UFUNCTION(BlueprintCallable, Category = "CCFF|UI")
 	FORCEINLINE UArenaResultWidget* GetArenaResultWidget() const { return ResultWidget; }
