@@ -179,13 +179,13 @@ void ABaseCharacter::BeginPlay()
 	//Bind Widget Update function to Delegate
 	if (ACharacterController* CC = Cast<ACharacterController>(GetController()))
 	{
-		UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Called"));
+		//UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Called"));
 		if (CC->IsLocalController())
 		{
-			UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Controller Is Valid"));
+			//UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::BeginPlay Controller Is Valid"));
 			if (AArenaModeHUD* AM = Cast<AArenaModeHUD>(CC->GetHUD()))
 			{
-				UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::SetHUD Called"));
+				//UE_LOG(LogTemp,Error,TEXT("ABaseCharacter::SetHUD Called"));
 				SetHUDWidget(AM->GetBaseInGameWidget());
 			}
 		}
@@ -279,13 +279,17 @@ void ABaseCharacter::AttackNotify(const FName NotifyName, const FBranchingPointN
 			}
 			else // Activate Collision
 			{
-				CurrentActivatedCollision=AttackNumber;
-				FVector OriginalLocation=GetActorLocation();
-				FVector Offset(0.1f,0.f,0.f);
-				SetActorLocation(OriginalLocation+Offset);
+				CurrentActivatedCollision = AttackNumber;
 				AttackCollisions[AttackNumber]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-				AttackCollisions[AttackNumber]->UpdateOverlaps();
-				SetActorLocation(OriginalLocation);
+				TArray<AActor*> OverlappingActors;
+				AttackCollisions[AttackNumber]->GetOverlappingActors(OverlappingActors);
+				for (AActor* OtherActor : OverlappingActors)
+				{
+					if (OtherActor != this)
+					{
+						OnAttackOverlap(AttackCollisions[AttackNumber], OtherActor, nullptr, 0, false, FHitResult());
+					}
+				}
 				UE_LOG(LogTemp,Warning,TEXT("Activate Collision! (Index: %d)"),AttackNumber);
 			}
 		}
