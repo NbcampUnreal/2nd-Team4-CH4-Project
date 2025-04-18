@@ -11,7 +11,7 @@ void ATrainingModeHUD::BeginPlay()
         TrainingWidget = CreateWidget<UTrainingWidget>(MyPlayerController, TrainingWidgetClass);
         if (IsValid(TrainingWidget))
         {
-            TrainingWidget->AddToViewport();
+            TrainingWidget->AddToViewport(4);
         }
     }
 }
