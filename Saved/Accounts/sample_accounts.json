@@ -1,0 +1,134 @@
+{
+    "1234": {
+        "Password": 1234,
+        "Nickname": "Test1234",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "gyu": {
+        "Password": "1234",
+        "Nickname": "Gyutae",
+        "AudioSettings": {
+            "Volume": 0.2
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "dah": {
+        "Password": "1234",
+        "Nickname": "Dahey",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "hwan": {
+        "Password": "1234",
+        "Nickname": "SexyMan",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "hong": {
+        "Password": "1234",
+        "Nickname": "Hongil",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "josh": {
+        "Password": "1234",
+        "Nickname": "Josh",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "soo": {
+        "Password": "1234",
+        "Nickname": "Porsche",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "4zoo": {
+        "Password": "1234",
+        "Nickname": "4Zoo",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "tutor": {
+        "Password": "1234",
+        "Nickname": "TutorNim",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "asdf": {
+        "Password": "1234",
+        "Nickname": "TestASDF",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    },
+    "aaaa": {
+        "Password": "1234",
+        "Nickname": "TestAAAA",
+        "AudioSettings": {
+            "Volume": 0.5
+        },
+        "Resolution": [
+            1280,
+            720
+        ],
+        "WindowMode": "Windowed"
+    }
+}
